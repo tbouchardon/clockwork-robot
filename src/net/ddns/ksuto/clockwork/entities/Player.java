@@ -1,6 +1,6 @@
-package autoGrind.entities;
+package net.ddns.ksuto.clockwork.entities;
 
-import autoGrind.tools.ShowZone;
+import net.ddns.ksuto.clockwork.tools.ShowZone;
 
 /**
  * Created by Kseniya! on 16/07/2016.

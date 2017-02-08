@@ -1,10 +1,10 @@
-package autoGrind;
+package net.ddns.ksuto.clockwork;
 
-import autoGrind.activity.AutoHit;
-import autoGrind.activity.TomTom.Arrows;
-import autoGrind.tellMeWhen.ConfigureTMW;
-import autoGrind.tellMeWhen.TMW;
-import autoGrind.tools.Scanner;
+import net.ddns.ksuto.clockwork.activity.AutoHit;
+import net.ddns.ksuto.clockwork.activity.TomTom.Arrows;
+import net.ddns.ksuto.clockwork.tellMeWhen.ConfigureTMW;
+import net.ddns.ksuto.clockwork.tellMeWhen.TMW;
+import net.ddns.ksuto.clockwork.tools.Scanner;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;

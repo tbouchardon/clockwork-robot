@@ -1,9 +1,9 @@
-package autoGrind.activity;
+package net.ddns.ksuto.clockwork.activity;
 
-import autoGrind.AutoHit_UI;
-import autoGrind.AutoHit_UI.Status;
-import autoGrind.tellMeWhen.Key;
-import autoGrind.tellMeWhen.TMW;
+import net.ddns.ksuto.clockwork.AutoHit_UI;
+import net.ddns.ksuto.clockwork.AutoHit_UI.Status;
+import net.ddns.ksuto.clockwork.tellMeWhen.Key;
+import net.ddns.ksuto.clockwork.tellMeWhen.TMW;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;

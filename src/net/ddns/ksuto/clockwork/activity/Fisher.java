@@ -1,7 +1,7 @@
-package autoGrind.activity;
+package net.ddns.ksuto.clockwork.activity;
 
-import autoGrind.tools.Scanner;
-import autoGrind.tools.ShowZone;
+import net.ddns.ksuto.clockwork.tools.Scanner;
+import net.ddns.ksuto.clockwork.tools.ShowZone;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;
@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
-//import autoGrind.AutoGrind_UI.Status;
+//import clockwork.AutoGrind_UI.Status;
 
 class Fisher {
     

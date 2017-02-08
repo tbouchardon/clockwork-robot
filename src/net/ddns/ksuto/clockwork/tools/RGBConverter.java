@@ -1,4 +1,4 @@
-package autoGrind.tools;
+package net.ddns.ksuto.clockwork.tools;
 
 import java.awt.image.BufferedImage;
 

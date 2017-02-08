@@ -1,4 +1,4 @@
-package autoGrind.tellMeWhen;
+package net.ddns.ksuto.clockwork.tellMeWhen;
 
 import java.util.ArrayList;
 

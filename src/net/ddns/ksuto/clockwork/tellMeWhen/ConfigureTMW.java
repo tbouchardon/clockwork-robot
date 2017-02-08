@@ -1,6 +1,6 @@
-package autoGrind.tellMeWhen;
+package net.ddns.ksuto.clockwork.tellMeWhen;
 
-import autoGrind.tools.Scanner;
+import net.ddns.ksuto.clockwork.tools.Scanner;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;

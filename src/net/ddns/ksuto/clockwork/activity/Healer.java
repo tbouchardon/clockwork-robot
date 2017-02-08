@@ -1,8 +1,8 @@
-package autoGrind.activity;
+package net.ddns.ksuto.clockwork.activity;
 
-import autoGrind.entities.Player;
-import autoGrind.tools.RGBConverter;
-import autoGrind.tools.ShowZone;
+import net.ddns.ksuto.clockwork.entities.Player;
+import net.ddns.ksuto.clockwork.tools.RGBConverter;
+import net.ddns.ksuto.clockwork.tools.ShowZone;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;

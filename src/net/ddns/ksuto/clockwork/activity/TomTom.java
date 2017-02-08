@@ -1,6 +1,6 @@
-package autoGrind.activity;
+package net.ddns.ksuto.clockwork.activity;
 
-import autoGrind.AutoHit_UI.Status;
+import net.ddns.ksuto.clockwork.AutoHit_UI;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;
@@ -124,12 +124,12 @@ public class TomTom {
         }
         if (iTime == 10) {
             isFlying = false;
-            while (autoHit.status == Status.TOMTOM && aiArrowPosition == null) {
+            while (autoHit.status == AutoHit_UI.Status.TOMTOM && aiArrowPosition == null) {
                 if (arrow == Arrows.ARCHEO) { aiArrowPosition = searchMiniArcheoArrow(aiCenter); }
                 else { aiArrowPosition = searchMiniQuestArrow(aiCenter); }
                 robot.delay(1000);
             }
-            if (autoHit.status == Status.TOMTOM) { robot.delay(5000); }
+            if (autoHit.status == AutoHit_UI.Status.TOMTOM) { robot.delay(5000); }
             iTime = 0;
         }
     }
