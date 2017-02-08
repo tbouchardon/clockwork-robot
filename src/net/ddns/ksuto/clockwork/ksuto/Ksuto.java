@@ -47,14 +47,6 @@ public class Ksuto {
         peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.delay(i_DELAY);
         
-        peripherals.robot.keyPress(KeyEvent.VK_ENTER);
-        peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
-        peripherals.robot.delay(i_DELAY);
-        peripherals.getKeyboard().typeString("/kto toggle");
-        peripherals.robot.delay(i_DELAY);
-        peripherals.robot.keyPress(KeyEvent.VK_ENTER);
-        peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
-        
         openCloseKsuto(peripherals);
     }
     
@@ -84,7 +76,23 @@ public class Ksuto {
         public int yPos_xXxx = 0;
         public int yPos_xxXx = 0;
         public int yPos_xxxX = 0;
-        
+
+        public Position(Position currenPosition) {
+            this.xPos_Xxxx = currenPosition.xPos_Xxxx;
+            this.xPos_xXxx = currenPosition.xPos_xXxx;
+            this.xPos_xxXx = currenPosition.xPos_xxXx;
+            this.xPos_xxxX = currenPosition.xPos_xxxX;
+
+            this.yPos_Xxxx = currenPosition.yPos_Xxxx;
+            this.yPos_xXxx = currenPosition.yPos_xXxx;
+            this.yPos_xxXx = currenPosition.yPos_xxXx;
+            this.yPos_xxxX = currenPosition.yPos_xxxX;
+        }
+
+        public Position() {
+
+        }
+
         public void clear() {
             
             xPos_Xxxx = 0;

@@ -24,6 +24,11 @@ public class Clockwork {
         
         this.peripherals = peripherals;
         this.clockWork_UI = autoHitControl;
+        try {
+            tomtom = new TomTom(peripherals);
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
     }
     
     public void play() throws AWTException {
@@ -65,7 +70,7 @@ public class Clockwork {
         
         if (ksuto.ADD_WAYPOINT.active) {
             tomtom.getCoordinates(ksuto, peripherals);
-            ksuto.path.add(ksuto.currenPosition);
+            ksuto.path.add(new Ksuto.Position(ksuto.currenPosition));
             Ksuto.typeInChat(peripherals, "/kto wpadded");
             peripherals.robot.delay(500);
         }
