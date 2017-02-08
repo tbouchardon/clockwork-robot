@@ -7,6 +7,12 @@ import java.awt.image.BufferedImage;
  */
 public class RGBConverter {
     
+    public static final int BLACK = -16777216;
+    public static final int RED   = -16711680;
+    public static final int GREEN = -65280;
+    public static final int BLUE  = -255;
+    public static final int WHITE = -1;
+    
     private final BufferedImage capturedScreen;
     private final int           x;
     private final int           y;

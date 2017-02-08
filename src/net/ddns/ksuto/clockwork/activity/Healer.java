@@ -26,7 +26,7 @@ class Healer {
     private Player            woundedPlayer  = null;
     private ShowZone showZone;
     
-    Healer(TBoPeripheralRobotHelper peripherals) {
+    private Healer(TBoPeripheralRobotHelper peripherals) {
         
         this.peripherals = peripherals;
         showZone = new ShowZone(peripherals);
