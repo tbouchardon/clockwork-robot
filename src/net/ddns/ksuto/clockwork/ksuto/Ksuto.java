@@ -1,7 +1,5 @@
 package net.ddns.ksuto.clockwork.ksuto;
 
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
-
 import net.ddns.ksuto.clockwork.entities.Dot;
 import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
@@ -10,6 +8,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 /**
  * Created by Administrateur on 19/05/15!
@@ -50,7 +50,7 @@ public class Ksuto {
         peripherals.robot.keyPress(KeyEvent.VK_ENTER);
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
         peripherals.robot.delay(i_DELAY);
-        peripherals.getKeyboard().typeString("/kto");
+        peripherals.getKeyboard().typeString("/kto toggle");
         peripherals.robot.delay(i_DELAY);
         peripherals.robot.keyPress(KeyEvent.VK_ENTER);
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
@@ -59,8 +59,8 @@ public class Ksuto {
     }
     
     static void openCloseKsuto(TBoPeripheralRobotHelper peripherals) {
-        
-        typeInChat(peripherals, "/kto");
+
+        typeInChat(peripherals, "/kto toggle");
     }
     
     void add(Key key) {
