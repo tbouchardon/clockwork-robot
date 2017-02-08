@@ -109,9 +109,8 @@ public class Clockwork {
         
         if (ksuto.DRIVE_MOD.active) {
             if (tomtom == null) { tomtom = new TomTom(peripherals); }
-            tomtom.drive(ksuto, peripherals, key2hit == null);
+            tomtom.drive(ksuto, peripherals, key2hit != null);
         }
-        else { tomtom = null; }
     }
     
     private void fish() throws AWTException {
