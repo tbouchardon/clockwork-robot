@@ -31,6 +31,8 @@ import javax.swing.*;
 @SuppressWarnings({"serial", "Duplicates"})
 public class AutoHit_UI extends JFrame {
     
+    //clockwork_vanilla
+    
     private final TBoPeripheralRobotHelper peripherals;
     
     private final int               i_DELAY         = 100;
