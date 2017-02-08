@@ -525,6 +525,8 @@ public class AutoHit_UI extends JFrame {
         };
     }
     
+    //Test branche
+    
     private ActionListener rightButtonListener() {
         
         return actionEvent -> {
