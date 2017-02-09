@@ -1,8 +1,8 @@
 package net.ddns.ksuto.clockwork;
 
 import net.ddns.ksuto.clockwork.activity.Clockwork;
-import net.ddns.ksuto.clockwork.ksuto.ConfigureKsuto;
-import net.ddns.ksuto.clockwork.ksuto.Ksuto;
+import net.ddns.ksuto.clockwork.entities.middleman.ConfigureMiddleMan;
+import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
 import java.awt.*;
@@ -24,7 +24,7 @@ public class ClockWork_UI extends JFrame {
     private       int        iRed           = 250, iGreen = 250, iBlue = 250, iGrey = 0;
     private JButton autoConfButton;
     private JButton jButtonFish;
-    private Ksuto ksuto = new Ksuto();
+    private MiddleMan middleMan = new MiddleMan();
     private Clockwork clockwork;
     
     @SuppressWarnings("ConstantConditions")
@@ -81,7 +81,7 @@ public class ClockWork_UI extends JFrame {
         ui.jTextFieldCast.requestFocus();
         ui.clockwork = new Clockwork(peripherals, ui);
         System.out.println("new Clockwork");
-        while (ui.getKsuto().getKeys().isEmpty()) { peripherals.robot.delay(200); }
+        while (ui.getMiddleMan().getKeys().isEmpty()) { peripherals.robot.delay(200); }
         ui.clockwork.play();
         System.exit(0);
     }
@@ -167,16 +167,16 @@ public class ClockWork_UI extends JFrame {
             autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.down.png"));
             
             SwingUtilities.invokeLater(() -> {
-                ConfigureKsuto conf;
+                ConfigureMiddleMan conf;
                 try {
-                    conf = new ConfigureKsuto();
+                    conf = new ConfigureMiddleMan();
                     conf.run();
-                    ksuto = conf.getKsuto();
+                    middleMan = conf.getMiddleMan();
                 }
                 catch (AWTException | IOException e) {
                     e.printStackTrace();
                 }
-                if (!ksuto.getKeys().isEmpty()) {
+                if (!middleMan.getKeys().isEmpty()) {
                     setEnabledButtonAutoconf(true);
                     setEnabledButtonFish(true);
                 }
@@ -197,9 +197,9 @@ public class ClockWork_UI extends JFrame {
         return null;
     }
     
-    public Ksuto getKsuto() {
+    public MiddleMan getMiddleMan() {
         
-        return ksuto;
+        return middleMan;
     }
     
     private void setEnabledButtonAutoconf(boolean b) {

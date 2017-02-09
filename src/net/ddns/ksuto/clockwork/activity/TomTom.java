@@ -1,6 +1,6 @@
 package net.ddns.ksuto.clockwork.activity;
 
-import net.ddns.ksuto.clockwork.ksuto.Ksuto;
+import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
@@ -24,74 +24,74 @@ public class TomTom {
 
         this.peripherals = peripherals;
     }
-
-    public void addCurrentPositionToPathList(Ksuto ksuto, TBoPeripheralRobotHelper peripherals) {
-
-        getCoordinates(ksuto, peripherals);
+    
+    public void addCurrentPositionToPathList(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals) {
+        
+        getCoordinates(middleMan, peripherals);
     }
-
-    public void getCoordinates(Ksuto ksuto, TBoPeripheralRobotHelper peripherals) {
+    
+    public void getCoordinates(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals) {
 
         BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 5) == RGBConverter.WHITE) {
-                ksuto.currenPosition.xPos_Xxxx = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 5) == RGBConverter.WHITE) {
+                middleMan.currenPosition.xPos_Xxxx = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 6) == RGBConverter.WHITE) {
-                ksuto.currenPosition.xPos_xXxx = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 6) == RGBConverter.WHITE) {
+                middleMan.currenPosition.xPos_xXxx = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 7) == RGBConverter.WHITE) {
-                ksuto.currenPosition.xPos_xxXx = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 7) == RGBConverter.WHITE) {
+                middleMan.currenPosition.xPos_xxXx = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 8) == RGBConverter.WHITE) {
-                ksuto.currenPosition.xPos_xxxX = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 8) == RGBConverter.WHITE) {
+                middleMan.currenPosition.xPos_xxxX = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 9) == RGBConverter.WHITE) {
-                ksuto.currenPosition.yPos_Xxxx = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 9) == RGBConverter.WHITE) {
+                middleMan.currenPosition.yPos_Xxxx = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 10) == RGBConverter.WHITE) {
-                ksuto.currenPosition.yPos_xXxx = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 10) == RGBConverter.WHITE) {
+                middleMan.currenPosition.yPos_xXxx = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 11) == RGBConverter.WHITE) {
-                ksuto.currenPosition.yPos_xxXx = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 11) == RGBConverter.WHITE) {
+                middleMan.currenPosition.yPos_xxXx = i;
                 break;
             }
         }
 
         for (int i = 2; i < 10; i++) {
-            if (biCapturedScreen.getRGB(ksuto.position.xPosition + i, ksuto.position.yPosition + 12) == RGBConverter.WHITE) {
-                ksuto.currenPosition.yPos_xxxX = i;
+            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 12) == RGBConverter.WHITE) {
+                middleMan.currenPosition.yPos_xxxX = i;
                 break;
             }
         }
     }
-
-    void drive(Ksuto ksuto, TBoPeripheralRobotHelper peripherals, boolean activeTarget) {
+    
+    void drive(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals, boolean activeTarget) {
 
         if (isRunning && activeTarget) {
             runStop();
@@ -101,8 +101,8 @@ public class TomTom {
         if (!isRunning && activeTarget) {
             return;
         }
-
-        if (ksuto.path.isEmpty()) {
+        
+        if (middleMan.path.isEmpty()) {
 
             if (isRunning) {
                 runStop();
@@ -113,21 +113,21 @@ public class TomTom {
         if (!isRunning) {
             runStart();
         }
-
-        if (ksuto.DRIVE_LOOP.active && pathIndex > ksuto.path.size() - 1) {
+        
+        if (middleMan.DRIVE_LOOP.active && pathIndex > middleMan.path.size() - 1) {
             pathIndex = 0;
         }
-
-        if (pathIndex > ksuto.path.size() - 1) {
-            ksuto.path.clear();
+        
+        if (pathIndex > middleMan.path.size() - 1) {
+            middleMan.path.clear();
             return;
         }
-
-        Ksuto.Position path = ksuto.path.get(pathIndex);
-
-        getCoordinates(ksuto, peripherals);
-
-        double[] playerCoords = ksuto.currenPosition.getCoordinates();
+        
+        MiddleMan.Position path = middleMan.path.get(pathIndex);
+        
+        getCoordinates(middleMan, peripherals);
+        
+        double[] playerCoords = middleMan.currenPosition.getCoordinates();
         System.out.println("playerCoords[0] = " + playerCoords[0] + ", playerCoords[1] = " + playerCoords[1]);
         if (lastPlayerCoords == null) {
             lastPlayerCoords = playerCoords;

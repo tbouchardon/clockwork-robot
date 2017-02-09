@@ -3,7 +3,8 @@ package net.ddns.ksuto.clockwork.activity;
 import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
 import net.ddns.ksuto.clockwork.entities.Key;
-import net.ddns.ksuto.clockwork.ksuto.Ksuto;
+import net.ddns.ksuto.clockwork.entities.Position;
+import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
@@ -39,8 +40,8 @@ public class Clockwork {
         
         //noinspection InfiniteLoopStatement
         while (true) {
-            
-            Ksuto ksuto = clockWork_UI.getKsuto();
+    
+            MiddleMan middleMan = clockWork_UI.getMiddleMan();
             
             robot.delay(100);
             
@@ -50,41 +51,41 @@ public class Clockwork {
             //ImageIO.write(biCapturedScreen, "png", outputfile);
             
             if (status == Status.FISHING) { fish(); }
-            
-            findSomethingToDo(biCapturedScreen, ksuto);
+    
+            findSomethingToDo(biCapturedScreen, middleMan);
         }
     }
     
-    private void findSomethingToDo(BufferedImage biCapturedScreen, Ksuto ksuto) throws AWTException {
+    private void findSomethingToDo(BufferedImage biCapturedScreen, MiddleMan middleMan) throws AWTException {
         
-        ksuto.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(ksuto.TOGGLE_ON_OFF.xPosition, ksuto.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
-        ksuto.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(ksuto.TARGET_NEAREST_ENEMY.xPosition, ksuto.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
-        ksuto.ADD_WAYPOINT.active = biCapturedScreen.getRGB(ksuto.ADD_WAYPOINT.xPosition, ksuto.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
-        ksuto.CLEAR_WAYPOINTS.active = biCapturedScreen.getRGB(ksuto.CLEAR_WAYPOINTS.xPosition, ksuto.CLEAR_WAYPOINTS.yPosition) == RGBConverter.WHITE;
-        ksuto.DRIVE_MOD.active = biCapturedScreen.getRGB(ksuto.DRIVE_MOD.xPosition, ksuto.DRIVE_MOD.yPosition) == RGBConverter.WHITE;
-        ksuto.DRIVE_LOOP.active = biCapturedScreen.getRGB(ksuto.DRIVE_LOOP.xPosition, ksuto.DRIVE_LOOP.yPosition) == RGBConverter.WHITE;
-        ksuto.DEBUG_MOD.active = biCapturedScreen.getRGB(ksuto.DEBUG_MOD.xPosition, ksuto.DEBUG_MOD.yPosition) == RGBConverter.RED;
+        middleMan.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(middleMan.TOGGLE_ON_OFF.xPosition, middleMan.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
+        middleMan.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(middleMan.TARGET_NEAREST_ENEMY.xPosition, middleMan.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
+        middleMan.ADD_WAYPOINT.active = biCapturedScreen.getRGB(middleMan.ADD_WAYPOINT.xPosition, middleMan.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
+        middleMan.CLEAR_WAYPOINTS.active = biCapturedScreen.getRGB(middleMan.CLEAR_WAYPOINTS.xPosition, middleMan.CLEAR_WAYPOINTS.yPosition) == RGBConverter.WHITE;
+        middleMan.DRIVE_MOD.active = biCapturedScreen.getRGB(middleMan.DRIVE_MOD.xPosition, middleMan.DRIVE_MOD.yPosition) == RGBConverter.WHITE;
+        middleMan.DRIVE_LOOP.active = biCapturedScreen.getRGB(middleMan.DRIVE_LOOP.xPosition, middleMan.DRIVE_LOOP.yPosition) == RGBConverter.WHITE;
+        middleMan.DEBUG_MOD.active = biCapturedScreen.getRGB(middleMan.DEBUG_MOD.xPosition, middleMan.DEBUG_MOD.yPosition) == RGBConverter.RED;
         
         
-        if (!ksuto.TOGGLE_ON_OFF.active) { return; }
+        if (!middleMan.TOGGLE_ON_OFF.active) { return; }
         
-        if (ksuto.ADD_WAYPOINT.active) {
-            tomtom.getCoordinates(ksuto, peripherals);
-            ksuto.path.add(new Ksuto.Position(ksuto.currenPosition));
-            Ksuto.typeInChat(peripherals, "/kto wpadded");
+        if (middleMan.ADD_WAYPOINT.active) {
+            tomtom.getCoordinates(middleMan, peripherals);
+            middleMan.path.add(new Position(middleMan.currenPosition));
+            MiddleMan.typeInChat(peripherals, "/kto wpadded");
             peripherals.robot.delay(500);
         }
         
-        if (ksuto.CLEAR_WAYPOINTS.active) {
-            ksuto.path.clear();
-            Ksuto.typeInChat(peripherals, "/kto wpcleared");
+        if (middleMan.CLEAR_WAYPOINTS.active) {
+            middleMan.path.clear();
+            MiddleMan.typeInChat(peripherals, "/kto wpcleared");
             peripherals.robot.delay(500);
         }
         
         Key     key2hit       = null;
         boolean shiftModifier = false;
         
-        for (Key key : ksuto.getKeys()) {
+        for (Key key : middleMan.getKeys()) {
             
             int iCapturedRGB = biCapturedScreen.getRGB(key.xPosition, key.yPosition); //-1 == white && -16777216 == black
             
@@ -109,12 +110,12 @@ public class Clockwork {
             if (shiftModifier) { robot.keyRelease(Event.SHIFT_MASK); }
         }
         
-        if (ksuto.TARGET_NEAREST_ENEMY.active) { pressKey(KeyEvent.VK_TAB); } // Without the 5s timer limit
-        //if (ksuto.TARGET_NEAREST_ENEMY.active && (System.currentTimeMillis() - lClickTiming) < 5000 && !foundSomethingToDo) pressKey(KeyEvent.VK_TAB);
+        if (middleMan.TARGET_NEAREST_ENEMY.active) { pressKey(KeyEvent.VK_TAB); } // Without the 5s timer limit
+        //if (middleMan.TARGET_NEAREST_ENEMY.active && (System.currentTimeMillis() - lClickTiming) < 5000 && !foundSomethingToDo) pressKey(KeyEvent.VK_TAB);
         
-        if (ksuto.DRIVE_MOD.active) {
+        if (middleMan.DRIVE_MOD.active) {
             if (tomtom == null) { tomtom = new TomTom(peripherals); }
-            tomtom.drive(ksuto, peripherals, key2hit != null);
+            tomtom.drive(middleMan, peripherals, key2hit != null);
         }
     }
     

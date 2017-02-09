@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/AutoHit.iml" filepath="$PROJECT_DIR$/AutoHit.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ClockWork.iml" filepath="$PROJECT_DIR$/ClockWork.iml" />
     </modules>
   </component>
 </project>
