@@ -41,6 +41,14 @@ public class MiddleMan {
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
     }
     
+    public static void pressKey(TBoPeripheralRobotHelper peripherals, int iKey) {
+        
+        peripherals.robot.keyPress(iKey);
+        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.keyRelease(iKey);
+        peripherals.robot.delay(i_DELAY);
+    }
+    
     static void startKsuto(TBoPeripheralRobotHelper peripherals, ArrayList<int[]> wowPosition) {
         
         peripherals.robot.mouseMove(wowPosition.get(0)[0] + 50, wowPosition.get(0)[1] + 50);
@@ -52,11 +60,11 @@ public class MiddleMan {
     }
     
     static void openCloseKsuto(TBoPeripheralRobotHelper peripherals) {
-
+    
         typeInChat(peripherals, "/kto toggle");
     }
     
-    void add(Key key) {
+    void addKey(Key key) {
         
         alKeys.add(key);
     }

@@ -27,7 +27,8 @@ public class Clockwork {
         this.clockWork_UI = autoHitControl;
         try {
             tomtom = new TomTom(peripherals);
-        } catch (AWTException e) {
+        }
+        catch (AWTException e) {
             e.printStackTrace();
         }
     }
@@ -66,7 +67,6 @@ public class Clockwork {
         middleMan.DRIVE_LOOP.active = biCapturedScreen.getRGB(middleMan.DRIVE_LOOP.xPosition, middleMan.DRIVE_LOOP.yPosition) == RGBConverter.WHITE;
         middleMan.DEBUG_MOD.active = biCapturedScreen.getRGB(middleMan.DEBUG_MOD.xPosition, middleMan.DEBUG_MOD.yPosition) == RGBConverter.RED;
         
-        
         if (!middleMan.TOGGLE_ON_OFF.active) { return; }
         
         if (middleMan.ADD_WAYPOINT.active) {
@@ -104,19 +104,21 @@ public class Clockwork {
             
             clockWork_UI.setTextField(key2hit.key);
             clockWork_UI.setiGrey(iGreyColor);
-            
-            pressKey(key2hit.hitKey);
+    
+            MiddleMan.pressKey(peripherals, key2hit.hitKey);
             
             if (shiftModifier) { robot.keyRelease(Event.SHIFT_MASK); }
         }
-        
-        if (middleMan.TARGET_NEAREST_ENEMY.active) { pressKey(KeyEvent.VK_TAB); } // Without the 5s timer limit
+    
+        if (middleMan.TARGET_NEAREST_ENEMY.active) { MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB); } // Without the 5s timer limit
         //if (middleMan.TARGET_NEAREST_ENEMY.active && (System.currentTimeMillis() - lClickTiming) < 5000 && !foundSomethingToDo) pressKey(KeyEvent.VK_TAB);
         
         if (middleMan.DRIVE_MOD.active) {
             if (tomtom == null) { tomtom = new TomTom(peripherals); }
             tomtom.drive(middleMan, peripherals, key2hit != null);
         }
+    
+        peripherals.robot.delay(250);
     }
     
     private void fish() throws AWTException {
@@ -127,13 +129,6 @@ public class Clockwork {
         while (bKeepFishing) { bKeepFishing = natPagle.fish(); }
         natPagle.leave();
         if (status == Status.FISHING) { clockWork_UI.dojButtonFishClick(); }
-    }
-    
-    private void pressKey(int iKey) {
-        
-        robot.keyPress(iKey);
-        robot.keyRelease(iKey);
-        robot.delay(500);
     }
     
     private boolean checkColor(int iX, int iY, BufferedImage biCapturedScreen, int iColor) {

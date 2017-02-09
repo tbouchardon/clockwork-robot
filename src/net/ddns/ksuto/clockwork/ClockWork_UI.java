@@ -19,7 +19,6 @@ public class ClockWork_UI extends JFrame {
     
     private final TBoPeripheralRobotHelper peripherals;
     
-    private final int        i_DELAY        = 100;
     private final JTextField jTextFieldCast = new JTextField("/Please Auto Config ");
     private       int        iRed           = 250, iGreen = 250, iBlue = 250, iGrey = 0;
     private JButton autoConfButton;

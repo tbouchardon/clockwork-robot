@@ -1,5 +1,7 @@
 package net.ddns.ksuto.clockwork.activity;
 
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
+
 import net.ddns.ksuto.clockwork.tools.Scanner;
 import net.ddns.ksuto.clockwork.tools.ShowZone;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
@@ -16,7 +18,6 @@ import java.util.Date;
 
 class Fisher {
     
-    private static final int i_DELAY   = 100;
     @SuppressWarnings("FieldCanBeLocal")
     private final        int iLureTime = 10 * 60000; // W
     @SuppressWarnings("FieldCanBeLocal")
