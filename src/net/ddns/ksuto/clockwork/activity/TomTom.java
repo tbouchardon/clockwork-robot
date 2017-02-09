@@ -1,7 +1,5 @@
 package net.ddns.ksuto.clockwork.activity;
 
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
-
 import net.ddns.ksuto.clockwork.entities.Position;
 import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
@@ -12,10 +10,12 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
+
 public class TomTom {
     
     private static final int KEY_J = 74, KEY_Y = 89, KEY_SPACE = 32;
-    private static final int TURN_DURATION = 150;
+    private static final int TURN_DURATION = 100;
     private TBoPeripheralRobotHelper peripherals;
     private boolean  isFlying         = false;
     private boolean  isRunning        = false;
@@ -34,6 +34,8 @@ public class TomTom {
     }
     
     public void getCoordinates(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals) {
+
+        System.out.println("getCoordinates");
     
         BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
     
@@ -108,7 +110,7 @@ public class TomTom {
     
         // Arrêter de courrir et retour si il n'y a plus de points de cheminement
         if (middleMan.path.isEmpty()) {
-    
+            pathIndex = 0;
             if (isRunning) {
                 runStop();
             }
@@ -129,6 +131,7 @@ public class TomTom {
         if (pathIndex > middleMan.path.size() - 1) {
             middleMan.path.clear();
             if (isRunning) { runStop(); }
+            pathIndex = 0;
             return;
         }
     
@@ -170,7 +173,7 @@ public class TomTom {
         double distance = Math.sqrt(Math.pow(path.getCoordinates()[0] - playerCoords[0], 2) + Math.pow(path.getCoordinates()[1] - playerCoords[1], 2));
         if (lastDistance != null && distance > lastDistance) {
             runStop();
-            turnRight(2000);
+            turnRight(1100);
             runStart();
         }
     
@@ -181,7 +184,9 @@ public class TomTom {
         lastPlayerCoords = playerCoords;
     
         // On passe au point de cheminement suivant si le point actuel est atteint
-        if (distance <= 0) { pathIndex++; }
+        if (distance <= 0.30) {
+            pathIndex++;
+        }
         
         peripherals.robot.delay(500);
     }
