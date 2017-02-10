@@ -157,12 +157,16 @@ public class TomTom {
         double y = a * playerCoords[0] + b; // y = ax + b
         
         // Tourner en fonction de la position du personnage par rapport à la droite précédement calculée
+        // Si à xA > xB, on se déplace d'est en ouest
         if (playerCoords[0] > path.getCoordinates()[0]) {
+            // Si yJoueur > yCalculé, le joueur est trop au sud par rapport à la droite
             if (playerCoords[1] > y) {
                 turnLeft(TURN_DURATION);
             }
+            // sinon le joueur est trop au nord
             else { turnRight(TURN_DURATION); }
         }
+        // Si à xA < xB, on se déplace d'ouest en est
         else {
             if (playerCoords[1] > y) {
                 turnRight(TURN_DURATION);
