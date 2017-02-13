@@ -1,7 +1,5 @@
 package net.ddns.ksuto.clockwork.activity;
 
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
-
 import net.ddns.ksuto.clockwork.entities.Position;
 import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
@@ -11,6 +9,8 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 public class TomTom {
     
@@ -179,8 +179,12 @@ public class TomTom {
         // γ = arccos[(a² + b² − c²) ÷ 2ab]
         // et si c = lastDistance, b = distance et a = traveledDistance alors l'angle C, opposé à c =
         Double angleC = Math.acos((Math.pow(traveledDistance, 2) + Math.pow(distance, 2) - Math.pow(lastDistance, 2)) / (2L * traveledDistance * distance));
-        
+
+        // conversion de radians en degrés
+        angleC = Math.toDegrees(angleC);
+
         System.out.println(y + " = " + a + " * " + playerCoords[0] + " + " + b + "( Actual = " + playerCoords[1] + ")");
+        System.out.println("lastDistance = " + lastDistance * 100L);
         System.out.println("distance = " + distance * 100L);
         System.out.println("traveledDistance = " + traveledDistance * 100L);
         System.out.println("angleC = " + angleC + "°");
