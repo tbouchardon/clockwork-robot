@@ -63,6 +63,11 @@ public class Clockwork {
         
         // On ne fait rien si L'addon n'est pas visible
         if (biCapturedScreen.getRGB(middleMan.position.xPosition, middleMan.position.yPosition) != RGBConverter.GREEN) { return; }
+    
+        double health = ((biCapturedScreen.getRGB(middleMan.health.xPosition, middleMan.health.yPosition) >> 16) & 0xFF);
+        health = 100L / 255L * health;
+        double mana = ((biCapturedScreen.getRGB(middleMan.mana.xPosition, middleMan.mana.yPosition)) & 0xFF);
+        mana = 100L / 255L * mana;
         
         middleMan.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(middleMan.TOGGLE_ON_OFF.xPosition, middleMan.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
         middleMan.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(middleMan.TARGET_NEAREST_ENEMY.xPosition, middleMan.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
@@ -133,8 +138,8 @@ public class Clockwork {
             MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB);
         } // Without the 5s timer limit
         //if (middleMan.TARGET_NEAREST_ENEMY.active && (System.currentTimeMillis() - lClickTiming) < 5000 && !foundSomethingToDo) pressKey(KeyEvent.VK_TAB);
-        
-        if (middleMan.DRIVE_MOD.active) {
+    
+        if (middleMan.DRIVE_MOD.active && health > 20) {
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }

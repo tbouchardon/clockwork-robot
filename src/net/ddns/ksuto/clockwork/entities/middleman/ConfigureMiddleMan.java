@@ -96,7 +96,9 @@ public class ConfigureMiddleMan {
             middleMan.addKey(new Key(KeyEvent.VK_3, iXKsuto + 4, iYKsuto + 4, "3"));
             middleMan.addKey(new Key(KeyEvent.VK_2, iXKsuto + 3, iYKsuto + 4, "2"));
             middleMan.addKey(new Key(KeyEvent.VK_1, iXKsuto + 2, iYKsuto + 4, "1"));
-            
+    
+            middleMan.health = new Dot(iXKsuto + 12, iYKsuto + 2);
+            middleMan.mana = new Dot(iXKsuto + 13, iYKsuto + 2);
             middleMan.TOGGLE_ON_OFF = new Dot(iXKsuto + 2, iYKsuto + 13);
             middleMan.TARGET_NEAREST_ENEMY = new Dot(iXKsuto + 3, iYKsuto + 13);
             middleMan.ADD_WAYPOINT = new Dot(iXKsuto + 4, iYKsuto + 13);

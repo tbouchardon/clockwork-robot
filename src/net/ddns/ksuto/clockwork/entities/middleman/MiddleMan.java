@@ -26,6 +26,8 @@ public class MiddleMan {
     public Dot DRIVE_MOD;
     public Dot DRIVE_LOOP;
     public Dot DEBUG_MOD;
+    public Dot health;
+    public Dot mana;
     public Position       currenPosition = new Position();
     public List<Position> path           = new ArrayList<>();
     
