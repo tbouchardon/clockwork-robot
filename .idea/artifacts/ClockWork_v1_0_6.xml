@@ -1,7 +1,7 @@
 <component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="ClockWork v1.0.1">
+  <artifact type="jar" build-on-make="true" name="ClockWork v1.0.6">
     <output-path>G:/</output-path>
-    <root id="archive" name="ClockWork v1.0.1.jar">
+    <root id="archive" name="ClockWork v1.0.6.jar">
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
       </element>

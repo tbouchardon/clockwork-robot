@@ -1,7 +1,5 @@
 package net.ddns.ksuto.clockwork.entities.middleman;
 
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
-
 import net.ddns.ksuto.clockwork.entities.Dot;
 import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.clockwork.tools.Scanner;
@@ -11,6 +9,8 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 public class ConfigureMiddleMan {
     
@@ -30,42 +30,32 @@ public class ConfigureMiddleMan {
         Robot robot = peripherals.robot;
         
         System.out.println("Starting AutoConfig");
-        
-        Scanner                  scan          = new Scanner(peripherals);
+
+        Scanner scan = new Scanner(peripherals);
         //        ArrayList<int[]>         wowPosition   = null;
         ArrayList<Scanner.Block> ksutoPosition = null;
         boolean                  bFound        = false;
-    
-        //        for (int j = 10; j >= 0; j--) {
-        //            wowPosition = scan.searchPicture("/Pictures/scan.WoW.vanilla.png");
-        //            ksutoPosition = scan.searchColorBlocks(0, 255, 0, 16, 16);
-        //            if (!wowPosition.isEmpty()) {
-        //                break;
-        //            }
-        //            robot.delay(1000);
-        //        }
-    
-        //        if (!wowPosition.isEmpty() && ksutoPosition.isEmpty()) {
-        //            System.out.println("Found WoW : X = " + wowPosition.get(0)[0] + ", Y = " + wowPosition.get(0)[0]);
-            
-            for (int i = 10; i >= 0; i--) {
-                ksutoPosition = scan.searchColorBlocks(0, 255, 0, 14, 0);
-                if (!ksutoPosition.isEmpty()) { break; }
-    
-                if (i == 5) { MiddleMan.openCloseKsuto(peripherals); }
-                
-                robot.delay(1000);
+
+        for (int i = 10; i >= 0; i--) {
+            ksutoPosition = scan.searchColorBlocks(0, 255, 0, 14, 0);
+            if (!ksutoPosition.isEmpty()) {
+                break;
             }
-        //        }
-    
-        //        if (!wowPosition.isEmpty() && !ksutoPosition.isEmpty()) {
+
+            if (i == 5) {
+                MiddleMan.openCloseKsuto(peripherals);
+            }
+
+            robot.delay(1000);
+        }
+        
         if (!ksutoPosition.isEmpty()) {
             
             iXKsuto = ksutoPosition.get(0).xPosition;
             iYKsuto = ksutoPosition.get(0).yPosition;
-    
+
             middleMan.position = new Dot(iXKsuto, iYKsuto);
-    
+
             System.out.println("Found MiddleMan : X = " + iXKsuto + ", Y = " + iYKsuto + ", carrying on.");
             peripherals.robot.mouseMove(iXKsuto, iYKsuto);
             
@@ -76,14 +66,14 @@ public class ConfigureMiddleMan {
         if (bFound) {
             
             robot.delay(i_DELAY);
-    
+
             // L'ordre d'ajout correspond à l'ordre de priorité. L'interface WoW et celui-ci doivent correspondre.
             middleMan.addKey(new Key(KeyEvent.VK_T, iXKsuto + 6, iYKsuto + 3, "T"));
             middleMan.addKey(new Key(KeyEvent.VK_G, iXKsuto + 5, iYKsuto + 3, "G"));
             middleMan.addKey(new Key(KeyEvent.VK_Q, iXKsuto + 4, iYKsuto + 3, "Q"));
             middleMan.addKey(new Key(KeyEvent.VK_D, iXKsuto + 3, iYKsuto + 3, "D"));
             middleMan.addKey(new Key(KeyEvent.VK_H, iXKsuto + 2, iYKsuto + 3, "H"));
-    
+
             middleMan.addKey(new Key(KeyEvent.VK_EQUALS, iXKsuto + 13, iYKsuto + 4, "="));
             middleMan.addKey(new Key(KeyEvent.VK_RIGHT_PARENTHESIS, iXKsuto + 12, iYKsuto + 4, ")"));
             middleMan.addKey(new Key(KeyEvent.VK_0, iXKsuto + 11, iYKsuto + 4, "0"));
@@ -96,7 +86,7 @@ public class ConfigureMiddleMan {
             middleMan.addKey(new Key(KeyEvent.VK_3, iXKsuto + 4, iYKsuto + 4, "3"));
             middleMan.addKey(new Key(KeyEvent.VK_2, iXKsuto + 3, iYKsuto + 4, "2"));
             middleMan.addKey(new Key(KeyEvent.VK_1, iXKsuto + 2, iYKsuto + 4, "1"));
-    
+
             middleMan.health = new Dot(iXKsuto + 12, iYKsuto + 2);
             middleMan.mana = new Dot(iXKsuto + 13, iYKsuto + 2);
             middleMan.TOGGLE_ON_OFF = new Dot(iXKsuto + 2, iYKsuto + 13);
@@ -106,11 +96,11 @@ public class ConfigureMiddleMan {
             middleMan.DRIVE_MOD = new Dot(iXKsuto + 6, iYKsuto + 13);
             middleMan.DRIVE_LOOP = new Dot(iXKsuto + 7, iYKsuto + 13);
             middleMan.DEBUG_MOD = new Dot(iXKsuto + 13, iYKsuto + 13);
-    
+
             MiddleMan.startKsuto(peripherals, middleMan.position);
             
             System.out.println("AutoConfig Done");
-    
+
             MiddleMan.pressKey(peripherals, KeyEvent.VK_ESCAPE);
         }
         else {

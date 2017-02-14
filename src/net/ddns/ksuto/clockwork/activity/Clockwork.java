@@ -62,13 +62,19 @@ public class Clockwork {
     private void findSomethingToDo(BufferedImage biCapturedScreen, MiddleMan middleMan) throws AWTException {
         
         // On ne fait rien si L'addon n'est pas visible
-        if (biCapturedScreen.getRGB(middleMan.position.xPosition, middleMan.position.yPosition) != RGBConverter.GREEN) { return; }
-    
-        double health = ((biCapturedScreen.getRGB(middleMan.health.xPosition, middleMan.health.yPosition) >> 16) & 0xFF);
-        health = 100L / 255L * health;
-        double mana = ((biCapturedScreen.getRGB(middleMan.mana.xPosition, middleMan.mana.yPosition)) & 0xFF);
-        mana = 100L / 255L * mana;
-        
+        if (biCapturedScreen.getRGB(middleMan.position.xPosition, middleMan.position.yPosition) != -16711936) {
+            return;
+        }
+
+        RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, middleMan.health.xPosition, middleMan.health.yPosition);
+        rgbConverter.invoke();
+        //System.out.println(rgbConverter.getRed());
+        double health = 100D / 255D * (double) rgbConverter.getRed();
+        rgbConverter = new RGBConverter(biCapturedScreen, middleMan.mana.xPosition, middleMan.mana.yPosition);
+        rgbConverter.invoke();
+        //System.out.println(rgbConverter.getBlue());
+        double mana = 100D / 255D * (double) rgbConverter.getBlue();
+
         middleMan.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(middleMan.TOGGLE_ON_OFF.xPosition, middleMan.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
         middleMan.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(middleMan.TARGET_NEAREST_ENEMY.xPosition, middleMan.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
         middleMan.ADD_WAYPOINT.active = biCapturedScreen.getRGB(middleMan.ADD_WAYPOINT.xPosition, middleMan.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
