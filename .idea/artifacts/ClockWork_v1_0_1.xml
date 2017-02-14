@@ -7,6 +7,7 @@
       </element>
       <element id="module-output" name="ClockWork" />
       <element id="extracted-dir" path="$PROJECT_DIR$/../TBoPeripheralRobotHelper/out/artifacts/peripheral_robot_helper/peripheral-robot-helper.jar" path-in-jar="/" />
+      <element id="library" level="project" name="peripheral-robot-helper" />
     </root>
   </artifact>
 </component>

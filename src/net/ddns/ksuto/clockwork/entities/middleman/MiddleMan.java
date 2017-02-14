@@ -49,9 +49,9 @@ public class MiddleMan {
         peripherals.robot.delay(i_DELAY);
     }
     
-    static void startKsuto(TBoPeripheralRobotHelper peripherals, ArrayList<int[]> wowPosition) {
+    static void startKsuto(TBoPeripheralRobotHelper peripherals, Dot dot) {
         
-        peripherals.robot.mouseMove(wowPosition.get(0)[0] + 50, wowPosition.get(0)[1] + 50);
+        peripherals.robot.mouseMove(dot.xPosition, dot.yPosition);
         peripherals.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.delay(i_DELAY);
