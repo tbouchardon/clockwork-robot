@@ -29,8 +29,8 @@ public class MiddleMan {
     public Dot inCombat;
     public Dot health;
     public Dot mana;
-    public Position       currenPosition = new Position();
-    public List<Position> path           = new ArrayList<>();
+    public Position       currenPlayerPosition = new Position();
+    public List<Position> path                 = new ArrayList<>();
     
     public static void typeInChat(TBoPeripheralRobotHelper peripherals, String s) {
         

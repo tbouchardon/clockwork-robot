@@ -67,24 +67,24 @@ public class ConfigureMiddleMan {
             robot.delay(i_DELAY);
 
             // L'ordre d'ajout correspond à l'ordre de priorité. L'interface WoW et celui-ci doivent correspondre.
-            middleMan.addKey(new Key(KeyEvent.VK_T, iXKsuto + 6, iYKsuto + 3, "T"));
-            middleMan.addKey(new Key(KeyEvent.VK_G, iXKsuto + 5, iYKsuto + 3, "G"));
-            middleMan.addKey(new Key(KeyEvent.VK_Q, iXKsuto + 4, iYKsuto + 3, "Q"));
-            middleMan.addKey(new Key(KeyEvent.VK_D, iXKsuto + 3, iYKsuto + 3, "D"));
-            middleMan.addKey(new Key(KeyEvent.VK_H, iXKsuto + 2, iYKsuto + 3, "H"));
-
-            middleMan.addKey(new Key(KeyEvent.VK_EQUALS, iXKsuto + 13, iYKsuto + 4, "="));
-            middleMan.addKey(new Key(KeyEvent.VK_RIGHT_PARENTHESIS, iXKsuto + 12, iYKsuto + 4, ")"));
-            middleMan.addKey(new Key(KeyEvent.VK_0, iXKsuto + 11, iYKsuto + 4, "0"));
-            middleMan.addKey(new Key(KeyEvent.VK_9, iXKsuto + 10, iYKsuto + 4, "9"));
-            middleMan.addKey(new Key(KeyEvent.VK_8, iXKsuto + 9, iYKsuto + 4, "8"));
-            middleMan.addKey(new Key(KeyEvent.VK_7, iXKsuto + 8, iYKsuto + 4, "7"));
-            middleMan.addKey(new Key(KeyEvent.VK_6, iXKsuto + 7, iYKsuto + 4, "6"));
-            middleMan.addKey(new Key(KeyEvent.VK_5, iXKsuto + 6, iYKsuto + 4, "5"));
-            middleMan.addKey(new Key(KeyEvent.VK_4, iXKsuto + 5, iYKsuto + 4, "4"));
-            middleMan.addKey(new Key(KeyEvent.VK_3, iXKsuto + 4, iYKsuto + 4, "3"));
-            middleMan.addKey(new Key(KeyEvent.VK_2, iXKsuto + 3, iYKsuto + 4, "2"));
-            middleMan.addKey(new Key(KeyEvent.VK_1, iXKsuto + 2, iYKsuto + 4, "1"));
+            middleMan.addKey(new Key(KeyEvent.VK_T, iXKsuto + 6, iYKsuto + 4, "T"));
+            middleMan.addKey(new Key(KeyEvent.VK_G, iXKsuto + 5, iYKsuto + 4, "G"));
+            middleMan.addKey(new Key(KeyEvent.VK_Q, iXKsuto + 4, iYKsuto + 4, "Q"));
+            middleMan.addKey(new Key(KeyEvent.VK_D, iXKsuto + 3, iYKsuto + 4, "D"));
+            middleMan.addKey(new Key(KeyEvent.VK_H, iXKsuto + 2, iYKsuto + 4, "H"));
+    
+            middleMan.addKey(new Key(KeyEvent.VK_EQUALS, iXKsuto + 13, iYKsuto + 5, "="));
+            middleMan.addKey(new Key(KeyEvent.VK_RIGHT_PARENTHESIS, iXKsuto + 12, iYKsuto + 5, ")"));
+            middleMan.addKey(new Key(KeyEvent.VK_0, iXKsuto + 11, iYKsuto + 5, "0"));
+            middleMan.addKey(new Key(KeyEvent.VK_9, iXKsuto + 10, iYKsuto + 5, "9"));
+            middleMan.addKey(new Key(KeyEvent.VK_8, iXKsuto + 9, iYKsuto + 5, "8"));
+            middleMan.addKey(new Key(KeyEvent.VK_7, iXKsuto + 8, iYKsuto + 5, "7"));
+            middleMan.addKey(new Key(KeyEvent.VK_6, iXKsuto + 7, iYKsuto + 5, "6"));
+            middleMan.addKey(new Key(KeyEvent.VK_5, iXKsuto + 6, iYKsuto + 5, "5"));
+            middleMan.addKey(new Key(KeyEvent.VK_4, iXKsuto + 5, iYKsuto + 5, "4"));
+            middleMan.addKey(new Key(KeyEvent.VK_3, iXKsuto + 4, iYKsuto + 5, "3"));
+            middleMan.addKey(new Key(KeyEvent.VK_2, iXKsuto + 3, iYKsuto + 5, "2"));
+            middleMan.addKey(new Key(KeyEvent.VK_1, iXKsuto + 2, iYKsuto + 5, "1"));
     
             middleMan.inCombat = new Dot(iXKsuto + 2, iYKsuto + 2);
             middleMan.health = new Dot(iXKsuto + 12, iYKsuto + 2);

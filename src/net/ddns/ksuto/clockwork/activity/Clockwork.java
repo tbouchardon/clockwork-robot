@@ -91,11 +91,13 @@ public class Clockwork {
         
         if (middleMan.ADD_WAYPOINT.active) {
             tomtom.getCoordinates(middleMan, peripherals);
-            middleMan.path.add(new Position(middleMan.currenPosition));
+            middleMan.path.add(new Position(middleMan.currenPlayerPosition));
             String output = "";
             for (Position position : middleMan.path) {
-                output += position.xPos_Xxxx + position.xPos_xXxx + "," + position.xPos_xxXx + position.xPos_xxxX + "-" +
-                          position.yPos_Xxxx + position.yPos_xXxx + "," + position.yPos_xxXx + position.yPos_xxxX + ";";
+                String formattedX = String.format("%06d", position.xPos);
+                String formattedY = String.format("%06d", position.yPos);
+                output += formattedX.substring(1, 2) + "," + formattedX.substring(3, 4) + "-" +
+                          formattedY.substring(1, 2) + "," + formattedY.substring(3, 4) + ";";
             }
             System.out.println(output);
             MiddleMan.typeInChat(peripherals, "/kto wpadded");
