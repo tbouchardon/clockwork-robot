@@ -32,7 +32,6 @@ public class ConfigureMiddleMan {
         System.out.println("Starting AutoConfig");
 
         Scanner scan = new Scanner(peripherals);
-        //        ArrayList<int[]>         wowPosition   = null;
         ArrayList<Scanner.Block> ksutoPosition = null;
         boolean                  bFound        = false;
 
@@ -101,8 +100,8 @@ public class ConfigureMiddleMan {
             MiddleMan.startKsuto(peripherals, middleMan.position);
             
             System.out.println("AutoConfig Done");
-
-            MiddleMan.pressKey(peripherals, KeyEvent.VK_ESCAPE);
+    
+            //            MiddleMan.pressKey(peripherals, KeyEvent.VK_ESCAPE);
         }
         else {
             System.out.println("AutoConfig Failed");
