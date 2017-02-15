@@ -65,7 +65,9 @@ public class Clockwork {
         if (biCapturedScreen.getRGB(middleMan.position.xPosition, middleMan.position.yPosition) != -16711936) {
             return;
         }
-
+    
+        middleMan.inCombat.active = biCapturedScreen.getRGB(middleMan.inCombat.xPosition, middleMan.inCombat.yPosition) == RGBConverter.WHITE;
+        ;
         RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, middleMan.health.xPosition, middleMan.health.yPosition);
         rgbConverter.invoke();
         //System.out.println(rgbConverter.getRed());
@@ -74,7 +76,7 @@ public class Clockwork {
         rgbConverter.invoke();
         //System.out.println(rgbConverter.getBlue());
         double mana = 100D / 255D * (double) rgbConverter.getBlue();
-
+    
         middleMan.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(middleMan.TOGGLE_ON_OFF.xPosition, middleMan.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
         middleMan.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(middleMan.TARGET_NEAREST_ENEMY.xPosition, middleMan.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
         middleMan.ADD_WAYPOINT.active = biCapturedScreen.getRGB(middleMan.ADD_WAYPOINT.xPosition, middleMan.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
@@ -120,8 +122,6 @@ public class Clockwork {
                 shiftModifier = true;
                 key2hit = key;
             }
-            
-            //peripherals.robot.mouseMove(key.xPosition, key.yPosition);
         }
         
         if (key2hit != null) {
@@ -139,13 +139,12 @@ public class Clockwork {
                 robot.keyRelease(Event.SHIFT_MASK);
             }
         }
-        
-        if (middleMan.TARGET_NEAREST_ENEMY.active && key2hit == null) {
-            MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB);
-        } // Without the 5s timer limit
-        //if (middleMan.TARGET_NEAREST_ENEMY.active && (System.currentTimeMillis() - lClickTiming) < 5000 && !foundSomethingToDo) pressKey(KeyEvent.VK_TAB);
     
-        if (middleMan.DRIVE_MOD.active && health > 20) {
+        if (middleMan.TARGET_NEAREST_ENEMY.active && !middleMan.inCombat.active) {
+            MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB);
+        }
+    
+        if (middleMan.DRIVE_MOD.active && health > 20 && !middleMan.inCombat.active) {
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }

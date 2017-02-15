@@ -1,5 +1,7 @@
 package net.ddns.ksuto.clockwork.entities.middleman;
 
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
+
 import net.ddns.ksuto.clockwork.entities.Dot;
 import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.clockwork.tools.Scanner;
@@ -9,8 +11,6 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 public class ConfigureMiddleMan {
     
@@ -86,7 +86,8 @@ public class ConfigureMiddleMan {
             middleMan.addKey(new Key(KeyEvent.VK_3, iXKsuto + 4, iYKsuto + 4, "3"));
             middleMan.addKey(new Key(KeyEvent.VK_2, iXKsuto + 3, iYKsuto + 4, "2"));
             middleMan.addKey(new Key(KeyEvent.VK_1, iXKsuto + 2, iYKsuto + 4, "1"));
-
+    
+            middleMan.inCombat = new Dot(iXKsuto + 2, iYKsuto + 2);
             middleMan.health = new Dot(iXKsuto + 12, iYKsuto + 2);
             middleMan.mana = new Dot(iXKsuto + 13, iYKsuto + 2);
             middleMan.TOGGLE_ON_OFF = new Dot(iXKsuto + 2, iYKsuto + 13);
