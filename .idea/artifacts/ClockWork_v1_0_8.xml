@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" build-on-make="true" name="ClockWork v1.0.8">
-    <output-path>$PROJECT_DIR$/out/artifacts/AutoHit</output-path>
+    <output-path>$PROJECT_DIR$</output-path>
     <root id="archive" name="ClockWork v1.0.8.jar">
       <element id="module-output" name="ClockWork" />
       <element id="extracted-dir" path="$PROJECT_DIR$/../TBoPeripheralRobotHelper/out/artifacts/peripheral_robot_helper/peripheral-robot-helper.jar" path-in-jar="/" />
