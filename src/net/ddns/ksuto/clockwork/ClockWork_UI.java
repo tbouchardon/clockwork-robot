@@ -5,14 +5,13 @@ import net.ddns.ksuto.clockwork.entities.middleman.ConfigureMiddleMan;
 import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
 
 @SuppressWarnings({"serial", "Duplicates"})
 public class ClockWork_UI extends JFrame {
@@ -100,7 +99,7 @@ public class ClockWork_UI extends JFrame {
         setAlwaysOnTop(true);
         setPreferredSize(new Dimension(200, 61));
         setResizable(false);
-        setLocation(peripherals.getScreen().i_SCREEN_WIDTH / 2, peripherals.getScreen().i_SCREEN_HEIGHT / 2);
+        setLocation(peripherals.getScreen().i_SCREEN_WIDTH - 270, peripherals.getScreen().i_SCREEN_HEIGHT - 131);
         setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
         getContentPane().setBackground(new Color(iRed, iGreen, iBlue));
     }
