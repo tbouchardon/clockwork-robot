@@ -141,7 +141,7 @@ public class Clockwork {
             }
         }
 
-        if (middleMan.TARGET_NEAREST_ENEMY.active && !middleMan.inCombat.active) {
+        if (middleMan.TARGET_NEAREST_ENEMY.active && key2hit == null) {
             MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB);
         }
 
@@ -152,7 +152,8 @@ public class Clockwork {
             tomtom.drive(middleMan, peripherals, key2hit != null);
         }
 
-        peripherals.robot.delay(250);
+        if (key2hit == null) peripherals.robot.delay(250);
+        else peripherals.robot.delay(750);
     }
 
     private void fish() throws AWTException {
