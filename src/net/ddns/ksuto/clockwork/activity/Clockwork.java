@@ -66,7 +66,7 @@ public class Clockwork {
         }
 
         middleMan.inCombat.active = biCapturedScreen.getRGB(middleMan.inCombat.xPosition, middleMan.inCombat.yPosition) == RGBConverter.WHITE;
-        ;
+    
         RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, middleMan.health.xPosition, middleMan.health.yPosition);
         rgbConverter.invoke();
         //System.out.println(rgbConverter.getRed());
@@ -167,12 +167,5 @@ public class Clockwork {
         if (status == Status.FISHING) {
             clockWork_UI.dojButtonFishClick();
         }
-    }
-
-    private boolean checkColor(int iX, int iY, BufferedImage biCapturedScreen, int iColor) {
-
-        int iCapturedRGB = biCapturedScreen.getRGB(iX, iY);
-        // System.out.println("(" + iX + ", " + iY + ") Searching : " + iColor + ", found : " + iCapturedRGB + ".");
-        return (iColor == iCapturedRGB);
     }
 }

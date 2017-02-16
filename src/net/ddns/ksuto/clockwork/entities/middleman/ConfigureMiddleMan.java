@@ -4,8 +4,8 @@ import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 import net.ddns.ksuto.clockwork.entities.Dot;
 import net.ddns.ksuto.clockwork.entities.Key;
-import net.ddns.ksuto.clockwork.tools.Scanner;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.prh.entities.ColorBlock;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -30,13 +30,12 @@ public class ConfigureMiddleMan {
         Robot robot = peripherals.robot;
         
         System.out.println("Starting AutoConfig");
-
-        Scanner scan = new Scanner(peripherals);
-        ArrayList<Scanner.Block> ksutoPosition = null;
-        boolean                  bFound        = false;
+    
+        ArrayList<ColorBlock> ksutoPosition = null;
+        boolean               bFound        = false;
 
         for (int i = 10; i >= 0; i--) {
-            ksutoPosition = scan.searchColorBlocks(0, 255, 0, 14, 0);
+            ksutoPosition = peripherals.getScreen().searchColorBlocks(0, 255, 0, 14, 0);
             if (!ksutoPosition.isEmpty()) {
                 break;
             }

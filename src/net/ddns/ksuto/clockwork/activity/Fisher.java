@@ -2,7 +2,6 @@ package net.ddns.ksuto.clockwork.activity;
 
 import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
-import net.ddns.ksuto.clockwork.tools.Scanner;
 import net.ddns.ksuto.clockwork.tools.ShowZone;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
@@ -10,7 +9,6 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -19,9 +17,9 @@ import java.util.Date;
 class Fisher {
     
     @SuppressWarnings("FieldCanBeLocal")
-    private final        int iLureTime = 10 * 60000; // W
+    private final int iLureTime = 10 * 60000; // W
     @SuppressWarnings("FieldCanBeLocal")
-    private final        int iBaitTime = 5 * 60000; // Shift + W
+    private final int iBaitTime = 5 * 60000; // Shift + W
     
     private final TBoPeripheralRobotHelper peripherals;
     private final int    iMargin          = 30;
@@ -100,18 +98,13 @@ class Fisher {
     }
     
     void setup() throws AWTException {
-        
-        Scanner scan = new Scanner(peripherals);
-        try {
-            ArrayList<int[]> resultsWoW = scan.searchPicture("Pictures/scan.WoW.png");
-            if (!resultsWoW.isEmpty()) {
-                int iWoWSize = peripherals.getScreen().i_SCREEN_WIDTH - (resultsWoW.get(0)[0] * 2);
-                System.out.println("WoW Width = " + iWoWSize);
-                iRatio = (double) iWoWSize / (double) peripherals.getScreen().i_SCREEN_WIDTH;
-                System.out.println("Ratio = " + iRatio);
-            }
-        }
-        catch (IOException ignored) {
+    
+        ArrayList<int[]> resultsWoW = peripherals.getScreen().scanFor("Pictures/scan.WoW.png");
+        if (!resultsWoW.isEmpty()) {
+            int iWoWSize = peripherals.getScreen().i_SCREEN_WIDTH - (resultsWoW.get(0)[0] * 2);
+            System.out.println("WoW Width = " + iWoWSize);
+            iRatio = (double) iWoWSize / (double) peripherals.getScreen().i_SCREEN_WIDTH;
+            System.out.println("Ratio = " + iRatio);
         }
         
         Robot robot = new Robot();
