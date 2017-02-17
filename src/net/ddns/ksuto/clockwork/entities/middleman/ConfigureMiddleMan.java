@@ -1,7 +1,5 @@
 package net.ddns.ksuto.clockwork.entities.middleman;
 
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
-
 import net.ddns.ksuto.clockwork.entities.Dot;
 import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
@@ -11,6 +9,8 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 public class ConfigureMiddleMan {
     
@@ -34,17 +34,17 @@ public class ConfigureMiddleMan {
         ArrayList<ColorBlock> ksutoPosition = null;
         boolean               bFound        = false;
 
-        for (int i = 10; i >= 0; i--) {
+        for (int i = 7; i >= 0; i--) {
             ksutoPosition = peripherals.getScreen().searchColorBlocks(0, 255, 0, 14, 0);
             if (!ksutoPosition.isEmpty()) {
                 break;
             }
 
-            if (i == 5) {
+            if (i == 4) {
                 MiddleMan.openCloseKsuto(peripherals);
             }
 
-            robot.delay(1000);
+            robot.delay(750);
         }
         
         if (!ksutoPosition.isEmpty()) {

@@ -148,15 +148,15 @@ public class Clockwork {
         if (key2hit != null) {
             
             if (ctrlModifier) {
-                robot.keyPress(Event.CTRL_MASK);
+                robot.keyPress(KeyEvent.VK_CONTROL);
             }
             
             if (shiftModifier) {
-                robot.keyPress(Event.SHIFT_MASK);
+                robot.keyPress(KeyEvent.VK_SHIFT);
             }
             
             if (altModifier) {
-                robot.keyPress(Event.ALT_MASK);
+                robot.keyPress(KeyEvent.VK_ALT);
             }
             
             clockWork_UI.setTextField(key2hit.key);
@@ -165,15 +165,15 @@ public class Clockwork {
             MiddleMan.pressKey(peripherals, key2hit.hitKey);
             
             if (ctrlModifier) {
-                robot.keyRelease(Event.CTRL_MASK);
+                robot.keyRelease(KeyEvent.VK_CONTROL);
             }
             
             if (shiftModifier) {
-                robot.keyRelease(Event.SHIFT_MASK);
+                robot.keyRelease(KeyEvent.VK_SHIFT);
             }
             
             if (altModifier) {
-                robot.keyRelease(Event.ALT_MASK);
+                robot.keyRelease(KeyEvent.VK_ALT);
             }
         }
         
