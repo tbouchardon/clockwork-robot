@@ -31,6 +31,7 @@ public class MiddleMan {
     public Dot mana;
     public Position       currenPlayerPosition = new Position();
     public List<Position> path                 = new ArrayList<>();
+    public Camera camera;
     
     public static void typeInChat(TBoPeripheralRobotHelper peripherals, String s) {
         
@@ -67,6 +68,34 @@ public class MiddleMan {
         typeInChat(peripherals, "/kto toggle");
     }
     
+    public void cameraDrive(TBoPeripheralRobotHelper peripherals) {
+        
+        if (camera == Camera.DRIVE) { return; }
+        
+        camera = Camera.DRIVE;
+        
+        for (int n = 1; n <= 5; n++) {
+            peripherals.robot.keyPress(KeyEvent.VK_END);
+            peripherals.robot.keyRelease(KeyEvent.VK_END);
+            peripherals.robot.delay(i_DELAY);
+        }
+    }
+    
+    public void cameraCombat(TBoPeripheralRobotHelper peripherals) {
+        
+        if (camera == Camera.COMBAT) { return; }
+        
+        cameraDrive(peripherals);
+        
+        camera = Camera.COMBAT;
+        
+        for (int n = 1; n <= 2; n++) {
+            peripherals.robot.keyPress(KeyEvent.VK_HOME);
+            peripherals.robot.keyRelease(KeyEvent.VK_HOME);
+            peripherals.robot.delay(i_DELAY);
+        }
+    }
+    
     void addKey(Key key) {
         
         alKeys.add(key);
@@ -75,6 +104,11 @@ public class MiddleMan {
     public ArrayList<Key> getKeys() {
         
         return alKeys;
+    }
+    
+    public enum Camera {
+        DRIVE,
+        COMBAT;
     }
 }
 

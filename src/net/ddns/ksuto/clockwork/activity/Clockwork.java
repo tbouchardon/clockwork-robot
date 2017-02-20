@@ -20,6 +20,7 @@ public class Clockwork {
     public Status status = Status.RUN;
     private Robot  robot;
     private TomTom tomtom;
+    private boolean wasInCombat = false;
     
     public Clockwork(TBoPeripheralRobotHelper peripherals, ClockWork_UI autoHitControl) {
         
@@ -180,16 +181,36 @@ public class Clockwork {
         if (middleMan.TARGET_NEAREST_ENEMY.active && key2hit == null) {
             MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB);
         }
-        
-        if (middleMan.DRIVE_MOD.active && health > 50 && mana > 40 && !middleMan.inCombat.active) {
+    
+        if (wasInCombat && !middleMan.inCombat.active) { tryToLoot();}
+    
+        if (middleMan.DRIVE_MOD.active && health > 50 && !middleMan.inCombat.active) { // && mana > 40
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }
             tomtom.drive(middleMan, peripherals, key2hit != null);
         }
-        
-        if (key2hit == null) { peripherals.robot.delay(250); }
+    
+        wasInCombat = middleMan.inCombat.active;
+    
+        if (key2hit == null) { peripherals.robot.delay(200); }
         else { peripherals.robot.delay(750); }
+    }
+    
+    private void tryToLoot() {
+        
+        peripherals.robot.delay(500);
+        
+        int hitZoneX = peripherals.getScreen().i_SCREEN_WIDTH / 2 + (int) ((double) peripherals.getScreen().i_SCREEN_WIDTH / 100d * 4.6875);
+        int hitZoneY = peripherals.getScreen().i_SCREEN_HEIGHT / 2 + (int) ((double) peripherals.getScreen().i_SCREEN_HEIGHT / 100d * 14.8148);
+        
+        peripherals.robot.keyPress(KeyEvent.VK_SHIFT);
+        peripherals.getMouse().clickRight(hitZoneX, hitZoneY);
+        peripherals.getMouse().clickRight(hitZoneX, hitZoneY - 100);
+        peripherals.getMouse().clickRight(hitZoneX, hitZoneY + 100);
+        peripherals.getMouse().clickRight(hitZoneX - 100, hitZoneY);
+        peripherals.getMouse().clickRight(hitZoneX + 100, hitZoneY);
+        peripherals.robot.keyRelease(KeyEvent.VK_SHIFT);
     }
     
     private void fish() throws AWTException {
