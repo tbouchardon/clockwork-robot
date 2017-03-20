@@ -4,7 +4,7 @@ import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
 import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.clockwork.entities.Position;
-import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
+import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
@@ -43,7 +43,7 @@ public class Clockwork {
         //noinspection InfiniteLoopStatement
         while (true) {
     
-            MiddleMan middleMan = clockWork_UI.getMiddleMan();
+            QrCode qrCode = clockWork_UI.getQrCode();
     
             robot.delay(100);
     
@@ -56,58 +56,58 @@ public class Clockwork {
                 fish();
             }
     
-            findSomethingToDo(biCapturedScreen, middleMan);
+            findSomethingToDo(biCapturedScreen, qrCode);
         }
     }
     
-    private void findSomethingToDo(BufferedImage biCapturedScreen, MiddleMan middleMan) throws AWTException {
+    private void findSomethingToDo(BufferedImage biCapturedScreen, QrCode qrCode) throws AWTException {
         
         // On ne fait rien si L'addon n'est pas visible
-        if (biCapturedScreen.getRGB(middleMan.position.xPosition, middleMan.position.yPosition) != -16711936) {
+        if (biCapturedScreen.getRGB(qrCode.position.xPosition, qrCode.position.yPosition) != -16711936) {
             return;
         }
         
-        middleMan.inCombat.active = biCapturedScreen.getRGB(middleMan.inCombat.xPosition, middleMan.inCombat.yPosition) == RGBConverter.WHITE;
+        qrCode.inCombat.active = biCapturedScreen.getRGB(qrCode.inCombat.xPosition, qrCode.inCombat.yPosition) == RGBConverter.WHITE;
         
-        RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, middleMan.health.xPosition, middleMan.health.yPosition);
+        RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, qrCode.health.xPosition, qrCode.health.yPosition);
         rgbConverter.invoke();
         //System.out.println(rgbConverter.getRed());
         double health = 100D / 255D * (double) rgbConverter.getRed();
-        rgbConverter = new RGBConverter(biCapturedScreen, middleMan.mana.xPosition, middleMan.mana.yPosition);
+        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.mana.xPosition, qrCode.mana.yPosition);
         rgbConverter.invoke();
         //System.out.println(rgbConverter.getBlue());
         double mana = 100D / 255D * (double) rgbConverter.getBlue();
         
-        middleMan.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(middleMan.TOGGLE_ON_OFF.xPosition, middleMan.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
-        middleMan.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(middleMan.TARGET_NEAREST_ENEMY.xPosition, middleMan.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
-        middleMan.ADD_WAYPOINT.active = biCapturedScreen.getRGB(middleMan.ADD_WAYPOINT.xPosition, middleMan.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
-        middleMan.CLEAR_WAYPOINTS.active = biCapturedScreen.getRGB(middleMan.CLEAR_WAYPOINTS.xPosition, middleMan.CLEAR_WAYPOINTS.yPosition) == RGBConverter.WHITE;
-        middleMan.DRIVE_MOD.active = biCapturedScreen.getRGB(middleMan.DRIVE_MOD.xPosition, middleMan.DRIVE_MOD.yPosition) == RGBConverter.WHITE;
-        middleMan.DRIVE_LOOP.active = biCapturedScreen.getRGB(middleMan.DRIVE_LOOP.xPosition, middleMan.DRIVE_LOOP.yPosition) == RGBConverter.WHITE;
-        middleMan.DEBUG_MOD.active = biCapturedScreen.getRGB(middleMan.DEBUG_MOD.xPosition, middleMan.DEBUG_MOD.yPosition) == RGBConverter.RED;
+        qrCode.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(qrCode.TOGGLE_ON_OFF.xPosition, qrCode.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
+        qrCode.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(qrCode.TARGET_NEAREST_ENEMY.xPosition, qrCode.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
+        qrCode.ADD_WAYPOINT.active = biCapturedScreen.getRGB(qrCode.ADD_WAYPOINT.xPosition, qrCode.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
+        qrCode.CLEAR_WAYPOINTS.active = biCapturedScreen.getRGB(qrCode.CLEAR_WAYPOINTS.xPosition, qrCode.CLEAR_WAYPOINTS.yPosition) == RGBConverter.WHITE;
+        qrCode.DRIVE_MOD.active = biCapturedScreen.getRGB(qrCode.DRIVE_MOD.xPosition, qrCode.DRIVE_MOD.yPosition) == RGBConverter.WHITE;
+        qrCode.DRIVE_LOOP.active = biCapturedScreen.getRGB(qrCode.DRIVE_LOOP.xPosition, qrCode.DRIVE_LOOP.yPosition) == RGBConverter.WHITE;
+        qrCode.DEBUG_MOD.active = biCapturedScreen.getRGB(qrCode.DEBUG_MOD.xPosition, qrCode.DEBUG_MOD.yPosition) == RGBConverter.RED;
         
-        if (!middleMan.TOGGLE_ON_OFF.active) {
+        if (!qrCode.TOGGLE_ON_OFF.active) {
             return;
         }
         
-        if (middleMan.ADD_WAYPOINT.active) {
-            tomtom.getCoordinates(middleMan, peripherals);
-            middleMan.path.add(new Position(middleMan.currenPlayerPosition));
+        if (qrCode.ADD_WAYPOINT.active) {
+            tomtom.getCoordinates(qrCode, peripherals);
+            qrCode.path.add(new Position(qrCode.currenPlayerPosition));
             String output = "";
-            for (Position position : middleMan.path) {
+            for (Position position : qrCode.path) {
                 String formattedX = String.format("%06d", position.xPos);
                 String formattedY = String.format("%06d", position.yPos);
                 output += formattedX.substring(0, 2) + "," + formattedX.substring(2, 4) + "-" +
                           formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
             }
             System.out.println(output);
-            MiddleMan.typeInChat(peripherals, "/kto wpadded");
+            QrCode.typeInChat(peripherals, "/kto wpadded");
             peripherals.robot.delay(500);
         }
         
-        if (middleMan.CLEAR_WAYPOINTS.active) {
-            middleMan.path.clear();
-            MiddleMan.typeInChat(peripherals, "/kto wpcleared");
+        if (qrCode.CLEAR_WAYPOINTS.active) {
+            qrCode.path.clear();
+            QrCode.typeInChat(peripherals, "/kto wpcleared");
             peripherals.robot.delay(500);
         }
         
@@ -116,7 +116,7 @@ public class Clockwork {
         boolean ctrlModifier  = false;
         boolean altModifier   = false;
         
-        for (Key key : middleMan.getKeys()) {
+        for (Key key : qrCode.getKeys()) {
     
             int iCapturedRGB = biCapturedScreen.getRGB(key.xPosition, key.yPosition); //-1 == white && -16777216 == black
     
@@ -162,8 +162,8 @@ public class Clockwork {
             
             clockWork_UI.setTextField(key2hit.key);
             clockWork_UI.setiGrey(iGreyColor);
-            
-            MiddleMan.pressKey(peripherals, key2hit.hitKey);
+    
+            QrCode.pressKey(peripherals, key2hit.hitKey);
             
             if (ctrlModifier) {
                 robot.keyRelease(KeyEvent.VK_CONTROL);
@@ -178,20 +178,20 @@ public class Clockwork {
             }
         }
         
-        if (middleMan.TARGET_NEAREST_ENEMY.active && key2hit == null) {
-            MiddleMan.pressKey(peripherals, KeyEvent.VK_TAB);
+        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null) {
+            QrCode.pressKey(peripherals, KeyEvent.VK_TAB);
         }
-    
-        if (wasInCombat && !middleMan.inCombat.active) { tryToLoot();}
-    
-        if (middleMan.DRIVE_MOD.active && health > 50 && !middleMan.inCombat.active) { // && mana > 40
+        
+        if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
+        
+        if (qrCode.DRIVE_MOD.active && health > 50 && !qrCode.inCombat.active) { // && mana > 40
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }
-            tomtom.drive(middleMan, peripherals, key2hit != null);
+            tomtom.drive(qrCode, peripherals, key2hit != null);
         }
-    
-        wasInCombat = middleMan.inCombat.active;
+        
+        wasInCombat = qrCode.inCombat.active;
     
         if (key2hit == null) { peripherals.robot.delay(200); }
         else { peripherals.robot.delay(750); }

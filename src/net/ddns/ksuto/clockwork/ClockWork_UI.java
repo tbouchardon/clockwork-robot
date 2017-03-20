@@ -1,17 +1,18 @@
 package net.ddns.ksuto.clockwork;
 
 import net.ddns.ksuto.clockwork.activity.Clockwork;
-import net.ddns.ksuto.clockwork.entities.middleman.ConfigureMiddleMan;
-import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
+import net.ddns.ksuto.clockwork.entities.middleman.ConfigureQrCode;
+import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
 
 @SuppressWarnings({"serial", "Duplicates"})
 public class ClockWork_UI extends JFrame {
@@ -22,7 +23,7 @@ public class ClockWork_UI extends JFrame {
     private       int        iRed           = 250, iGreen = 250, iBlue = 250, iGrey = 0;
     private JButton autoConfButton;
     private JButton jButtonFish;
-    private MiddleMan middleMan = new MiddleMan();
+    private QrCode qrCode = new QrCode();
     private Clockwork clockwork;
     
     @SuppressWarnings("ConstantConditions")
@@ -79,7 +80,7 @@ public class ClockWork_UI extends JFrame {
         ui.jTextFieldCast.requestFocus();
         ui.clockwork = new Clockwork(peripherals, ui);
         System.out.println("new Clockwork");
-        while (ui.getMiddleMan().getKeys().isEmpty()) { peripherals.robot.delay(200); }
+        while (ui.getQrCode().getKeys().isEmpty()) { peripherals.robot.delay(200); }
         ui.clockwork.play();
         System.exit(0);
     }
@@ -165,16 +166,16 @@ public class ClockWork_UI extends JFrame {
             autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.down.png"));
             
             SwingUtilities.invokeLater(() -> {
-                ConfigureMiddleMan conf;
+                ConfigureQrCode conf;
                 try {
-                    conf = new ConfigureMiddleMan();
+                    conf = new ConfigureQrCode();
                     conf.run();
-                    middleMan = conf.getMiddleMan();
+                    qrCode = conf.getQrCode();
                 }
                 catch (AWTException | IOException e) {
                     e.printStackTrace();
                 }
-                if (!middleMan.getKeys().isEmpty()) {
+                if (!qrCode.getKeys().isEmpty()) {
                     setEnabledButtonAutoconf(true);
                     setEnabledButtonFish(true);
                 }
@@ -195,9 +196,9 @@ public class ClockWork_UI extends JFrame {
         return null;
     }
     
-    public MiddleMan getMiddleMan() {
+    public QrCode getQrCode() {
         
-        return middleMan;
+        return qrCode;
     }
     
     private void setEnabledButtonAutoconf(boolean b) {

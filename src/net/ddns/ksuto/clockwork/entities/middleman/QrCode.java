@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Created by Administrateur on 19/05/15!
  */
-public class MiddleMan {
+public class QrCode {
     
     private final ArrayList<Key> alKeys = new ArrayList<>();
     public Dot position;
