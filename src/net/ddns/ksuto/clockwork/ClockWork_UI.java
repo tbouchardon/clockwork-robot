@@ -1,6 +1,6 @@
 package net.ddns.ksuto.clockwork;
 
-import net.ddns.ksuto.clockwork.activity.Clockwork;
+import net.ddns.ksuto.clockwork.activity.Clockwork_Figure;
 import net.ddns.ksuto.clockwork.entities.middleman.ConfigureQrCode;
 import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
@@ -24,7 +24,7 @@ public class ClockWork_UI extends JFrame {
     private JButton autoConfButton;
     private JButton jButtonFish;
     private QrCode qrCode = new QrCode();
-    private Clockwork clockwork;
+    private Clockwork_Figure clockworkFigure;
     
     @SuppressWarnings("ConstantConditions")
     private ClockWork_UI(TBoPeripheralRobotHelper peripherals) throws IOException {
@@ -78,10 +78,10 @@ public class ClockWork_UI extends JFrame {
         ClockWork_UI ui = new ClockWork_UI(peripherals);
         System.out.println("new UI");
         ui.jTextFieldCast.requestFocus();
-        ui.clockwork = new Clockwork(peripherals, ui);
-        System.out.println("new Clockwork");
+        ui.clockworkFigure = new Clockwork_Figure(peripherals, ui);
+        System.out.println("new Clockwork_Figure");
         while (ui.getQrCode().getKeys().isEmpty()) { peripherals.robot.delay(200); }
-        ui.clockwork.play();
+        ui.clockworkFigure.play();
         System.exit(0);
     }
     
@@ -141,17 +141,17 @@ public class ClockWork_UI extends JFrame {
     private ActionListener fishButtonListener() {
         
         return actionEvent -> {
-            if (clockwork.status == Status.RUN) {
+            if (clockworkFigure.status == Status.RUN) {
                 jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.down.png"));
-                clockwork.status = Status.FISHING;
+                clockworkFigure.status = Status.FISHING;
                 
                 autoConfButton.setEnabled(false);
                 jButtonFish.setEnabled(true);
             }
-            else if (clockwork.status == Status.FISHING) {
+            else if (clockworkFigure.status == Status.FISHING) {
                 jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
-                
-                clockwork.status = Status.RUN;
+        
+                clockworkFigure.status = Status.RUN;
                 
                 autoConfButton.setEnabled(true);
                 jButtonFish.setEnabled(true);

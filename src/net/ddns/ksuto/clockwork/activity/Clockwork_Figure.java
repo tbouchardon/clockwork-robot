@@ -12,7 +12,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
-public class Clockwork {
+public class Clockwork_Figure {
     
     private static final int iGreyColor = 100;
     private final ClockWork_UI             clockWork_UI;
@@ -22,7 +22,7 @@ public class Clockwork {
     private TomTom tomtom;
     private boolean wasInCombat = false;
     
-    public Clockwork(TBoPeripheralRobotHelper peripherals, ClockWork_UI autoHitControl) {
+    public Clockwork_Figure(TBoPeripheralRobotHelper peripherals, ClockWork_UI autoHitControl) {
         
         this.peripherals = peripherals;
         this.clockWork_UI = autoHitControl;
