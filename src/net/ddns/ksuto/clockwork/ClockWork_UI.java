@@ -1,6 +1,6 @@
 package net.ddns.ksuto.clockwork;
 
-import net.ddns.ksuto.clockwork.activity.Clockwork_Figure;
+import net.ddns.ksuto.clockwork.activity.Automaton;
 import net.ddns.ksuto.clockwork.entities.middleman.ConfigureQrCode;
 import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
@@ -24,7 +24,7 @@ public class ClockWork_UI extends JFrame {
     private JButton autoConfButton;
     private JButton jButtonFish;
     private QrCode qrCode = new QrCode();
-    private Clockwork_Figure clockworkFigure;
+    private Automaton clockworkFigure;
     
     @SuppressWarnings("ConstantConditions")
     private ClockWork_UI(TBoPeripheralRobotHelper peripherals) throws IOException {
@@ -78,8 +78,8 @@ public class ClockWork_UI extends JFrame {
         ClockWork_UI ui = new ClockWork_UI(peripherals);
         System.out.println("new UI");
         ui.jTextFieldCast.requestFocus();
-        ui.clockworkFigure = new Clockwork_Figure(peripherals, ui);
-        System.out.println("new Clockwork_Figure");
+        ui.clockworkFigure = new Automaton(peripherals, ui);
+        System.out.println("new Automaton");
         while (ui.getQrCode().getKeys().isEmpty()) { peripherals.robot.delay(200); }
         ui.clockworkFigure.play();
         System.exit(0);
