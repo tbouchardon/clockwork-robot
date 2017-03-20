@@ -36,6 +36,8 @@ public class Automaton {
     }
     
     public void play() throws AWTException {
+    
+        TboTools_Debug.sout("");
         
         robot = new Robot();
         
@@ -48,23 +50,28 @@ public class Automaton {
     
             robot.delay(100);
     
-            biCapturedScreen = robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
+            biCapturedScreen = qrCode.captureQrCode(peripherals);
     
-            //File outputfile = new File("saved.png");
-            //ImageIO.write(biCapturedScreen, "png", outputfile);
+            //            File outputfile = new File("saved.png");
+            //            try {
+            //                ImageIO.write(biCapturedScreen, "png", outputfile);
+            //            }
+            //            catch (IOException e) {
+            //                e.printStackTrace();
+            //            }
     
             if (status == Status.FISHING) {
                 fish();
             }
     
-            findSomethingToDo(biCapturedScreen, qrCode);
+            searchForSomethingToDo(biCapturedScreen, qrCode);
         }
     }
     
-    private void findSomethingToDo(BufferedImage biCapturedScreen, QrCode qrCode) throws AWTException {
+    private void searchForSomethingToDo(BufferedImage biCapturedScreen, QrCode qrCode) throws AWTException {
         
         // On ne fait rien si L'addon n'est pas visible
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition, qrCode.position.yPosition) != -16711936) {
+        if (biCapturedScreen.getRGB(0, 0) != -16711936) {
             return;
         }
         
@@ -120,25 +127,25 @@ public class Automaton {
         for (Key key : qrCode.getKeys()) {
     
             int iCapturedRGB = biCapturedScreen.getRGB(key.xPosition, key.yPosition); //-1 == white && -16777216 == black
-    
+            
             if (!ctrlModifier) {
                 if (iCapturedRGB == RGBConverter.GREEN) {
                     ctrlModifier = true;
                     key2hit = key;
                 }
-        
+    
                 if (!shiftModifier) {
                     if (iCapturedRGB == RGBConverter.RED) {
                         shiftModifier = true;
                         key2hit = key;
                     }
-            
+        
                     if (!altModifier) {
                         if (iCapturedRGB == RGBConverter.BLUE) {
                             altModifier = true;
                             key2hit = key;
                         }
-                
+            
                         if (iCapturedRGB == RGBConverter.WHITE && key2hit == null) {
                             key2hit = key;
                         }
@@ -193,7 +200,7 @@ public class Automaton {
         }
         
         wasInCombat = qrCode.inCombat.active;
-    
+        
         if (key2hit == null) { peripherals.robot.delay(200); }
         else { peripherals.robot.delay(750); }
     }

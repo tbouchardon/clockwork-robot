@@ -1,7 +1,6 @@
 package net.ddns.ksuto.clockwork;
 
 import net.ddns.ksuto.clockwork.activity.Automaton;
-import net.ddns.ksuto.clockwork.entities.qrcode.ConfigureQrCode;
 import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 import net.ddns.ksuto.tools.TboTools_Debug;
@@ -107,9 +106,9 @@ public class ClockWork_UI extends JDialog {
     
         //        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
-        
+    
             public void windowClosing(WindowEvent evt) {
-            
+        
                 System.exit(0);
             }
         });
@@ -160,7 +159,7 @@ public class ClockWork_UI extends JDialog {
             }
             else if (automaton.status == Status.FISHING) {
                 jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
-        
+    
                 automaton.status = Status.RUN;
                 
                 autoConfButton.setEnabled(true);
@@ -176,11 +175,9 @@ public class ClockWork_UI extends JDialog {
             autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.down.png"));
             
             SwingUtilities.invokeLater(() -> {
-                ConfigureQrCode conf;
                 try {
-                    conf = new ConfigureQrCode();
-                    conf.run();
-                    qrCode = conf.getQrCode();
+                    qrCode = new QrCode();
+                    qrCode.init(peripherals);
                 }
                 catch (AWTException | IOException e) {
                     e.printStackTrace();

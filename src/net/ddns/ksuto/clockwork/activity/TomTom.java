@@ -40,132 +40,132 @@ public class TomTom {
     public void getCoordinates(QrCode qrCode, TBoPeripheralRobotHelper peripherals) {
     
         TboTools_Debug.sout("getCoordinates");
-        
-        BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
+    
+        BufferedImage biCapturedScreen = qrCode.captureQrCode(peripherals);
         
         int xPos = 0;
-        
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 6, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+    
+        if (biCapturedScreen.getRGB(6, 7) == RGBConverter.WHITE) {
             xPos += 524288;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 7, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 7) == RGBConverter.WHITE) {
             xPos += 262144;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 8, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 7) == RGBConverter.WHITE) {
             xPos += 131072;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 9, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 7) == RGBConverter.WHITE) {
             xPos += 65536;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 10, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 7) == RGBConverter.WHITE) {
             xPos += 32768;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 11, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 7) == RGBConverter.WHITE) {
             xPos += 16384;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 12, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 7) == RGBConverter.WHITE) {
             xPos += 8192;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 13, qrCode.position.yPosition + 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 7) == RGBConverter.WHITE) {
             xPos += 4096;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 2, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(2, 8) == RGBConverter.WHITE) {
             xPos += 2048;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 3, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(3, 8) == RGBConverter.WHITE) {
             xPos += 1024;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 4, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(4, 8) == RGBConverter.WHITE) {
             xPos += 512;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 5, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(5, 8) == RGBConverter.WHITE) {
             xPos += 256;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 6, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 8) == RGBConverter.WHITE) {
             xPos += 128;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 7, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 8) == RGBConverter.WHITE) {
             xPos += 64;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 8, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 8) == RGBConverter.WHITE) {
             xPos += 32;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 9, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 8) == RGBConverter.WHITE) {
             xPos += 16;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 10, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 8) == RGBConverter.WHITE) {
             xPos += 8;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 11, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 8) == RGBConverter.WHITE) {
             xPos += 4;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 12, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 8) == RGBConverter.WHITE) {
             xPos += 2;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 13, qrCode.position.yPosition + 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 8) == RGBConverter.WHITE) {
             xPos += 1;
         }
         qrCode.currenPlayerPosition.xPos = xPos;
         
         int yPos = 0;
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 6, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 10) == RGBConverter.WHITE) {
             yPos += 524288;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 7, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 10) == RGBConverter.WHITE) {
             yPos += 262144;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 8, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 10) == RGBConverter.WHITE) {
             yPos += 131072;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 9, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 10) == RGBConverter.WHITE) {
             yPos += 65536;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 10, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 10) == RGBConverter.WHITE) {
             yPos += 32768;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 11, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 10) == RGBConverter.WHITE) {
             yPos += 16384;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 12, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 10) == RGBConverter.WHITE) {
             yPos += 8192;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 13, qrCode.position.yPosition + 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 10) == RGBConverter.WHITE) {
             yPos += 4096;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 2, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(2, 11) == RGBConverter.WHITE) {
             yPos += 2048;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 3, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(3, 11) == RGBConverter.WHITE) {
             yPos += 1024;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 4, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(4, 11) == RGBConverter.WHITE) {
             yPos += 512;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 5, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(5, 11) == RGBConverter.WHITE) {
             yPos += 256;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 6, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 11) == RGBConverter.WHITE) {
             yPos += 128;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 7, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 11) == RGBConverter.WHITE) {
             yPos += 64;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 8, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 11) == RGBConverter.WHITE) {
             yPos += 32;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 9, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 11) == RGBConverter.WHITE) {
             yPos += 16;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 10, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 11) == RGBConverter.WHITE) {
             yPos += 8;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 11, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 11) == RGBConverter.WHITE) {
             yPos += 4;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 12, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 11) == RGBConverter.WHITE) {
             yPos += 2;
         }
-        if (biCapturedScreen.getRGB(qrCode.position.xPosition + 13, qrCode.position.yPosition + 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 11) == RGBConverter.WHITE) {
             yPos += 1;
         }
         qrCode.currenPlayerPosition.yPos = yPos;
@@ -223,7 +223,8 @@ public class TomTom {
         getCoordinates(qrCode, peripherals); //position du personage
     
         TboTools_Debug.sout("Position courante : qrCode.currenPlayerPosition.xPos = " + qrCode.currenPlayerPosition.xPos + ", qrCode.currenPlayerPosition.yPos = " + qrCode
-                                                                                                                                                                                     .currenPlayerPosition.yPos);
+                                                                                                                                                                             .currenPlayerPosition
+                                                                                                                                                                             .yPos);
         if (playersLastPosition == null) {
             playersLastPosition = new Position(qrCode.currenPlayerPosition);
             lastRemainingDistance = Math.sqrt(Math.pow(path.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(path.yPos - qrCode.currenPlayerPosition.yPos, 2));
