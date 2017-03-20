@@ -3,9 +3,10 @@ package net.ddns.ksuto.clockwork.activity;
 import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 import net.ddns.ksuto.clockwork.entities.Position;
-import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
+import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -37,8 +38,8 @@ public class TomTom {
     }
     
     public void getCoordinates(QrCode qrCode, TBoPeripheralRobotHelper peripherals) {
-        
-        System.out.println("getCoordinates");
+    
+        TboTools_Debug.sout("getCoordinates");
         
         BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
         
@@ -171,8 +172,8 @@ public class TomTom {
     }
     
     void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean activeTarget) {
-        
-        System.out.println("--------------------------------- drive ----------------------------------");
+    
+        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
         // En cas de cible active (actions engagées)
         if (activeTarget) {
@@ -204,7 +205,7 @@ public class TomTom {
         
         // Retourner au point de départ si la fonction LOOP est activée et qu'il n'y a plus de points de cheminement
         if (qrCode.DRIVE_LOOP.active && pathIndex > qrCode.path.size() - 1) {
-            System.out.println("loop");
+            TboTools_Debug.sout("loop");
             pathIndex = 0;
         }
         
@@ -220,8 +221,8 @@ public class TomTom {
         
         Position path = qrCode.path.get(pathIndex); //coordonnées destination
         getCoordinates(qrCode, peripherals); //position du personage
-        
-        System.out.println("Position courante : qrCode.currenPlayerPosition.xPos = " + qrCode.currenPlayerPosition.xPos + ", qrCode.currenPlayerPosition.yPos = " + qrCode
+    
+        TboTools_Debug.sout("Position courante : qrCode.currenPlayerPosition.xPos = " + qrCode.currenPlayerPosition.xPos + ", qrCode.currenPlayerPosition.yPos = " + qrCode
                                                                                                                                                                                      .currenPlayerPosition.yPos);
         if (playersLastPosition == null) {
             playersLastPosition = new Position(qrCode.currenPlayerPosition);
@@ -230,13 +231,13 @@ public class TomTom {
         }
         
         // Calcul de l'équation de la droite passant par la position précédente et le point de cheminement actuel
-        System.out.println("Destination : path.xPos = " + path.xPos + ", path.yPos = " + path.yPos);
-        System.out.println("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
+        TboTools_Debug.sout("Destination : path.xPos = " + path.xPos + ", path.yPos = " + path.yPos);
+        TboTools_Debug.sout("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
         
         double a = ((double) path.yPos - (double) playersLastPosition.yPos) / ((double) path.xPos - (double) playersLastPosition.xPos); // a = (yB - yA) / (xB - xA)
         
         //Si les deux points sont trop proches, le déplacement parfaitement vertical, ou horizontal, "a" peut être en erreur. On attend donc la prochaine passe. Retour.
-        System.out.println("a = " + a);
+        TboTools_Debug.sout("a = " + a);
         if (Double.isNaN(a) || Double.isInfinite(a)) {
             playersLastPosition = new Position(qrCode.currenPlayerPosition);
             return;
@@ -262,12 +263,12 @@ public class TomTom {
         // conversion de radians en degrés
         angleC = Math.toDegrees(angleC);
         angleB = Math.toDegrees(angleB);
-        
-        System.out.println(y + " = " + a + " * " + qrCode.currenPlayerPosition.xPos + " + " + b + "( Actual = " + qrCode.currenPlayerPosition.yPos + ")");
-        System.out.println("lastRemainingDistance = " + lastRemainingDistance * 100d);
-        System.out.println("remainingDistance = " + remainingDistance * 100d);
-        System.out.println("traveledDistance = " + traveledDistance * 100d);
-        System.out.println("angleC = " + angleC + "°");
+    
+        TboTools_Debug.sout(y + " = " + a + " * " + qrCode.currenPlayerPosition.xPos + " + " + b + "( Actual = " + qrCode.currenPlayerPosition.yPos + ")");
+        TboTools_Debug.sout("lastRemainingDistance = " + lastRemainingDistance * 100d);
+        TboTools_Debug.sout("remainingDistance = " + remainingDistance * 100d);
+        TboTools_Debug.sout("traveledDistance = " + traveledDistance * 100d);
+        TboTools_Debug.sout("angleC = " + angleC + "°");
         
         // Plus l'angle interne est grand, moins on doit tourner. Résultat en Milisecondes, partant du principe que 1000ms équivaut à un demi tour.
         int turnDuration = (int) (1000d / 180d * (180d - angleC));
@@ -307,7 +308,7 @@ public class TomTom {
         
         // Poney mod! xD
         int jump = (int) (Math.random() * 25);
-        System.out.println("jump ? " + jump);
+        TboTools_Debug.sout("jump ? " + jump);
         if (jump == 1) { QrCode.pressKey(peripherals, KEY_SPACE); }
         
         peripherals.robot.delay(100);
@@ -322,8 +323,8 @@ public class TomTom {
     }
     
     private void runStart() {
-        
-        System.out.println("Run Start/Stop");
+    
+        TboTools_Debug.sout("Run Start/Stop");
         peripherals.robot.keyPress(KEY_J);
         peripherals.robot.delay(i_DELAY);
         peripherals.robot.keyRelease(KEY_J);
@@ -332,14 +333,14 @@ public class TomTom {
     
     @SuppressWarnings("Duplicates")
     private void turnLeft(int iTime) {
-        
-        System.out.println("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
+    
+        TboTools_Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
         
         if (isFlying && !isRunning) {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
-        System.out.println("Tourne à Gauche");
+        TboTools_Debug.sout("Tourne à Gauche");
         peripherals.robot.keyPress(37);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(37);
@@ -349,14 +350,14 @@ public class TomTom {
     
     @SuppressWarnings("Duplicates")
     private void turnRight(int iTime) {
-        
-        System.out.println("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
+    
+        TboTools_Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
         
         if (isFlying && !isRunning) {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
-        System.out.println("Tourne à Droite");
+        TboTools_Debug.sout("Tourne à Droite");
         peripherals.robot.keyPress(39);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(39);

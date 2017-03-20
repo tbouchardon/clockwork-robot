@@ -1,4 +1,4 @@
-package net.ddns.ksuto.clockwork.entities;
+package net.ddns.ksuto.clockwork.entities.qrcode;
 
 public class Key extends Dot {
     
@@ -6,7 +6,7 @@ public class Key extends Dot {
     public       String key;
     public int priority = 0;
     
-    public Key(int hitKey, int xPosition, int yPosition, String key) {
+    Key(int hitKey, int xPosition, int yPosition, String key) {
         
         this.hitKey = hitKey;
         this.xPosition = xPosition;
@@ -15,8 +15,6 @@ public class Key extends Dot {
     }
     
     Key(int hitKey) {
-        
-        super();
         
         this.hitKey = hitKey;
     }

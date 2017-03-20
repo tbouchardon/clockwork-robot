@@ -2,11 +2,12 @@ package net.ddns.ksuto.clockwork.activity;
 
 import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
-import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.clockwork.entities.Position;
-import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
+import net.ddns.ksuto.clockwork.entities.qrcode.Key;
+import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -71,11 +72,11 @@ public class Automaton {
         
         RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, qrCode.health.xPosition, qrCode.health.yPosition);
         rgbConverter.invoke();
-        //System.out.println(rgbConverter.getRed());
+        //TboTools_Debug.sout(rgbConverter.getRed());
         double health = 100D / 255D * (double) rgbConverter.getRed();
         rgbConverter = new RGBConverter(biCapturedScreen, qrCode.mana.xPosition, qrCode.mana.yPosition);
         rgbConverter.invoke();
-        //System.out.println(rgbConverter.getBlue());
+        //TboTools_Debug.sout(rgbConverter.getBlue());
         double mana = 100D / 255D * (double) rgbConverter.getBlue();
         
         qrCode.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(qrCode.TOGGLE_ON_OFF.xPosition, qrCode.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
@@ -100,7 +101,7 @@ public class Automaton {
                 output += formattedX.substring(0, 2) + "," + formattedX.substring(2, 4) + "-" +
                           formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
             }
-            System.out.println(output);
+            TboTools_Debug.sout(output);
             QrCode.typeInChat(peripherals, "/kto wpadded");
             peripherals.robot.delay(500);
         }

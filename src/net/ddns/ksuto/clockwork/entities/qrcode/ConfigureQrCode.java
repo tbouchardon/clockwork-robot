@@ -1,11 +1,10 @@
-package net.ddns.ksuto.clockwork.entities.middleman;
+package net.ddns.ksuto.clockwork.entities.qrcode;
 
 import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
-import net.ddns.ksuto.clockwork.entities.Dot;
-import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 import net.ddns.ksuto.prh.entities.ColorBlock;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -28,8 +27,8 @@ public class ConfigureQrCode {
     public void run() throws AWTException, IOException {
         
         Robot robot = peripherals.robot;
-        
-        System.out.println("Starting AutoConfig");
+    
+        TboTools_Debug.sout("Starting AutoConfig");
     
         ArrayList<ColorBlock> ksutoPosition = null;
         boolean               bFound        = false;
@@ -54,7 +53,7 @@ public class ConfigureQrCode {
     
             qrCode.position = new Dot(iXKsuto, iYKsuto);
     
-            System.out.println("Found QrCode : X = " + iXKsuto + ", Y = " + iYKsuto + ", carrying on.");
+            TboTools_Debug.sout("Found QrCode : X = " + iXKsuto + ", Y = " + iYKsuto + ", carrying on.");
             peripherals.robot.mouseMove(iXKsuto, iYKsuto);
             
             robot.delay(i_DELAY + i_DEBUG_DELAY);
@@ -97,13 +96,13 @@ public class ConfigureQrCode {
             qrCode.DEBUG_MOD = new Dot(iXKsuto + 13, iYKsuto + 13);
     
             QrCode.startKsuto(peripherals, qrCode.position);
-            
-            System.out.println("AutoConfig Done");
+    
+            TboTools_Debug.sout("AutoConfig Done");
     
             //            QrCode.pressKey(peripherals, KeyEvent.VK_ESCAPE);
         }
         else {
-            System.out.println("AutoConfig Failed");
+            TboTools_Debug.sout("AutoConfig Failed");
         }
     }
     

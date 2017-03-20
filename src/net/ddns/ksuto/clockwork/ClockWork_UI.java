@@ -1,12 +1,15 @@
 package net.ddns.ksuto.clockwork;
 
 import net.ddns.ksuto.clockwork.activity.Automaton;
-import net.ddns.ksuto.clockwork.entities.middleman.ConfigureQrCode;
-import net.ddns.ksuto.clockwork.entities.middleman.QrCode;
+import net.ddns.ksuto.clockwork.entities.qrcode.ConfigureQrCode;
+import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
@@ -15,16 +18,15 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 @SuppressWarnings({"serial", "Duplicates"})
-public class ClockWork_UI extends JFrame {
+public class ClockWork_UI extends JDialog {
     
     private final TBoPeripheralRobotHelper peripherals;
-    
     private final JTextField jTextFieldCast = new JTextField("/Please Auto Config ");
     private       int        iRed           = 250, iGreen = 250, iBlue = 250, iGrey = 0;
     private JButton autoConfButton;
     private JButton jButtonFish;
     private QrCode qrCode = new QrCode();
-    private Automaton clockworkFigure;
+    private Automaton automaton;
     
     @SuppressWarnings("ConstantConditions")
     private ClockWork_UI(TBoPeripheralRobotHelper peripherals) throws IOException {
@@ -32,14 +34,14 @@ public class ClockWork_UI extends JFrame {
         this.peripherals = peripherals;
         
         JPanel panel = new JPanel() {
-            
-            private final BufferedImage buf = ImageIO.read(getClass().getResource("/Pictures/background.png"));
+    
+            private final BufferedImage bufferedImage = ImageIO.read(getClass().getResource("/Pictures/background.png"));
             
             @Override
             protected void paintComponent(Graphics g) {
                 
                 super.paintComponent(g);
-                g.drawImage(buf, 0, 0, null);
+                g.drawImage(bufferedImage, 0, 0, null);
             }
         };
         
@@ -76,12 +78,12 @@ public class ClockWork_UI extends JFrame {
         TBoPeripheralRobotHelper peripherals = new TBoPeripheralRobotHelper();
         
         ClockWork_UI ui = new ClockWork_UI(peripherals);
-        System.out.println("new UI");
+        TboTools_Debug.sout("new UI");
         ui.jTextFieldCast.requestFocus();
-        ui.clockworkFigure = new Automaton(peripherals, ui);
-        System.out.println("new Automaton");
+        ui.automaton = new Automaton(peripherals, ui);
+        TboTools_Debug.sout("new Automaton");
         while (ui.getQrCode().getKeys().isEmpty()) { peripherals.robot.delay(200); }
-        ui.clockworkFigure.play();
+        ui.automaton.play();
         System.exit(0);
     }
     
@@ -94,15 +96,23 @@ public class ClockWork_UI extends JFrame {
         
         setContentPane(panel);
         setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
-        setTitle("AutoGrind");
+        setTitle("ClockWork");
         URL url = getClass().getResource("/Pictures/icon.Default.jpg");
         if (url != null) { setIconImage(ImageIO.read(url)); }
         setAlwaysOnTop(true);
         setPreferredSize(new Dimension(200, 61));
         setResizable(false);
         setLocation(peripherals.getScreen().i_SCREEN_WIDTH - 270, peripherals.getScreen().i_SCREEN_HEIGHT - 131);
-        setDefaultCloseOperation(JDialog.EXIT_ON_CLOSE);
         getContentPane().setBackground(new Color(iRed, iGreen, iBlue));
+    
+        //        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+        
+            public void windowClosing(WindowEvent evt) {
+            
+                System.exit(0);
+            }
+        });
     }
     
     private void initTextField() {
@@ -141,17 +151,17 @@ public class ClockWork_UI extends JFrame {
     private ActionListener fishButtonListener() {
         
         return actionEvent -> {
-            if (clockworkFigure.status == Status.RUN) {
+            if (automaton.status == Status.RUN) {
                 jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.down.png"));
-                clockworkFigure.status = Status.FISHING;
+                automaton.status = Status.FISHING;
                 
                 autoConfButton.setEnabled(false);
                 jButtonFish.setEnabled(true);
             }
-            else if (clockworkFigure.status == Status.FISHING) {
+            else if (automaton.status == Status.FISHING) {
                 jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
         
-                clockworkFigure.status = Status.RUN;
+                automaton.status = Status.RUN;
                 
                 autoConfButton.setEnabled(true);
                 jButtonFish.setEnabled(true);

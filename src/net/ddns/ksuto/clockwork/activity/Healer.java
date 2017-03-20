@@ -4,6 +4,7 @@ import net.ddns.ksuto.clockwork.entities.Player;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.clockwork.tools.ShowZone;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -41,13 +42,13 @@ class Healer {
         Robot robot = new Robot();
         for (int i = 3; i != 0; i--) {
             robot.delay(1000);
-            System.out.println(i);
+            TboTools_Debug.sout("" + i);
         }
         
         BufferedImage capturedScreen = robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
         double        time           = System.currentTimeMillis();
         bot.lookForHealbotMembers(capturedScreen);
-        System.out.println("lookForHealbotMembers time : " + (System.currentTimeMillis() - time));
+        TboTools_Debug.sout("lookForHealbotMembers time : " + (System.currentTimeMillis() - time));
         
         for (Player p : bot.raid) {
             robot.mouseMove(p.xPosition, p.yPosition);
@@ -109,7 +110,7 @@ class Healer {
             }
             if (mostWoundedPlayer == null) { mostWoundedPlayer = raid.get(0); }
         }
-        //		System.out.println("mostWoundedPlayer : " + mostWoundedPlayer.xPosition + " " + mostWoundedPlayer.yPosition);
+        //		TboTools_Debug.sout("mostWoundedPlayer : " + mostWoundedPlayer.xPosition + " " + mostWoundedPlayer.yPosition);
         return mostWoundedPlayer;
     }
     
@@ -163,7 +164,7 @@ class Healer {
                             player.zone = new ShowZone.Zone(showZone, hbMaxBarWidth, hbMaxBarHeight, x - 2, y - 2);
                             showZone.addZone(player.zone);
                             raid.add(player);
-                            System.out.println(hbMinBarWidth + " " + hbMinBarHeight);
+                            TboTools_Debug.sout(hbMinBarWidth + " " + hbMinBarHeight);
                         }
                     }
                 }
@@ -173,8 +174,8 @@ class Healer {
         int iFound = raid.size();
         for (int i = raid.size() - 1; i >= 0; i--) {
             Player player = raid.get(i);
-            
-            System.out.println("delta lastseen : " + (System.currentTimeMillis() - player.lastSeen));
+    
+            TboTools_Debug.sout("delta lastseen : " + (System.currentTimeMillis() - player.lastSeen));
             if (System.currentTimeMillis() - player.lastSeen > 1000) {
                 iFound--;
             }
@@ -189,8 +190,8 @@ class Healer {
                 raid.remove(i);
             }
         }
-        
-        System.out.println("raid size = " + raid.size() + ", found = " + iFound);
+    
+        TboTools_Debug.sout("raid size = " + raid.size() + ", found = " + iFound);
         lastSearch = System.currentTimeMillis();
         return raid;
     }

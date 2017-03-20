@@ -30,7 +30,7 @@ public class RGBConverter {
     public RGBConverter invoke() {
         
         int capturedRGB;
-        //System.out.println(x + " " + y);
+        //TboTools_Debug.sout(x + " " + y);
         capturedRGB = capturedScreen.getRGB(x, y);
         red = (capturedRGB >> 16) & 0xFF;
         green = (capturedRGB >> 8) & 0xFF;

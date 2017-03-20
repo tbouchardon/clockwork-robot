@@ -1,9 +1,7 @@
-package net.ddns.ksuto.clockwork.entities.middleman;
+package net.ddns.ksuto.clockwork.entities.qrcode;
 
 import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
-import net.ddns.ksuto.clockwork.entities.Dot;
-import net.ddns.ksuto.clockwork.entities.Key;
 import net.ddns.ksuto.clockwork.entities.Position;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 
