@@ -191,12 +191,12 @@ public class Automaton {
         }
         
         if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
-        
-        if (qrCode.DRIVE_MOD.active && health > 50 && !qrCode.inCombat.active) { // && mana > 40
+    
+        if (qrCode.DRIVE_MOD.active && health > 50) { // && !qrCode.inCombat.active && mana > 40
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }
-            tomtom.drive(qrCode, peripherals, key2hit != null);
+            tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.inCombat.active);
         }
         
         wasInCombat = qrCode.inCombat.active;
