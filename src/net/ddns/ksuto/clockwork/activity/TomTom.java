@@ -1,16 +1,17 @@
 package net.ddns.ksuto.clockwork.activity;
 
+import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
+
 import net.ddns.ksuto.clockwork.entities.Position;
-import net.ddns.ksuto.clockwork.entities.middleman.MiddleMan;
+import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-
-import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
 public class TomTom {
     
@@ -18,105 +19,182 @@ public class TomTom {
     private static final int TURN_DURATION      = 100;
     private static final int TURN_BACK_DURATION = 100;
     private TBoPeripheralRobotHelper peripherals;
-    private boolean  isFlying         = false;
-    private boolean  isRunning        = false;
-    private double[] lastPlayerCoords = null;
-    private Double   lastDistance     = null;
-    private int      pathIndex        = 0;
+    private boolean  isFlying              = false;
+    private boolean  isRunning             = false;
+    private Position playersLastPosition   = null;
+    private Double   lastRemainingDistance = null;
+    private boolean  turnedRight           = false;
+    private int      pathIndex             = 0;
+    private double angleB;
     
     TomTom(TBoPeripheralRobotHelper peripherals) throws AWTException {
         
         this.peripherals = peripherals;
     }
     
-    public void addCurrentPositionToPathList(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals) {
+    public void addCurrentPositionToPathList(QrCode qrCode, TBoPeripheralRobotHelper peripherals) {
         
-        getCoordinates(middleMan, peripherals);
+        getCoordinates(qrCode, peripherals);
     }
     
-    public void getCoordinates(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals) {
+    public void getCoordinates(QrCode qrCode, TBoPeripheralRobotHelper peripherals) {
+    
+        TboTools_Debug.sout("getCoordinates");
+    
+        BufferedImage biCapturedScreen = qrCode.captureQrCode(peripherals);
         
-        System.out.println("getCoordinates");
-        
-        BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().i_SCREEN_WIDTH, peripherals.getScreen().i_SCREEN_HEIGHT));
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 5) == RGBConverter.WHITE) {
-                middleMan.currenPosition.xPos_Xxxx = i - 2;
-                break;
-            }
+        int xPos = 0;
+    
+        if (biCapturedScreen.getRGB(6, 7) == RGBConverter.WHITE) {
+            xPos += 524288;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 6) == RGBConverter.WHITE) {
-                middleMan.currenPosition.xPos_xXxx = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(7, 7) == RGBConverter.WHITE) {
+            xPos += 262144;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 7) == RGBConverter.WHITE) {
-                middleMan.currenPosition.xPos_xxXx = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(8, 7) == RGBConverter.WHITE) {
+            xPos += 131072;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 8) == RGBConverter.WHITE) {
-                middleMan.currenPosition.xPos_xxxX = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(9, 7) == RGBConverter.WHITE) {
+            xPos += 65536;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 9) == RGBConverter.WHITE) {
-                middleMan.currenPosition.yPos_Xxxx = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(10, 7) == RGBConverter.WHITE) {
+            xPos += 32768;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 10) == RGBConverter.WHITE) {
-                middleMan.currenPosition.yPos_xXxx = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(11, 7) == RGBConverter.WHITE) {
+            xPos += 16384;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 11) == RGBConverter.WHITE) {
-                middleMan.currenPosition.yPos_xxXx = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(12, 7) == RGBConverter.WHITE) {
+            xPos += 8192;
         }
-        
-        for (int i = 2; i < 12; i++) {
-            if (biCapturedScreen.getRGB(middleMan.position.xPosition + i, middleMan.position.yPosition + 12) == RGBConverter.WHITE) {
-                middleMan.currenPosition.yPos_xxxX = i - 2;
-                break;
-            }
+        if (biCapturedScreen.getRGB(13, 7) == RGBConverter.WHITE) {
+            xPos += 4096;
         }
+        if (biCapturedScreen.getRGB(2, 8) == RGBConverter.WHITE) {
+            xPos += 2048;
+        }
+        if (biCapturedScreen.getRGB(3, 8) == RGBConverter.WHITE) {
+            xPos += 1024;
+        }
+        if (biCapturedScreen.getRGB(4, 8) == RGBConverter.WHITE) {
+            xPos += 512;
+        }
+        if (biCapturedScreen.getRGB(5, 8) == RGBConverter.WHITE) {
+            xPos += 256;
+        }
+        if (biCapturedScreen.getRGB(6, 8) == RGBConverter.WHITE) {
+            xPos += 128;
+        }
+        if (biCapturedScreen.getRGB(7, 8) == RGBConverter.WHITE) {
+            xPos += 64;
+        }
+        if (biCapturedScreen.getRGB(8, 8) == RGBConverter.WHITE) {
+            xPos += 32;
+        }
+        if (biCapturedScreen.getRGB(9, 8) == RGBConverter.WHITE) {
+            xPos += 16;
+        }
+        if (biCapturedScreen.getRGB(10, 8) == RGBConverter.WHITE) {
+            xPos += 8;
+        }
+        if (biCapturedScreen.getRGB(11, 8) == RGBConverter.WHITE) {
+            xPos += 4;
+        }
+        if (biCapturedScreen.getRGB(12, 8) == RGBConverter.WHITE) {
+            xPos += 2;
+        }
+        if (biCapturedScreen.getRGB(13, 8) == RGBConverter.WHITE) {
+            xPos += 1;
+        }
+        qrCode.currenPlayerPosition.xPos = xPos;
+        
+        int yPos = 0;
+        if (biCapturedScreen.getRGB(6, 10) == RGBConverter.WHITE) {
+            yPos += 524288;
+        }
+        if (biCapturedScreen.getRGB(7, 10) == RGBConverter.WHITE) {
+            yPos += 262144;
+        }
+        if (biCapturedScreen.getRGB(8, 10) == RGBConverter.WHITE) {
+            yPos += 131072;
+        }
+        if (biCapturedScreen.getRGB(9, 10) == RGBConverter.WHITE) {
+            yPos += 65536;
+        }
+        if (biCapturedScreen.getRGB(10, 10) == RGBConverter.WHITE) {
+            yPos += 32768;
+        }
+        if (biCapturedScreen.getRGB(11, 10) == RGBConverter.WHITE) {
+            yPos += 16384;
+        }
+        if (biCapturedScreen.getRGB(12, 10) == RGBConverter.WHITE) {
+            yPos += 8192;
+        }
+        if (biCapturedScreen.getRGB(13, 10) == RGBConverter.WHITE) {
+            yPos += 4096;
+        }
+        if (biCapturedScreen.getRGB(2, 11) == RGBConverter.WHITE) {
+            yPos += 2048;
+        }
+        if (biCapturedScreen.getRGB(3, 11) == RGBConverter.WHITE) {
+            yPos += 1024;
+        }
+        if (biCapturedScreen.getRGB(4, 11) == RGBConverter.WHITE) {
+            yPos += 512;
+        }
+        if (biCapturedScreen.getRGB(5, 11) == RGBConverter.WHITE) {
+            yPos += 256;
+        }
+        if (biCapturedScreen.getRGB(6, 11) == RGBConverter.WHITE) {
+            yPos += 128;
+        }
+        if (biCapturedScreen.getRGB(7, 11) == RGBConverter.WHITE) {
+            yPos += 64;
+        }
+        if (biCapturedScreen.getRGB(8, 11) == RGBConverter.WHITE) {
+            yPos += 32;
+        }
+        if (biCapturedScreen.getRGB(9, 11) == RGBConverter.WHITE) {
+            yPos += 16;
+        }
+        if (biCapturedScreen.getRGB(10, 11) == RGBConverter.WHITE) {
+            yPos += 8;
+        }
+        if (biCapturedScreen.getRGB(11, 11) == RGBConverter.WHITE) {
+            yPos += 4;
+        }
+        if (biCapturedScreen.getRGB(12, 11) == RGBConverter.WHITE) {
+            yPos += 2;
+        }
+        if (biCapturedScreen.getRGB(13, 11) == RGBConverter.WHITE) {
+            yPos += 1;
+        }
+        qrCode.currenPlayerPosition.yPos = yPos;
     }
     
-    void drive(MiddleMan middleMan, TBoPeripheralRobotHelper peripherals, boolean activeTarget) {
+    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean activeTarget, boolean inCombat) {
+    
+        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
-        System.out.println("--------------------------------- drive ----------------------------------");
-        
-        // Arréter de courrir et retour en cas de cible active
-        if (isRunning && activeTarget) {
-            runStop();
+        // En cas de cible active (actions engagées)
+        if (activeTarget || inCombat) {
+            // Passage en camera position combat (Pour pouvoir loot plus facilement)
+            qrCode.cameraCombat(peripherals);
+            
+            // Arréter de courrir et retour en cas de cible active
+            if (isRunning) { runStop(); }
             return;
         }
         
-        if (!isRunning && activeTarget) {
-            return;
-        }
+        // Passage en camera position course
+        qrCode.cameraDrive(peripherals);
         
         // Arrêter de courrir et retour si il n'y a plus de points de cheminement
-        if (middleMan.path.isEmpty()) {
+        if (qrCode.path.isEmpty()) {
             pathIndex = 0;
             if (isRunning) {
                 runStop();
             }
+            QrCode.typeInChat(peripherals, "/kto drive");
             return;
         }
         
@@ -126,14 +204,14 @@ public class TomTom {
         }
         
         // Retourner au point de départ si la fonction LOOP est activée et qu'il n'y a plus de points de cheminement
-        if (middleMan.DRIVE_LOOP.active && pathIndex > middleMan.path.size() - 1) {
-            System.out.println("loop");
+        if (qrCode.DRIVE_LOOP.active && pathIndex > qrCode.path.size() - 1) {
+            TboTools_Debug.sout("loop");
             pathIndex = 0;
         }
         
         // Si l'on est à cours de points de cheminement, on vide la liste, on arrête de courrir et retour
-        if (pathIndex > middleMan.path.size() - 1) {
-            middleMan.path.clear();
+        if (pathIndex > qrCode.path.size() - 1) {
+            qrCode.path.clear();
             if (isRunning) {
                 runStop();
             }
@@ -141,35 +219,37 @@ public class TomTom {
             return;
         }
         
-        Position path = middleMan.path.get(pathIndex); //coordonnées destination
-        getCoordinates(middleMan, peripherals); //position du personage
-        
-        double[] playerCoords = middleMan.currenPosition.getCoordinates(); //les coordonnées actuelles (x,y)
-        System.out.println("Position courante : playerCoords[0] = " + playerCoords[0] + ", playerCoords[1] = " + playerCoords[1]);
-        if (lastPlayerCoords == null) {
-            lastPlayerCoords = playerCoords;
-            lastDistance = Math.sqrt(Math.pow(path.getCoordinates()[0] - playerCoords[0], 2) + Math.pow(path.getCoordinates()[1] - playerCoords[1], 2));
+        Position path = qrCode.path.get(pathIndex); //coordonnées destination
+        getCoordinates(qrCode, peripherals); //position du personage
+    
+        TboTools_Debug.sout("Position courante : qrCode.currenPlayerPosition.xPos = " + qrCode.currenPlayerPosition.xPos + ", qrCode.currenPlayerPosition.yPos = " + qrCode
+                                                                                                                                                                             .currenPlayerPosition
+                                                                                                                                                                             .yPos);
+        if (playersLastPosition == null) {
+            playersLastPosition = new Position(qrCode.currenPlayerPosition);
+            lastRemainingDistance = Math.sqrt(Math.pow(path.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(path.yPos - qrCode.currenPlayerPosition.yPos, 2));
             return;
         }
         
         // Calcul de l'équation de la droite passant par la position précédente et le point de cheminement actuel
-        System.out.println("Destination : path.getCoordinates()[0] = " + path.getCoordinates()[0] + ", path.getCoordinates()[1] = " + path.getCoordinates()[1]);
-        System.out.println("Pos. Tour precedent : lastPlayerCoords[0] = " + lastPlayerCoords[0] + ", lastPlayerCoords[1] = " + lastPlayerCoords[1]);
+        TboTools_Debug.sout("Destination : path.xPos = " + path.xPos + ", path.yPos = " + path.yPos);
+        TboTools_Debug.sout("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
         
-        double a = (path.getCoordinates()[1] - lastPlayerCoords[1]) / (path.getCoordinates()[0] - lastPlayerCoords[0]); // a = (yB - yA) / (xB - xA)
+        double a = ((double) path.yPos - (double) playersLastPosition.yPos) / ((double) path.xPos - (double) playersLastPosition.xPos); // a = (yB - yA) / (xB - xA)
         
         //Si les deux points sont trop proches, le déplacement parfaitement vertical, ou horizontal, "a" peut être en erreur. On attend donc la prochaine passe. Retour.
-        System.out.println("a = " + a);
+        TboTools_Debug.sout("a = " + a);
         if (Double.isNaN(a) || Double.isInfinite(a)) {
+            playersLastPosition = new Position(qrCode.currenPlayerPosition);
             return;
         }
-        double b = path.getCoordinates()[1] - (a * path.getCoordinates()[0]); // b = y - ax
+        double b = path.yPos - (a * path.xPos); // b = y - ax
         
-        double y = a * playerCoords[0] + b; // y = ax + b
+        double y = a * qrCode.currenPlayerPosition.xPos + b; // y = ax + b
         
-        // Regarder la distance restante
-        double distance         = Math.sqrt(Math.pow(path.getCoordinates()[0] - playerCoords[0], 2) + Math.pow(path.getCoordinates()[1] - playerCoords[1], 2));
-        double traveledDistance = Math.sqrt(Math.pow(lastPlayerCoords[0] - playerCoords[0], 2) + Math.pow(lastPlayerCoords[1] - playerCoords[1], 2));
+        // Regarder la remainingDistance restante
+        double remainingDistance = Math.sqrt(Math.pow(path.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(path.yPos - qrCode.currenPlayerPosition.yPos, 2));
+        double traveledDistance  = Math.sqrt(Math.pow(playersLastPosition.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(playersLastPosition.yPos - qrCode.currenPlayerPosition.yPos, 2));
         
         // puisque :
         //        a² = b² + c² − 2bc.cos(α)
@@ -177,58 +257,30 @@ public class TomTom {
         //        c² = a² + b² − 2ab.cos(γ)
         // alors,
         // γ = arccos[(a² + b² − c²) ÷ 2ab]
-        // et si c = lastDistance, b = distance et a = traveledDistance alors l'angle C, opposé à c =
-        Double angleC = Math.acos((Math.pow(traveledDistance, 2) + Math.pow(distance, 2) - Math.pow(lastDistance, 2)) / (2L * traveledDistance * distance));
-
+        // et si c = lastRemainingDistance, b = remainingDistance et a = traveledDistance alors l'angle C, opposé à c =
+        Double angleC = Math.acos((Math.pow(traveledDistance, 2) + Math.pow(remainingDistance, 2) - Math.pow(lastRemainingDistance, 2)) / (2d * traveledDistance * remainingDistance));
+        angleB = Math.acos((Math.pow(traveledDistance, 2) + Math.pow(lastRemainingDistance, 2) - Math.pow(remainingDistance, 2)) / (2d * traveledDistance * lastRemainingDistance));
+        
         // conversion de radians en degrés
         angleC = Math.toDegrees(angleC);
-
-        System.out.println(y + " = " + a + " * " + playerCoords[0] + " + " + b + "( Actual = " + playerCoords[1] + ")");
-        System.out.println("lastDistance = " + lastDistance * 100L);
-        System.out.println("distance = " + distance * 100L);
-        System.out.println("traveledDistance = " + traveledDistance * 100L);
-        System.out.println("angleC = " + angleC + "°");
+        angleB = Math.toDegrees(angleB);
+    
+        TboTools_Debug.sout(y + " = " + a + " * " + qrCode.currenPlayerPosition.xPos + " + " + b + "( Actual = " + qrCode.currenPlayerPosition.yPos + ")");
+        TboTools_Debug.sout("lastRemainingDistance = " + lastRemainingDistance * 100d);
+        TboTools_Debug.sout("remainingDistance = " + remainingDistance * 100d);
+        TboTools_Debug.sout("traveledDistance = " + traveledDistance * 100d);
+        TboTools_Debug.sout("angleC = " + angleC + "°");
         
-        // Plus l'angle est grand, moins on doit tourner. Résultat en Milisecondes, partant du principe que 1000ms équivaut à un demi tour.
-        int turnDuration = (int) (1000L / 180L * (180L - angleC));
+        // Plus l'angle interne est grand, moins on doit tourner. Résultat en Milisecondes, partant du principe que 1000ms équivaut à un demi tour.
+        int turnDuration = (int) (1000d / 180d * (180d - angleC));
         
-        // En fonction de la droite, de la position et de la distance :
-        
-        // Faire demi tour si l'on s'éloigne
-        // if (distance > lastDistance && Math.abs(distance - lastDistance) > 0.01) {
-        //        if (distance > lastDistance) {
-        //            System.out.println("Last distance = " + lastDistance * 100L + " vs Current distance = " + distance * 100L);
-        //            System.out.println("Demi tour");
-        //            runStop();
-        //            if (playerCoords[0] > path.getCoordinates()[0]) {
-        //                // Si yJoueur > yCalculé, le joueur est trop au sud par rapport à la droite
-        //                if (playerCoords[1] > y) {
-        //                    turnRight(TURN_BACK_DURATION);
-        //                }
-        //                // sinon le joueur est trop au nord
-        //                else {
-        //                    turnLeft(TURN_BACK_DURATION);
-        //                }
-        //            }
-        //            // Si à xA < xB, on se déplace d'ouest en est
-        //            else {
-        //                if (playerCoords[1] > y) {
-        //                    turnLeft(TURN_BACK_DURATION);
-        //                }
-        //                else {
-        //                    turnRight(TURN_BACK_DURATION);
-        //                }
-        //            }
-        //            runStart();
-        //        }
-        // Sinon,
-        //        else {
+        // En fonction de la droite, de la position et de la remainingDistance :
         
         // Tourner de turnDuration (milisecondes) en fonction de la position du personnage par rapport à la droite précédement calculée
         // Si à xA > xB, on se déplace d'est en ouest
-        if (playerCoords[0] < path.getCoordinates()[0]) { //TODO : Trouver l'incohérence.
+        if (qrCode.currenPlayerPosition.xPos > path.xPos) {
             // Si yJoueur (là où le joueur est) > yCalculé (là où le joueur devrait être), le joueur est trop au sud par rapport à position idéale (les coordonnées en y étant inversées).
-            if (playerCoords[1] > y) {
+            if (qrCode.currenPlayerPosition.yPos > y) {
                 turnRight(turnDuration);
             }
             // sinon le joueur est trop au nord
@@ -238,22 +290,27 @@ public class TomTom {
         }
         // Si à xA < xB, on se déplace d'ouest en est
         else {
-            if (playerCoords[1] > y) {
+            if (qrCode.currenPlayerPosition.yPos > y) {
                 turnLeft(turnDuration);
             }
             else {
                 turnRight(turnDuration);
             }
         }
-        //        }
         
-        lastDistance = distance;
-        lastPlayerCoords = playerCoords;
+        lastRemainingDistance = remainingDistance;
+        
+        playersLastPosition = new Position(qrCode.currenPlayerPosition);
         
         // On passe au point de cheminement suivant si le point actuel est atteint
-        if (distance <= 0.40) {
+        if (remainingDistance <= traveledDistance * 1.5) {
             pathIndex++;
         }
+        
+        // Poney mod! xD
+        int jump = (int) (Math.random() * 25);
+        TboTools_Debug.sout("jump ? " + jump);
+        if (jump == 1) { QrCode.pressKey(peripherals, KEY_SPACE); }
         
         peripherals.robot.delay(100);
     }
@@ -267,7 +324,8 @@ public class TomTom {
     }
     
     private void runStart() {
-        
+    
+        TboTools_Debug.sout("Run Start/Stop");
         peripherals.robot.keyPress(KEY_J);
         peripherals.robot.delay(i_DELAY);
         peripherals.robot.keyRelease(KEY_J);
@@ -276,28 +334,36 @@ public class TomTom {
     
     @SuppressWarnings("Duplicates")
     private void turnLeft(int iTime) {
+    
+        TboTools_Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
         
         if (isFlying && !isRunning) {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
-        System.out.println("Tourne à Gauche");
+        TboTools_Debug.sout("Tourne à Gauche");
         peripherals.robot.keyPress(37);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(37);
+        
+        turnedRight = false;
     }
     
     @SuppressWarnings("Duplicates")
     private void turnRight(int iTime) {
+    
+        TboTools_Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
         
         if (isFlying && !isRunning) {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
-        System.out.println("Tourne à Droite");
+        TboTools_Debug.sout("Tourne à Droite");
         peripherals.robot.keyPress(39);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(39);
+        
+        turnedRight = true;
     }
     
     //	public void land() throws AWTException {}

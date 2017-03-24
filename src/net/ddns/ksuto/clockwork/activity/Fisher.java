@@ -2,15 +2,14 @@ package net.ddns.ksuto.clockwork.activity;
 
 import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
-import net.ddns.ksuto.clockwork.tools.Scanner;
 import net.ddns.ksuto.clockwork.tools.ShowZone;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
+import net.ddns.ksuto.tools.TboTools_Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -19,9 +18,9 @@ import java.util.Date;
 class Fisher {
     
     @SuppressWarnings("FieldCanBeLocal")
-    private final        int iLureTime = 10 * 60000; // W
+    private final int iLureTime = 10 * 60000; // W
     @SuppressWarnings("FieldCanBeLocal")
-    private final        int iBaitTime = 5 * 60000; // Shift + W
+    private final int iBaitTime = 5 * 60000; // Shift + W
     
     private final TBoPeripheralRobotHelper peripherals;
     private final int    iMargin          = 30;
@@ -56,25 +55,27 @@ class Fisher {
         }
         
         peripherals.getKeyboard().typeString("h");
-        
-        long lFishingTime = new Date().getTime(), lCurTime = new Date().getTime();
+    
+        long fishingTime = new Date().getTime(), lCurTime = new Date().getTime();
         
         robot.delay(2500);
         
         coords = searchFloat();
         tempcoords = coords;
-        
-        while (lCurTime - lFishingTime < 21000) {
-            // System.out.println(lCurTime + " " + lInitTime + " " + (lCurTime - lInitTime));
+    
+        while (lCurTime - fishingTime < 21000) {
+            // TboTools_Debug.sout(lCurTime + " " + lInitTime + " " + (lCurTime - lInitTime));
             // if (autoGrindUI.getStatus() != Status.FISHING) break;
-            // autoGrindUI.setjLabText(String.valueOf(22 - ((lCurTime - lFishingTime) / 1000)));
+            // autoGrindUI.setjLabText(String.valueOf(22 - ((lCurTime - fishingTime) / 1000)));
             coords = searchFloat();
             
             if (tempcoords == null || coords == null) { return true; }
             
             if (coords[0] != 0) {
                 if ((MouseInfo.getPointerInfo().getLocation().x - coords[0] > 5) || (MouseInfo.getPointerInfo().getLocation().x - coords[0] < -5)
-                    || (MouseInfo.getPointerInfo().getLocation().y - coords[1] > 5) || (MouseInfo.getPointerInfo().getLocation().y - coords[1] < -5)) { robot.mouseMove(coords[0], coords[1]); }
+                    || (MouseInfo.getPointerInfo().getLocation().y - coords[1] > 5) || (MouseInfo.getPointerInfo().getLocation().y - coords[1] < -5)) {
+                    robot.mouseMove(coords[0], coords[1]);
+                }
                 robot.delay(100);
                 if ((MouseInfo.getPointerInfo().getLocation().x - coords[0] > 10) || (MouseInfo.getPointerInfo().getLocation().x - coords[0] < -10)
                     || (MouseInfo.getPointerInfo().getLocation().y - coords[1] > 10) || (MouseInfo.getPointerInfo().getLocation().y - coords[1] < -10)) {
@@ -83,9 +84,8 @@ class Fisher {
             }
             
             if (((coords[1] - tempcoords[1] > 2) || (coords[1] - tempcoords[1] < -2) || (coords[0] - tempcoords[0] > 5) || (coords[0] - tempcoords[0] < -5))
-                && (coords[1] - tempcoords[1] < 15) && (coords[1] - tempcoords[1] > -15) && (coords[0] - tempcoords[0] < 15) && (coords[0] - tempcoords[0] >
-                                                                                                                                 -15)) {
-                System.out.println("Got a catch ? Float Moving : dY = " + (coords[1] - tempcoords[1]) + ", dX = " + (coords[0] - tempcoords[0]));
+                && (coords[1] - tempcoords[1] < 15) && (coords[1] - tempcoords[1] > -15) && (coords[0] - tempcoords[0] < 15) && (coords[0] - tempcoords[0] > -15)) {
+                TboTools_Debug.sout("Got a catch ? Float Moving : dY = " + (coords[1] - tempcoords[1]) + ", dX = " + (coords[0] - tempcoords[0]));
                 peripherals.getMouse().clickLeft();
                 robot.delay(2000);
                 return true;
@@ -93,34 +93,31 @@ class Fisher {
             
             tempcoords = coords;
             lCurTime = new Date().getTime();
-            if ((coords[0] == 0) && (lCurTime - lFishingTime > 4000)) { return true; }
+            if ((coords[0] == 0) && (lCurTime - fishingTime > 4000)) { return true; }
         }
         
         return true;
     }
     
     void setup() throws AWTException {
-        
-        Scanner scan = new Scanner(peripherals);
-        try {
-            ArrayList<int[]> resultsWoW = scan.searchPicture("Pictures/scan.WoW.png");
-            if (!resultsWoW.isEmpty()) {
-                int iWoWSize = peripherals.getScreen().i_SCREEN_WIDTH - (resultsWoW.get(0)[0] * 2);
-                System.out.println("WoW Width = " + iWoWSize);
-                iRatio = (double) iWoWSize / (double) peripherals.getScreen().i_SCREEN_WIDTH;
-                System.out.println("Ratio = " + iRatio);
-            }
-        }
-        catch (IOException ignored) {
+    
+        ArrayList<int[]> resultsWoW = peripherals.getScreen().scanFor("Pictures/scan.WoW.png");
+        if (!resultsWoW.isEmpty()) {
+            int iWoWSize = peripherals.getScreen().i_SCREEN_WIDTH - (resultsWoW.get(0)[0] * 2);
+            TboTools_Debug.sout("WoW Width = " + iWoWSize);
+            iRatio = (double) iWoWSize / (double) peripherals.getScreen().i_SCREEN_WIDTH;
+            TboTools_Debug.sout("Ratio = " + iRatio);
         }
         
         Robot robot = new Robot();
         
         show = new ShowZone(peripherals);
-        show.zone("Fishing Zone", iWidth + iMargin, iHeight + iMargin, peripherals.getScreen().i_SCREEN_WIDTH / 2 - (iWidth / 2 + iMargin), peripherals.getScreen().i_SCREEN_HEIGHT / 2 - (iHeight +
-                                                                                                                                                                                           iMargin)
-                                                                                                                                            - iDeltaY, 150,
-                  150, 200, 0);
+        show.zone("Fishing Zone",
+                  iWidth + iMargin,
+                  iHeight + iMargin,
+                  peripherals.getScreen().i_SCREEN_WIDTH / 2 - (iWidth / 2 + iMargin),
+                  peripherals.getScreen().i_SCREEN_HEIGHT / 2 - (iHeight + iMargin) - iDeltaY,
+                  150, 150, 200, 0);
         show.setVisible(true);
         robot.delay(i_DELAY);
         robot.mouseMove(peripherals.getScreen().i_SCREEN_WIDTH / 2, peripherals.getScreen().i_SCREEN_HEIGHT / 2 + 10);
@@ -198,12 +195,10 @@ class Fisher {
                 iWidth = (int) (peripherals.getScreen().i_SCREEN_WIDTH / (3 / iRatio));
                 iHeight = iWidth / 3;
             }
-            
-            show.changeSize(iWidth + iMargin, iHeight + iMargin + 10, peripherals.getScreen().i_SCREEN_WIDTH / 2 - ((iWidth + iMargin) / 2), peripherals.getScreen().i_SCREEN_HEIGHT / 2 - (iHeight +
-                                                                                                                                                                                            ((iMargin
-                                                                                                                                                                                              + 10) /
-                                                                                                                                                                                             2))
-                                                                                                                                             - iDeltaY);
+    
+            show.changeSize(iWidth + iMargin, iHeight + iMargin + 10,
+                            peripherals.getScreen().i_SCREEN_WIDTH / 2 - ((iWidth + iMargin) / 2),
+                            peripherals.getScreen().i_SCREEN_HEIGHT / 2 - (iHeight + ((iMargin + 10) / 2)) - iDeltaY);
         }
         return null;
     }

@@ -1,4 +1,4 @@
-package net.ddns.ksuto.clockwork.entities;
+package net.ddns.ksuto.clockwork.entities.qrcode;
 
 /**
  * Created by thomas.bouchardon on 07/02/2017!
@@ -9,7 +9,7 @@ public class Dot {
     public int yPosition;
     public boolean active = false;
     
-    public Dot(int xPosition, int yPosition) {
+    Dot(int xPosition, int yPosition) {
         
         this.xPosition = xPosition;
         this.yPosition = yPosition;
