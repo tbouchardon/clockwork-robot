@@ -202,6 +202,7 @@ public class Automaton {
         wasInCombat = qrCode.inCombat.active;
         
         if (key2hit == null) { peripherals.robot.delay(200); }
+        else if (key2hit.key.equals("H")) { peripherals.robot.delay(1000);}
         else { peripherals.robot.delay(750); }
     }
     
