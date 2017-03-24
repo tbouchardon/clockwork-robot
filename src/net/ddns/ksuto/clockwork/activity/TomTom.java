@@ -345,7 +345,7 @@ public class TomTom {
         peripherals.robot.keyPress(37);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(37);
-        
+    
         turnedRight = false;
     }
     
@@ -362,7 +362,7 @@ public class TomTom {
         peripherals.robot.keyPress(39);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(39);
-        
+    
         turnedRight = true;
     }
     
