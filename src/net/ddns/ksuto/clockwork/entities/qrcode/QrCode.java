@@ -31,8 +31,11 @@ public class QrCode {
     public Dot DRIVE_LOOP;
     public Dot DEBUG_MOD;
     public Dot inCombat;
-    public Dot health;
-    public Dot mana;
+    public Dot playerHealth;
+    public Dot playerMana;
+    public Dot targetReaction;
+    public Dot targetHealth;
+    public Dot targetMana;
     public Position       currenPlayerPosition = new Position();
     public List<Position> path                 = new ArrayList<>();
     private Camera cameraPosition;
@@ -161,8 +164,11 @@ public class QrCode {
             keys.add(new Key(KeyEvent.VK_1, 2, 5, "1"));
             
             inCombat = new Dot(2, 2);
-            health = new Dot(12, 2);
-            mana = new Dot(13, 2);
+            playerHealth = new Dot(12, 2);
+            playerMana = new Dot(13, 2);
+            targetReaction = new Dot(11, 3);
+            targetHealth = new Dot(12, 3);
+            targetMana = new Dot(13, 3);
             TOGGLE_ON_OFF = new Dot(2, 13);
             TARGET_NEAREST_ENEMY = new Dot(3, 13);
             ADD_WAYPOINT = new Dot(4, 13);

@@ -171,12 +171,12 @@ public class TomTom {
         qrCode.currenPlayerPosition.yPos = yPos;
     }
     
-    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean activeTarget, boolean inCombat) {
+    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, Boolean inCombat) {
     
         TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
         // En cas de cible active (actions engagées)
-        if (activeTarget || inCombat) {
+        if (actionPossible || inCombat) {
             // Passage en camera position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
             

@@ -76,15 +76,26 @@ public class Automaton {
         }
         
         qrCode.inCombat.active = biCapturedScreen.getRGB(qrCode.inCombat.xPosition, qrCode.inCombat.yPosition) == RGBConverter.WHITE;
-        
-        RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, qrCode.health.xPosition, qrCode.health.yPosition);
+    
+        RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, qrCode.playerHealth.xPosition, qrCode.playerHealth.yPosition);
         rgbConverter.invoke();
-        //TboTools_Debug.sout(rgbConverter.getRed());
-        double health = 100D / 255D * (double) rgbConverter.getRed();
-        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.mana.xPosition, qrCode.mana.yPosition);
+        double playerHealth = 100D / 255D * (double) rgbConverter.getRed();
+    
+        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.playerMana.xPosition, qrCode.playerMana.yPosition);
         rgbConverter.invoke();
-        //TboTools_Debug.sout(rgbConverter.getBlue());
-        double mana = 100D / 255D * (double) rgbConverter.getBlue();
+        double playerMana = 100D / 255D * (double) rgbConverter.getBlue();
+    
+        int     rgb           = biCapturedScreen.getRGB(qrCode.targetReaction.xPosition, qrCode.targetReaction.yPosition);
+        boolean hostileTarget = (rgb == RGBConverter.RED);
+        boolean target        = (rgb != RGBConverter.BLACK);
+    
+        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.targetHealth.xPosition, qrCode.targetHealth.yPosition);
+        rgbConverter.invoke();
+        double targetHealth = 100D / 255D * (double) rgbConverter.getRed();
+    
+        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.targetMana.xPosition, qrCode.targetMana.yPosition);
+        rgbConverter.invoke();
+        double targetMana = 100D / 255D * (double) rgbConverter.getBlue();
         
         qrCode.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(qrCode.TOGGLE_ON_OFF.xPosition, qrCode.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
         qrCode.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(qrCode.TARGET_NEAREST_ENEMY.xPosition, qrCode.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
@@ -192,7 +203,7 @@ public class Automaton {
         
         if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
     
-        if (qrCode.DRIVE_MOD.active && health > 50) { // && !qrCode.inCombat.active && mana > 40
+        if (qrCode.DRIVE_MOD.active && playerHealth > 50) { // && !qrCode.inCombat.active && playerMana > 40
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }
@@ -202,7 +213,7 @@ public class Automaton {
         wasInCombat = qrCode.inCombat.active;
         
         if (key2hit == null) { peripherals.robot.delay(200); }
-        else if (key2hit.key.equals("H")) { peripherals.robot.delay(1000);}
+        //        else if (key2hit.key.equals("H")) { peripherals.robot.delay(1000);}
         else { peripherals.robot.delay(750); }
     }
     
