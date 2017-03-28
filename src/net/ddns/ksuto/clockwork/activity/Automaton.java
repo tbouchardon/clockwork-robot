@@ -18,7 +18,8 @@ public class Automaton {
     private static final int iGreyColor = 100;
     private final ClockWork_UI             clockWork_UI;
     private final TBoPeripheralRobotHelper peripherals;
-    public Status status = Status.RUN;
+    public Status  status      = Status.RUN;
+    public boolean stepingBack = false;
     private Robot  robot;
     private TomTom tomtom;
     private boolean wasInCombat = false;
@@ -68,42 +69,32 @@ public class Automaton {
         }
     }
     
-    private void searchForSomethingToDo(BufferedImage biCapturedScreen, QrCode qrCode) throws AWTException {
+    private void searchForSomethingToDo(BufferedImage capturedScreen, QrCode qrCode) throws AWTException {
         
         // On ne fait rien si L'addon n'est pas visible
-        if (biCapturedScreen.getRGB(0, 0) != -16711936) {
+        if (capturedScreen.getRGB(0, 0) != RGBConverter.GREEN) {
             return;
         }
         
-        qrCode.inCombat.active = biCapturedScreen.getRGB(qrCode.inCombat.xPosition, qrCode.inCombat.yPosition) == RGBConverter.WHITE;
-    
-        RGBConverter rgbConverter = new RGBConverter(biCapturedScreen, qrCode.playerHealth.xPosition, qrCode.playerHealth.yPosition);
-        rgbConverter.invoke();
-        double playerHealth = 100D / 255D * (double) rgbConverter.getRed();
-    
-        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.playerMana.xPosition, qrCode.playerMana.yPosition);
-        rgbConverter.invoke();
-        double playerMana = 100D / 255D * (double) rgbConverter.getBlue();
-    
-        int     rgb           = biCapturedScreen.getRGB(qrCode.targetReaction.xPosition, qrCode.targetReaction.yPosition);
-        boolean hostileTarget = (rgb == RGBConverter.RED);
-        boolean target        = (rgb != RGBConverter.BLACK);
-    
-        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.targetHealth.xPosition, qrCode.targetHealth.yPosition);
-        rgbConverter.invoke();
-        double targetHealth = 100D / 255D * (double) rgbConverter.getRed();
-    
-        rgbConverter = new RGBConverter(biCapturedScreen, qrCode.targetMana.xPosition, qrCode.targetMana.yPosition);
-        rgbConverter.invoke();
-        double targetMana = 100D / 255D * (double) rgbConverter.getBlue();
+        qrCode.inCombat.updateActive(capturedScreen);
+        qrCode.stepBack.updateActive(capturedScreen);
         
-        qrCode.TOGGLE_ON_OFF.active = biCapturedScreen.getRGB(qrCode.TOGGLE_ON_OFF.xPosition, qrCode.TOGGLE_ON_OFF.yPosition) == RGBConverter.WHITE;
-        qrCode.TARGET_NEAREST_ENEMY.active = biCapturedScreen.getRGB(qrCode.TARGET_NEAREST_ENEMY.xPosition, qrCode.TARGET_NEAREST_ENEMY.yPosition) == RGBConverter.WHITE;
-        qrCode.ADD_WAYPOINT.active = biCapturedScreen.getRGB(qrCode.ADD_WAYPOINT.xPosition, qrCode.ADD_WAYPOINT.yPosition) == RGBConverter.WHITE;
-        qrCode.CLEAR_WAYPOINTS.active = biCapturedScreen.getRGB(qrCode.CLEAR_WAYPOINTS.xPosition, qrCode.CLEAR_WAYPOINTS.yPosition) == RGBConverter.WHITE;
-        qrCode.DRIVE_MOD.active = biCapturedScreen.getRGB(qrCode.DRIVE_MOD.xPosition, qrCode.DRIVE_MOD.yPosition) == RGBConverter.WHITE;
-        qrCode.DRIVE_LOOP.active = biCapturedScreen.getRGB(qrCode.DRIVE_LOOP.xPosition, qrCode.DRIVE_LOOP.yPosition) == RGBConverter.WHITE;
-        qrCode.DEBUG_MOD.active = biCapturedScreen.getRGB(qrCode.DEBUG_MOD.xPosition, qrCode.DEBUG_MOD.yPosition) == RGBConverter.RED;
+        double playerHealth = 100D / 255D * (double) qrCode.playerHealth.getRed(capturedScreen);
+        double playerMana   = 100D / 255D * (double) qrCode.playerMana.getBlue(capturedScreen);
+        
+        boolean hostileTarget = (qrCode.targetReaction.getRgb(capturedScreen) == RGBConverter.RED);
+        boolean target        = (qrCode.targetReaction.getRgb(capturedScreen) != RGBConverter.BLACK);
+        
+        double targetHealth = 100D / 255D * (double) qrCode.targetHealth.getRed(capturedScreen);
+        double targetMana   = 100D / 255D * (double) qrCode.targetMana.getBlue(capturedScreen);
+        
+        qrCode.TOGGLE_ON_OFF.updateActive(capturedScreen);
+        qrCode.TARGET_NEAREST_ENEMY.updateActive(capturedScreen);
+        qrCode.ADD_WAYPOINT.updateActive(capturedScreen);
+        qrCode.CLEAR_WAYPOINTS.updateActive(capturedScreen);
+        qrCode.DRIVE_MOD.updateActive(capturedScreen);
+        qrCode.DRIVE_LOOP.updateActive(capturedScreen);
+        qrCode.DEBUG_MOD.updateActive(capturedScreen);
         
         if (!qrCode.TOGGLE_ON_OFF.active) {
             return;
@@ -137,7 +128,7 @@ public class Automaton {
         
         for (Key key : qrCode.getKeys()) {
     
-            int iCapturedRGB = biCapturedScreen.getRGB(key.xPosition, key.yPosition); //-1 == white && -16777216 == black
+            int iCapturedRGB = capturedScreen.getRGB(key.xPosition, key.yPosition); //-1 == white && -16777216 == black
             
             if (!ctrlModifier) {
                 if (iCapturedRGB == RGBConverter.GREEN) {
@@ -202,7 +193,7 @@ public class Automaton {
         }
         
         if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
-    
+        
         if (qrCode.DRIVE_MOD.active && playerHealth > 50) { // && !qrCode.inCombat.active && playerMana > 40
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
@@ -210,10 +201,19 @@ public class Automaton {
             tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.inCombat.active);
         }
         
+        if (qrCode.stepBack.active && !stepingBack) {
+            TboTools_Debug.sout("Steping Back !");
+            peripherals.robot.keyPress(40);
+            stepingBack = true;
+        }
+        if (!qrCode.stepBack.active && stepingBack) {
+            peripherals.robot.keyRelease(40);
+            stepingBack = false;
+        }
+        
         wasInCombat = qrCode.inCombat.active;
         
         if (key2hit == null) { peripherals.robot.delay(200); }
-        //        else if (key2hit.key.equals("H")) { peripherals.robot.delay(1000);}
         else { peripherals.robot.delay(750); }
     }
     

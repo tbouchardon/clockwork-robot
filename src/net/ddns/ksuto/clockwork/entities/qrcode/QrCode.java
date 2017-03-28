@@ -22,23 +22,24 @@ public class QrCode {
     
     private final ArrayList<Key> keys      = new ArrayList<>();
     public        int            xPosition = 0, yPosition = 0;
-    public Dot position;
-    public Dot TOGGLE_ON_OFF;
-    public Dot TARGET_NEAREST_ENEMY;
-    public Dot ADD_WAYPOINT;
-    public Dot CLEAR_WAYPOINTS;
-    public Dot DRIVE_MOD;
-    public Dot DRIVE_LOOP;
-    public Dot DEBUG_MOD;
+    public List<Position> path = new ArrayList<>();
     public Dot inCombat;
+    public Dot stepBack;
     public Dot playerHealth;
     public Dot playerMana;
     public Dot targetReaction;
     public Dot targetHealth;
     public Dot targetMana;
-    public Position       currenPlayerPosition = new Position();
-    public List<Position> path                 = new ArrayList<>();
+    public Position currenPlayerPosition = new Position();
+    public  Dot    TOGGLE_ON_OFF;
+    public  Dot    TARGET_NEAREST_ENEMY;
+    public  Dot    ADD_WAYPOINT;
+    public  Dot    CLEAR_WAYPOINTS;
+    public  Dot    DRIVE_MOD;
+    public  Dot    DRIVE_LOOP;
+    public  Dot    DEBUG_MOD;
     private Camera cameraPosition;
+    private Dot    qrCodePosition;
     
     public static void typeInChat(TBoPeripheralRobotHelper peripherals, String s) {
         
@@ -129,8 +130,8 @@ public class QrCode {
             
             xPosition = ksutoPosition.get(0).xPosition;
             yPosition = ksutoPosition.get(0).yPosition;
-            
-            position = new Dot(xPosition, yPosition);
+    
+            qrCodePosition = new Dot(xPosition, yPosition);
             
             TboTools_Debug.sout("Found QrCode : X = " + xPosition + ", Y = " + yPosition + ", carrying on.");
             peripherals.robot.mouseMove(xPosition, yPosition);
@@ -164,11 +165,14 @@ public class QrCode {
             keys.add(new Key(KeyEvent.VK_1, 2, 5, "1"));
             
             inCombat = new Dot(2, 2);
+            stepBack = new Dot(3, 2);
+            
             playerHealth = new Dot(12, 2);
             playerMana = new Dot(13, 2);
             targetReaction = new Dot(11, 3);
             targetHealth = new Dot(12, 3);
             targetMana = new Dot(13, 3);
+    
             TOGGLE_ON_OFF = new Dot(2, 13);
             TARGET_NEAREST_ENEMY = new Dot(3, 13);
             ADD_WAYPOINT = new Dot(4, 13);
@@ -176,8 +180,8 @@ public class QrCode {
             DRIVE_MOD = new Dot(6, 13);
             DRIVE_LOOP = new Dot(7, 13);
             DEBUG_MOD = new Dot(13, 13);
-            
-            QrCode.startKsuto(peripherals, position);
+    
+            QrCode.startKsuto(peripherals, qrCodePosition);
             
             //            QrCode.pressKey(peripherals, KeyEvent.VK_ESCAPE);
             
