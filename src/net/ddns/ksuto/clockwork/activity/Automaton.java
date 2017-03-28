@@ -200,21 +200,40 @@ public class Automaton {
             }
             tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.inCombat.active);
         }
-        
-        if (qrCode.stepBack.active && !stepingBack) {
-            TboTools_Debug.sout("Steping Back !");
-            peripherals.robot.keyPress(40);
-            stepingBack = true;
-        }
-        if (!qrCode.stepBack.active && stepingBack) {
-            peripherals.robot.keyRelease(40);
-            stepingBack = false;
-        }
+    
+        //        if (qrCode.stepBack.active && !stepingBack) {
+        //            TboTools_Debug.sout("Steping Back !");
+        //            peripherals.robot.keyPress(40);
+        //            stepingBack = true;
+        //        }
+        //        if (!qrCode.stepBack.active && stepingBack) {
+        //            peripherals.robot.keyRelease(40);
+        //            stepingBack = false;
+        //        }
+    
+        if (qrCode.stepBack.active) { faceEnemy(); }
         
         wasInCombat = qrCode.inCombat.active;
         
         if (key2hit == null) { peripherals.robot.delay(200); }
         else { peripherals.robot.delay(750); }
+    }
+    
+    private void faceEnemy() {
+        
+        peripherals.robot.keyPress(40); // Recule
+        peripherals.robot.keyPress(32); // Saute
+        peripherals.robot.keyPress(39); // Tourne
+        peripherals.robot.delay(100);
+        peripherals.robot.keyRelease(32); // Stop Saute
+        peripherals.robot.delay(400);
+        peripherals.robot.keyRelease(39); // Stop Tourne
+        peripherals.robot.delay(500);
+        peripherals.robot.keyPress(32); // Saute
+        peripherals.robot.delay(100);
+        peripherals.robot.keyRelease(32); // Stop Saute
+        peripherals.robot.delay(900);
+        peripherals.robot.keyRelease(40); // Stop Recule
     }
     
     private void tryToLoot() {

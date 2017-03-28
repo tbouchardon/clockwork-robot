@@ -25,6 +25,8 @@ public class TomTom {
     private Double   lastRemainingDistance = null;
     private boolean  turnedRight           = false;
     private int      pathIndex             = 0;
+    private boolean  triedRight            = false;
+    private int      closeStep             = 0;
     private double angleB;
     
     TomTom(TBoPeripheralRobotHelper peripherals) throws AWTException {
@@ -171,9 +173,36 @@ public class TomTom {
         qrCode.currenPlayerPosition.yPos = yPos;
     }
     
+    public void stuckProtocol() {
+        
+        TboTools_Debug.sout("Trying to unstuck...");
+        
+        runStop();
+        
+        peripherals.robot.keyPress(40); // Recule
+        
+        peripherals.robot.keyPress(32); // Saute
+        peripherals.robot.delay(100);
+        peripherals.robot.keyRelease(32); // Stop Saute
+        
+        peripherals.robot.delay(900);
+        
+        peripherals.robot.keyPress(32); // Saute
+        
+        if (turnedRight) { turnLeft(500); }
+        else { turnRight(500); } // Tourne
+        
+        peripherals.robot.keyRelease(32); // Stop Saute
+        peripherals.robot.keyRelease(40); // Stop Recule
+        
+        stepForward(2000); // Avance
+        
+        runStart();
+    }
+    
     void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, Boolean inCombat) {
     
-        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
+        //        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
         // En cas de cible active (actions engagées)
         if (actionPossible || inCombat) {
@@ -266,9 +295,9 @@ public class TomTom {
         angleB = Math.toDegrees(angleB);
     
         TboTools_Debug.sout(y + " = " + a + " * " + qrCode.currenPlayerPosition.xPos + " + " + b + "( Actual = " + qrCode.currenPlayerPosition.yPos + ")");
-        TboTools_Debug.sout("lastRemainingDistance = " + lastRemainingDistance * 100d);
-        TboTools_Debug.sout("remainingDistance = " + remainingDistance * 100d);
-        TboTools_Debug.sout("traveledDistance = " + traveledDistance * 100d);
+        TboTools_Debug.sout("lastRemainingDistance = " + lastRemainingDistance);
+        TboTools_Debug.sout("remainingDistance = " + remainingDistance);
+        TboTools_Debug.sout("traveledDistance = " + traveledDistance);
         TboTools_Debug.sout("angleC = " + angleC + "°");
         
         // Plus l'angle interne est grand, moins on doit tourner. Résultat en Milisecondes, partant du principe que 1000ms équivaut à un demi tour.
@@ -311,6 +340,12 @@ public class TomTom {
         int jump = (int) (Math.random() * 25);
         TboTools_Debug.sout("jump ? " + jump);
         if (jump == 1) { QrCode.pressKey(peripherals, KEY_SPACE); }
+        if (traveledDistance < 460) { // 469 étant la distance moyenne dans l'eau, on ne peut pas faire plus sans prendre le risque de confondre
+            closeStep++;
+            TboTools_Debug.sout("closeStep = " + closeStep);
+        }
+        else { closeStep = 0; }
+        if (closeStep > 10) { stuckProtocol(); }
         
         peripherals.robot.delay(100);
     }
@@ -332,7 +367,6 @@ public class TomTom {
         isRunning = true;
     }
     
-    @SuppressWarnings("Duplicates")
     private void turnLeft(int iTime) {
     
         TboTools_Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
@@ -341,7 +375,9 @@ public class TomTom {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
+    
         TboTools_Debug.sout("Tourne à Gauche");
+    
         peripherals.robot.keyPress(37);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(37);
@@ -349,7 +385,6 @@ public class TomTom {
         turnedRight = false;
     }
     
-    @SuppressWarnings("Duplicates")
     private void turnRight(int iTime) {
     
         TboTools_Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
@@ -358,7 +393,9 @@ public class TomTom {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
+    
         TboTools_Debug.sout("Tourne à Droite");
+    
         peripherals.robot.keyPress(39);
         peripherals.robot.delay(iTime);
         peripherals.robot.keyRelease(39);
@@ -366,7 +403,23 @@ public class TomTom {
         turnedRight = true;
     }
     
-    //	public void land() throws AWTException {}
+    private void stepBackward(int iTime) {
+        
+        TboTools_Debug.sout("Recule");
+        
+        peripherals.robot.keyPress(40);
+        peripherals.robot.delay(iTime);
+        peripherals.robot.keyRelease(40);
+    }
+    
+    private void stepForward(int iTime) {
+        
+        TboTools_Debug.sout("Avance");
+        
+        peripherals.robot.keyPress(38);
+        peripherals.robot.delay(iTime);
+        peripherals.robot.keyRelease(38);
+    }
     
     private void fly() throws AWTException {
         
