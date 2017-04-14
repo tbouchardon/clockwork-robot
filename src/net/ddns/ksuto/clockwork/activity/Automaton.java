@@ -77,6 +77,7 @@ public class Automaton {
         }
         
         qrCode.inCombat.updateActive(capturedScreen);
+        qrCode.casting.updateActive(capturedScreen);
         qrCode.stepBack.updateActive(capturedScreen);
         
         double playerHealth = 100D / 255D * (double) qrCode.playerHealth.getRed(capturedScreen);
@@ -187,8 +188,8 @@ public class Automaton {
                 robot.keyRelease(KeyEvent.VK_ALT);
             }
         }
-        
-        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null) {
+    
+        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
             QrCode.pressKey(peripherals, KeyEvent.VK_TAB);
         }
         
@@ -198,18 +199,8 @@ public class Automaton {
             if (tomtom == null) {
                 tomtom = new TomTom(peripherals);
             }
-            tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.inCombat.active);
+            tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active);
         }
-    
-        //        if (qrCode.stepBack.active && !stepingBack) {
-        //            TboTools_Debug.sout("Steping Back !");
-        //            peripherals.robot.keyPress(40);
-        //            stepingBack = true;
-        //        }
-        //        if (!qrCode.stepBack.active && stepingBack) {
-        //            peripherals.robot.keyRelease(40);
-        //            stepingBack = false;
-        //        }
     
         if (qrCode.stepBack.active) { faceEnemy(); }
         

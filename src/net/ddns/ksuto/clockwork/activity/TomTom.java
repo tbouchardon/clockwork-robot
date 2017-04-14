@@ -24,8 +24,8 @@ public class TomTom {
     private Position playersLastPosition   = null;
     private Double   lastRemainingDistance = null;
     private boolean  turnedRight           = false;
+    private boolean  turnedLeft            = false;
     private int      pathIndex             = 0;
-    private boolean  triedRight            = false;
     private int      closeStep             = 0;
     private double angleB;
     
@@ -200,12 +200,12 @@ public class TomTom {
         runStart();
     }
     
-    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, Boolean inCombat) {
+    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, boolean actionEnCours, Boolean inCombat) {
     
         //        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
         // En cas de cible active (actions engagées)
-        if (actionPossible || inCombat) {
+        if (actionPossible || actionEnCours || inCombat) {
             // Passage en camera position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
             
@@ -383,6 +383,7 @@ public class TomTom {
         peripherals.robot.keyRelease(37);
     
         turnedRight = false;
+        turnedLeft = true;
     }
     
     private void turnRight(int iTime) {
@@ -401,6 +402,7 @@ public class TomTom {
         peripherals.robot.keyRelease(39);
     
         turnedRight = true;
+        turnedLeft = false;
     }
     
     private void stepBackward(int iTime) {

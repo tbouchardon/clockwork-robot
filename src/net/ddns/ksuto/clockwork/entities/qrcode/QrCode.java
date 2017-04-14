@@ -24,6 +24,7 @@ public class QrCode {
     public        int            xPosition = 0, yPosition = 0;
     public List<Position> path = new ArrayList<>();
     public Dot inCombat;
+    public Dot casting;
     public Dot stepBack;
     public Dot playerHealth;
     public Dot playerMana;
@@ -165,7 +166,8 @@ public class QrCode {
             keys.add(new Key(KeyEvent.VK_1, 2, 5, "1"));
             
             inCombat = new Dot(2, 2);
-            stepBack = new Dot(3, 2);
+            casting = new Dot(3, 2);
+            stepBack = new Dot(4, 2);
             
             playerHealth = new Dot(12, 2);
             playerMana = new Dot(13, 2);
