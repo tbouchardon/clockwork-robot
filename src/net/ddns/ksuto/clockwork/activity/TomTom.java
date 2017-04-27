@@ -16,11 +16,11 @@ import java.awt.image.BufferedImage;
 public class TomTom {
     
     private static final int KEY_J = 74, KEY_Y = 89, KEY_SPACE = 32;
-    private static final int TURN_DURATION      = 100;
-    private static final int TURN_BACK_DURATION = 100;
+    private static final int     TURN_DURATION      = 100;
+    private static final int     TURN_BACK_DURATION = 100;
+    public               boolean isRunning          = false;
     private TBoPeripheralRobotHelper peripherals;
     private boolean  isFlying              = false;
-    private boolean  isRunning             = false;
     private Position playersLastPosition   = null;
     private Double   lastRemainingDistance = null;
     private boolean  turnedRight           = false;
@@ -200,8 +200,24 @@ public class TomTom {
         runStart();
     }
     
-    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, boolean actionEnCours, Boolean inCombat) {
+    public void runStop() {
+        
+        peripherals.robot.keyPress(KeyEvent.VK_S);
+        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.keyRelease(KeyEvent.VK_S);
+        isRunning = false;
+    }
     
+    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, boolean actionEnCours, Boolean inCombat, double playerHealth) {
+        
+        if (!qrCode.DRIVE_MOD.active) {
+            if (isRunning) { runStop(); }
+            return;
+        }
+        if (playerHealth < 50) {
+            return;
+        }
+        
         //        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
         // En cas de cible active (actions engagées)
@@ -250,7 +266,7 @@ public class TomTom {
         
         Position path = qrCode.path.get(pathIndex); //coordonnées destination
         getCoordinates(qrCode, peripherals); //position du personage
-    
+        
         TboTools_Debug.sout("Position courante : qrCode.currenPlayerPosition.xPos = " + qrCode.currenPlayerPosition.xPos + ", qrCode.currenPlayerPosition.yPos = " + qrCode
                                                                                                                                                                              .currenPlayerPosition
                                                                                                                                                                              .yPos);
@@ -293,7 +309,7 @@ public class TomTom {
         // conversion de radians en degrés
         angleC = Math.toDegrees(angleC);
         angleB = Math.toDegrees(angleB);
-    
+        
         TboTools_Debug.sout(y + " = " + a + " * " + qrCode.currenPlayerPosition.xPos + " + " + b + "( Actual = " + qrCode.currenPlayerPosition.yPos + ")");
         TboTools_Debug.sout("lastRemainingDistance = " + lastRemainingDistance);
         TboTools_Debug.sout("remainingDistance = " + remainingDistance);
@@ -348,14 +364,6 @@ public class TomTom {
         if (closeStep > 10) { stuckProtocol(); }
         
         peripherals.robot.delay(100);
-    }
-    
-    private void runStop() {
-        
-        peripherals.robot.keyPress(KeyEvent.VK_S);
-        peripherals.robot.delay(i_DELAY);
-        peripherals.robot.keyRelease(KeyEvent.VK_S);
-        isRunning = false;
     }
     
     private void runStart() {

@@ -31,7 +31,8 @@ public class QrCode {
     public Dot targetReaction;
     public Dot targetHealth;
     public Dot targetMana;
-    public Position currenPlayerPosition = new Position();
+    public List<Dot> raid                 = new ArrayList<>();
+    public Position  currenPlayerPosition = new Position();
     public  Dot    TOGGLE_ON_OFF;
     public  Dot    TARGET_NEAREST_ENEMY;
     public  Dot    ADD_WAYPOINT;
@@ -182,6 +183,50 @@ public class QrCode {
             DRIVE_MOD = new Dot(6, 13);
             DRIVE_LOOP = new Dot(7, 13);
             DEBUG_MOD = new Dot(13, 13);
+    
+            raid.add(new Dot(3, -1)); //raid1
+            raid.add(new Dot(4, -1)); //raid2
+            raid.add(new Dot(5, -1)); //raid3
+            raid.add(new Dot(6, -1)); //raid4
+            raid.add(new Dot(7, -1)); //raid5
+            raid.add(new Dot(8, -1)); //raid6
+            raid.add(new Dot(9, -1)); //raid7
+            raid.add(new Dot(10, -1)); //raid8
+            raid.add(new Dot(11, -1)); //raid9
+            raid.add(new Dot(12, -1)); //raid10
+    
+            raid.add(new Dot(14, -3)); //raid11
+            raid.add(new Dot(14, -4)); //raid12
+            raid.add(new Dot(14, -5)); //raid13
+            raid.add(new Dot(14, -6)); //raid14
+            raid.add(new Dot(14, -7)); //raid15
+            raid.add(new Dot(14, -8)); //raid16
+            raid.add(new Dot(14, -9)); //raid17
+            raid.add(new Dot(14, -10)); //raid18
+            raid.add(new Dot(14, -11)); //raid19
+            raid.add(new Dot(14, -12)); //raid20
+    
+            raid.add(new Dot(12, -1)); //raid21
+            raid.add(new Dot(11, -1)); //raid22
+            raid.add(new Dot(10, -1)); //raid23
+            raid.add(new Dot(9, -1)); //raid24
+            raid.add(new Dot(8, -1)); //raid25
+            raid.add(new Dot(7, -1)); //raid26
+            raid.add(new Dot(6, -1)); //raid27
+            raid.add(new Dot(5, -1)); //raid28
+            raid.add(new Dot(4, -1)); //raid29
+            raid.add(new Dot(3, -1)); //raid30
+    
+            raid.add(new Dot(1, -12)); //raid31
+            raid.add(new Dot(1, -11)); //raid32
+            raid.add(new Dot(1, -10)); //raid33
+            raid.add(new Dot(1, -9)); //raid34
+            raid.add(new Dot(1, -8)); //raid35
+            raid.add(new Dot(1, -7)); //raid36
+            raid.add(new Dot(1, -6)); //raid37
+            raid.add(new Dot(1, -5)); //raid38
+            raid.add(new Dot(1, -4)); //raid39
+            raid.add(new Dot(1, -3)); //raid40
     
             QrCode.startKsuto(peripherals, qrCodePosition);
             

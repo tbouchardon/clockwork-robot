@@ -3,6 +3,7 @@ package net.ddns.ksuto.clockwork.activity;
 import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
 import net.ddns.ksuto.clockwork.entities.Position;
+import net.ddns.ksuto.clockwork.entities.qrcode.Dot;
 import net.ddns.ksuto.clockwork.entities.qrcode.Key;
 import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
@@ -194,14 +195,12 @@ public class Automaton {
         }
         
         if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
-        
-        if (qrCode.DRIVE_MOD.active && playerHealth > 50) { // && !qrCode.inCombat.active && playerMana > 40
-            if (tomtom == null) {
-                tomtom = new TomTom(peripherals);
-            }
-            tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active);
-        }
     
+        if (tomtom == null) {
+            tomtom = new TomTom(peripherals);
+        }
+        tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, playerHealth);
+        
         if (qrCode.stepBack.active) { faceEnemy(); }
         
         wasInCombat = qrCode.inCombat.active;
@@ -254,6 +253,47 @@ public class Automaton {
         natPagle.leave();
         if (status == Status.FISHING) {
             clockWork_UI.dojButtonFishClick();
+        }
+    }
+    
+    private void checkParty(BufferedImage capturedScreen, QrCode qrCode) {
+        
+        int index = 0;
+        for (Dot dot : qrCode.raid) {
+            index++;
+            
+            dot.updateActive(capturedScreen);
+            if (dot.getBlue(capturedScreen) != 0) {
+                if (index < 5) { targetPartyMember(index); }
+                else { targetRaidMember(index); }
+                break;
+            }
+        }
+    }
+    
+    private void targetRaidMember(int index) {
+        
+        peripherals.getKeyboard().enter();
+        peripherals.getKeyboard().typeString("/tar raid" + index);
+        peripherals.getKeyboard().enter();
+    }
+    
+    private void targetPartyMember(int index) {
+        
+        switch (index) {
+            
+            case 1:
+                peripherals.getKeyboard().f1();
+                break;
+            case 2:
+                peripherals.getKeyboard().f2();
+                break;
+            case 3:
+                peripherals.getKeyboard().f3();
+                break;
+            case 4:
+                peripherals.getKeyboard().f4();
+                break;
         }
     }
 }
