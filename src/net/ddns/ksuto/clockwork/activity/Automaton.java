@@ -122,6 +122,8 @@ public class Automaton {
             QrCode.typeInChat(peripherals, "/kto wpcleared");
             peripherals.robot.delay(500);
         }
+    
+        if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
         
         Key     key2hit       = null;
         boolean shiftModifier = false;
@@ -157,56 +159,53 @@ public class Automaton {
                 }
             }
         }
-        
-        if (key2hit != null) {
-            
-            if (ctrlModifier) {
-                robot.keyPress(KeyEvent.VK_CONTROL);
-            }
-            
-            if (shiftModifier) {
-                robot.keyPress(KeyEvent.VK_SHIFT);
-            }
-            
-            if (altModifier) {
-                robot.keyPress(KeyEvent.VK_ALT);
-            }
-            
-            clockWork_UI.setTextField(key2hit.key);
-            clockWork_UI.setiGrey(iGreyColor);
     
-            QrCode.pressKey(peripherals, key2hit.hitKey);
-            
-            if (ctrlModifier) {
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-            }
-            
-            if (shiftModifier) {
-                robot.keyRelease(KeyEvent.VK_SHIFT);
-            }
-            
-            if (altModifier) {
-                robot.keyRelease(KeyEvent.VK_ALT);
-            }
-        }
+        if (key2hit != null) { hitKey(key2hit, shiftModifier, ctrlModifier, altModifier); }
     
         if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
             QrCode.pressKey(peripherals, KeyEvent.VK_TAB);
         }
-        
-        if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}
     
-        if (tomtom == null) {
-            tomtom = new TomTom(peripherals);
-        }
         tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, playerHealth);
-        
+    
         if (qrCode.stepBack.active) { faceEnemy(); }
-        
+    
         wasInCombat = qrCode.inCombat.active;
-        
+    
         if (key2hit == null) { peripherals.robot.delay(200); }
         else { peripherals.robot.delay(750); }
+    }
+    
+    private void hitKey(Key key2hit, boolean shiftModifier, boolean ctrlModifier, boolean altModifier) {
+        
+        if (ctrlModifier) {
+            robot.keyPress(KeyEvent.VK_CONTROL);
+        }
+        
+        if (shiftModifier) {
+            robot.keyPress(KeyEvent.VK_SHIFT);
+        }
+        
+        if (altModifier) {
+            robot.keyPress(KeyEvent.VK_ALT);
+        }
+        
+        clockWork_UI.setTextField(key2hit.key);
+        clockWork_UI.setiGrey(iGreyColor);
+        
+        QrCode.pressKey(peripherals, key2hit.hitKey);
+        
+        if (ctrlModifier) {
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+        }
+        
+        if (shiftModifier) {
+            robot.keyRelease(KeyEvent.VK_SHIFT);
+        }
+        
+        if (altModifier) {
+            robot.keyRelease(KeyEvent.VK_ALT);
+        }
     }
     
     private void faceEnemy() {
