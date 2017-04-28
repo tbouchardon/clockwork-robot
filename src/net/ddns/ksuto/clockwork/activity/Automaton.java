@@ -23,7 +23,8 @@ public class Automaton {
     public boolean stepingBack = false;
     private Robot  robot;
     private TomTom tomtom;
-    private boolean wasInCombat = false;
+    private boolean wasInCombat    = false;
+    private long    lastActionTime = 0;
     
     public Automaton(TBoPeripheralRobotHelper peripherals, ClockWork_UI autoHitControl) {
         
@@ -160,13 +161,16 @@ public class Automaton {
             }
         }
     
-        if (key2hit != null) { hitKey(key2hit, shiftModifier, ctrlModifier, altModifier); }
+        if (key2hit != null) {
+            lastActionTime = System.currentTimeMillis();
+            hitKey(key2hit, shiftModifier, ctrlModifier, altModifier);
+        }
     
         if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
             QrCode.pressKey(peripherals, KeyEvent.VK_TAB);
         }
     
-        tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, playerHealth);
+        tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, playerHealth);
     
         if (qrCode.stepBack.active) { faceEnemy(); }
     

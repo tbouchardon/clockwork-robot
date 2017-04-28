@@ -208,7 +208,7 @@ public class TomTom {
         isRunning = false;
     }
     
-    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, boolean actionEnCours, Boolean inCombat, double playerHealth) {
+    void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, boolean actionEnCours, Boolean inCombat, long lastActionTime, double playerHealth) {
         
         if (!qrCode.DRIVE_MOD.active) {
             if (isRunning) { runStop(); }
@@ -220,8 +220,9 @@ public class TomTom {
         
         //        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
         
-        // En cas de cible active (actions engagées)
-        if (actionPossible || actionEnCours || inCombat) {
+        // En cas de cible active (actions engagées) il y a moins de 2 secondes
+        long lastActionDelay = System.currentTimeMillis() - lastActionTime;
+        if (actionPossible || actionEnCours || inCombat || lastActionDelay < 2000) {
             // Passage en camera position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
             
