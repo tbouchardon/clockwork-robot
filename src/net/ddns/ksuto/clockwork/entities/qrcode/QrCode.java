@@ -31,8 +31,8 @@ public class QrCode {
     public Dot targetReaction;
     public Dot targetHealth;
     public Dot targetMana;
-    public List<Dot> raid                 = new ArrayList<>();
-    public Position  currenPlayerPosition = new Position();
+    public List<RaidMember> raid                 = new ArrayList<>();
+    public Position         currenPlayerPosition = new Position();
     public  Dot    TOGGLE_ON_OFF;
     public  Dot    TARGET_NEAREST_ENEMY;
     public  Dot    ADD_WAYPOINT;
@@ -53,14 +53,6 @@ public class QrCode {
         peripherals.robot.delay(i_DELAY);
         peripherals.robot.keyPress(KeyEvent.VK_ENTER);
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
-    }
-    
-    public static void pressKey(TBoPeripheralRobotHelper peripherals, int iKey) {
-        
-        peripherals.robot.keyPress(iKey);
-        peripherals.robot.delay(i_DELAY);
-        peripherals.robot.keyRelease(iKey);
-        peripherals.robot.delay(i_DELAY);
     }
     
     static void startKsuto(TBoPeripheralRobotHelper peripherals, Dot dot) {
@@ -184,49 +176,50 @@ public class QrCode {
             DRIVE_LOOP = new Dot(7, 13);
             DEBUG_MOD = new Dot(13, 13);
     
-            raid.add(new Dot(3, -1)); //raid1
-            raid.add(new Dot(4, -1)); //raid2
-            raid.add(new Dot(5, -1)); //raid3
-            raid.add(new Dot(6, -1)); //raid4
-            raid.add(new Dot(7, -1)); //raid5
-            raid.add(new Dot(8, -1)); //raid6
-            raid.add(new Dot(9, -1)); //raid7
-            raid.add(new Dot(10, -1)); //raid8
-            raid.add(new Dot(11, -1)); //raid9
-            raid.add(new Dot(12, -1)); //raid10
+            int index = 1;
+            raid.add(new RaidMember(KeyEvent.VK_A, 3, -1, "a", true, false, true, index++)); //raid1
+            raid.add(new RaidMember(KeyEvent.VK_B, 4, -1, "b", true, false, true, index++)); //raid2
+            raid.add(new RaidMember(KeyEvent.VK_C, 5, -1, "c", true, false, true, index++)); //raid3
+            raid.add(new RaidMember(KeyEvent.VK_D, 6, -1, "d", true, false, true, index++)); //raid4
+            raid.add(new RaidMember(KeyEvent.VK_E, 7, -1, "e", true, false, true, index++)); //raid5
+            raid.add(new RaidMember(KeyEvent.VK_F, 8, -1, "f", true, false, true, index++)); //raid6
+            raid.add(new RaidMember(KeyEvent.VK_G, 9, -1, "g", true, false, true, index++)); //raid7
+            raid.add(new RaidMember(KeyEvent.VK_H, 10, -1, "h", true, false, true, index++)); //raid8
+            raid.add(new RaidMember(KeyEvent.VK_I, 11, -1, "i", true, false, true, index++)); //raid9
+            raid.add(new RaidMember(KeyEvent.VK_J, 12, -1, "j", true, false, true, index++)); //raid10
     
-            raid.add(new Dot(14, -3)); //raid11
-            raid.add(new Dot(14, -4)); //raid12
-            raid.add(new Dot(14, -5)); //raid13
-            raid.add(new Dot(14, -6)); //raid14
-            raid.add(new Dot(14, -7)); //raid15
-            raid.add(new Dot(14, -8)); //raid16
-            raid.add(new Dot(14, -9)); //raid17
-            raid.add(new Dot(14, -10)); //raid18
-            raid.add(new Dot(14, -11)); //raid19
-            raid.add(new Dot(14, -12)); //raid20
+            raid.add(new RaidMember(KeyEvent.VK_K, 14, -3, "k", true, false, true, index++)); //raid11
+            raid.add(new RaidMember(KeyEvent.VK_L, 14, -4, "l", true, false, true, index++)); //raid12
+            raid.add(new RaidMember(KeyEvent.VK_M, 14, -5, "m", true, false, true, index++)); //raid13
+            raid.add(new RaidMember(KeyEvent.VK_N, 14, -6, "n", true, false, true, index++)); //raid14
+            raid.add(new RaidMember(KeyEvent.VK_O, 14, -7, "o", true, false, true, index++)); //raid15
+            raid.add(new RaidMember(KeyEvent.VK_P, 14, -8, "p", true, false, true, index++)); //raid16
+            raid.add(new RaidMember(KeyEvent.VK_Q, 14, -9, "q", true, false, true, index++)); //raid17
+            raid.add(new RaidMember(KeyEvent.VK_R, 14, -10, "r", true, false, true, index++)); //raid18
+            raid.add(new RaidMember(KeyEvent.VK_S, 14, -11, "s", true, false, true, index++)); //raid19
+            raid.add(new RaidMember(KeyEvent.VK_T, 14, -12, "t", true, false, true, index++)); //raid20
     
-            raid.add(new Dot(12, -1)); //raid21
-            raid.add(new Dot(11, -1)); //raid22
-            raid.add(new Dot(10, -1)); //raid23
-            raid.add(new Dot(9, -1)); //raid24
-            raid.add(new Dot(8, -1)); //raid25
-            raid.add(new Dot(7, -1)); //raid26
-            raid.add(new Dot(6, -1)); //raid27
-            raid.add(new Dot(5, -1)); //raid28
-            raid.add(new Dot(4, -1)); //raid29
-            raid.add(new Dot(3, -1)); //raid30
+            raid.add(new RaidMember(KeyEvent.VK_A, 12, -1, "a", true, true, false, index++)); //raid21
+            raid.add(new RaidMember(KeyEvent.VK_B, 11, -1, "b", true, true, false, index++)); //raid22
+            raid.add(new RaidMember(KeyEvent.VK_C, 10, -1, "c", true, true, false, index++)); //raid23
+            raid.add(new RaidMember(KeyEvent.VK_D, 9, -1, "d", true, true, false, index++)); //raid24
+            raid.add(new RaidMember(KeyEvent.VK_E, 8, -1, "e", true, true, false, index++)); //raid25
+            raid.add(new RaidMember(KeyEvent.VK_F, 7, -1, "f", true, true, false, index++)); //raid26
+            raid.add(new RaidMember(KeyEvent.VK_G, 6, -1, "g", true, true, false, index++)); //raid27
+            raid.add(new RaidMember(KeyEvent.VK_H, 5, -1, "h", true, true, false, index++)); //raid28
+            raid.add(new RaidMember(KeyEvent.VK_I, 4, -1, "i", true, true, false, index++)); //raid29
+            raid.add(new RaidMember(KeyEvent.VK_J, 3, -1, "j", true, true, false, index++)); //raid30
     
-            raid.add(new Dot(1, -12)); //raid31
-            raid.add(new Dot(1, -11)); //raid32
-            raid.add(new Dot(1, -10)); //raid33
-            raid.add(new Dot(1, -9)); //raid34
-            raid.add(new Dot(1, -8)); //raid35
-            raid.add(new Dot(1, -7)); //raid36
-            raid.add(new Dot(1, -6)); //raid37
-            raid.add(new Dot(1, -5)); //raid38
-            raid.add(new Dot(1, -4)); //raid39
-            raid.add(new Dot(1, -3)); //raid40
+            raid.add(new RaidMember(KeyEvent.VK_K, 1, -12, "k", true, true, false, index++)); //raid31
+            raid.add(new RaidMember(KeyEvent.VK_L, 1, -11, "l", true, true, false, index++)); //raid32
+            raid.add(new RaidMember(KeyEvent.VK_M, 1, -10, "m", true, true, false, index++)); //raid33
+            raid.add(new RaidMember(KeyEvent.VK_N, 1, -9, "n", true, true, false, index++)); //raid34
+            raid.add(new RaidMember(KeyEvent.VK_O, 1, -8, "o", true, true, false, index++)); //raid35
+            raid.add(new RaidMember(KeyEvent.VK_P, 1, -7, "p", true, true, false, index++)); //raid36
+            raid.add(new RaidMember(KeyEvent.VK_Q, 1, -6, "q", true, true, false, index++)); //raid37
+            raid.add(new RaidMember(KeyEvent.VK_R, 1, -5, "r", true, true, false, index++)); //raid38
+            raid.add(new RaidMember(KeyEvent.VK_S, 1, -4, "s", true, true, false, index++)); //raid39
+            raid.add(new RaidMember(KeyEvent.VK_T, 1, -3, "t", true, true, false, index)); //raid40
     
             QrCode.startKsuto(peripherals, qrCodePosition);
             

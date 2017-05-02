@@ -3,9 +3,9 @@ package net.ddns.ksuto.clockwork.activity;
 import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
 import net.ddns.ksuto.clockwork.entities.Position;
-import net.ddns.ksuto.clockwork.entities.qrcode.Dot;
 import net.ddns.ksuto.clockwork.entities.qrcode.Key;
 import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
+import net.ddns.ksuto.clockwork.entities.qrcode.RaidMember;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 import net.ddns.ksuto.tools.TboTools_Debug;
@@ -167,7 +167,7 @@ public class Automaton {
         }
     
         if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
-            QrCode.pressKey(peripherals, KeyEvent.VK_TAB);
+            peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
         }
     
         tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, playerHealth);
@@ -182,34 +182,13 @@ public class Automaton {
     
     private void hitKey(Key key2hit, boolean shiftModifier, boolean ctrlModifier, boolean altModifier) {
         
-        if (ctrlModifier) {
-            robot.keyPress(KeyEvent.VK_CONTROL);
-        }
         
-        if (shiftModifier) {
-            robot.keyPress(KeyEvent.VK_SHIFT);
-        }
-        
-        if (altModifier) {
-            robot.keyPress(KeyEvent.VK_ALT);
-        }
         
         clockWork_UI.setTextField(key2hit.key);
         clockWork_UI.setiGrey(iGreyColor);
+    
+        peripherals.getKeyboard().pressKey(key2hit.hitKey);
         
-        QrCode.pressKey(peripherals, key2hit.hitKey);
-        
-        if (ctrlModifier) {
-            robot.keyRelease(KeyEvent.VK_CONTROL);
-        }
-        
-        if (shiftModifier) {
-            robot.keyRelease(KeyEvent.VK_SHIFT);
-        }
-        
-        if (altModifier) {
-            robot.keyRelease(KeyEvent.VK_ALT);
-        }
     }
     
     private void faceEnemy() {
@@ -260,42 +239,39 @@ public class Automaton {
     }
     
     private void checkParty(BufferedImage capturedScreen, QrCode qrCode) {
+    
+        for (RaidMember raidMember : qrCode.raid) {
         
-        int index = 0;
-        for (Dot dot : qrCode.raid) {
-            index++;
-            
-            dot.updateActive(capturedScreen);
-            if (dot.getBlue(capturedScreen) != 0) {
-                if (index < 5) { targetPartyMember(index); }
-                else { targetRaidMember(index); }
+            raidMember.updateActive(capturedScreen);
+            if (raidMember.getBlue(capturedScreen) != 0) {
+                if (raidMember.index < 5) { targetPartyMember(raidMember); }
+                else { targetRaidMember(raidMember); }
                 break;
             }
         }
     }
     
-    private void targetRaidMember(int index) {
+    private void targetRaidMember(RaidMember raidMember) {
         
-        peripherals.getKeyboard().enter();
-        peripherals.getKeyboard().typeString("/tar raid" + index);
-        peripherals.getKeyboard().enter();
+        peripherals.getKeyboard().pressKey(raidMember.hitKey, raidMember.alt, raidMember.ctrl, raidMember.shift);
+        
     }
     
-    private void targetPartyMember(int index) {
+    private void targetPartyMember(RaidMember raidMember) {
         
-        switch (index) {
+        switch (raidMember.index) {
             
             case 1:
-                peripherals.getKeyboard().f1();
-                break;
-            case 2:
                 peripherals.getKeyboard().f2();
                 break;
-            case 3:
+            case 2:
                 peripherals.getKeyboard().f3();
                 break;
-            case 4:
+            case 3:
                 peripherals.getKeyboard().f4();
+                break;
+            case 4:
+                peripherals.getKeyboard().f5();
                 break;
         }
     }

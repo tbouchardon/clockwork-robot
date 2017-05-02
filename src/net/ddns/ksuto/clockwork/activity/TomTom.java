@@ -356,7 +356,7 @@ public class TomTom {
         // Poney mod! xD
         int jump = (int) (Math.random() * 25);
         TboTools_Debug.sout("jump ? " + jump);
-        if (jump == 1) { QrCode.pressKey(peripherals, KEY_SPACE); }
+        if (jump == 1) { peripherals.getKeyboard().pressKey(KEY_SPACE); }
         if (traveledDistance < 460) { // 469 étant la distance moyenne dans l'eau, on ne peut pas faire plus sans prendre le risque de confondre
             closeStep++;
             TboTools_Debug.sout("closeStep = " + closeStep);
