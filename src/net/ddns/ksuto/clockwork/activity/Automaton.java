@@ -2,9 +2,9 @@ package net.ddns.ksuto.clockwork.activity;
 
 import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
+import net.ddns.ksuto.clockwork.entities.qrcode.ComplexKey;
 import net.ddns.ksuto.clockwork.entities.qrcode.Key;
 import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
-import net.ddns.ksuto.clockwork.entities.qrcode.RaidMember;
 import net.ddns.ksuto.clockwork.tools.RGBConverter;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 import net.ddns.ksuto.tools.TboTools_Debug;
@@ -116,6 +116,8 @@ public class Automaton {
         boolean shiftModifier = false;
         boolean ctrlModifier  = false;
         boolean altModifier   = false;
+    
+        checkParty(capturedScreen, qrCode);
         
         for (Key key : qrCode.getKeys()) {
     
@@ -226,7 +228,7 @@ public class Automaton {
     
     private void checkParty(BufferedImage capturedScreen, QrCode qrCode) {
     
-        for (RaidMember raidMember : qrCode.raid) {
+        for (ComplexKey raidMember : qrCode.raid) {
         
             raidMember.updateActive(capturedScreen);
             if (raidMember.getBlue(capturedScreen) != 0) {
@@ -237,13 +239,13 @@ public class Automaton {
         }
     }
     
-    private void targetRaidMember(RaidMember raidMember) {
+    private void targetRaidMember(ComplexKey raidMember) {
         
         peripherals.getKeyboard().pressKey(raidMember.hitKey, raidMember.alt, raidMember.ctrl, raidMember.shift);
         
     }
     
-    private void targetPartyMember(RaidMember raidMember) {
+    private void targetPartyMember(ComplexKey raidMember) {
         
         switch (raidMember.index) {
             
