@@ -2,7 +2,6 @@ package net.ddns.ksuto.clockwork.activity;
 
 import net.ddns.ksuto.clockwork.ClockWork_UI;
 import net.ddns.ksuto.clockwork.ClockWork_UI.Status;
-import net.ddns.ksuto.clockwork.entities.Position;
 import net.ddns.ksuto.clockwork.entities.qrcode.Key;
 import net.ddns.ksuto.clockwork.entities.qrcode.QrCode;
 import net.ddns.ksuto.clockwork.entities.qrcode.RaidMember;
@@ -104,24 +103,11 @@ public class Automaton {
         }
         
         if (qrCode.ADD_WAYPOINT.active) {
-            tomtom.getCoordinates(qrCode, peripherals);
-            qrCode.path.add(new Position(qrCode.currenPlayerPosition));
-            String output = "";
-            for (Position position : qrCode.path) {
-                String formattedX = String.format("%06d", position.xPos);
-                String formattedY = String.format("%06d", position.yPos);
-                output += formattedX.substring(0, 2) + "," + formattedX.substring(2, 4) + "-" +
-                          formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
-            }
-            TboTools_Debug.sout(output);
-            QrCode.typeInChat(peripherals, "/kto wpadded");
-            peripherals.robot.delay(500);
+            tomtom.addWayPoint(qrCode);
         }
         
         if (qrCode.CLEAR_WAYPOINTS.active) {
-            qrCode.path.clear();
-            QrCode.typeInChat(peripherals, "/kto wpcleared");
-            peripherals.robot.delay(500);
+            tomtom.clearWayPoints();
         }
     
         if (wasInCombat && !qrCode.inCombat.active) { tryToLoot();}

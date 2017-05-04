@@ -2,7 +2,6 @@ package net.ddns.ksuto.clockwork.entities.qrcode;
 
 import static net.ddns.ksuto.prh.properties.Constants.i_DELAY;
 
-import net.ddns.ksuto.clockwork.entities.Position;
 import net.ddns.ksuto.prh.TBoPeripheralRobotHelper;
 import net.ddns.ksuto.prh.entities.ColorBlock;
 import net.ddns.ksuto.tools.TboTools_Debug;
@@ -22,7 +21,6 @@ public class QrCode {
     
     private final ArrayList<Key> keys      = new ArrayList<>();
     public        int            xPosition = 0, yPosition = 0;
-    public List<Position> path = new ArrayList<>();
     public Dot inCombat;
     public Dot casting;
     public Dot stepBack;
@@ -32,7 +30,7 @@ public class QrCode {
     public Dot targetHealth;
     public Dot targetMana;
     public List<RaidMember> raid                 = new ArrayList<>();
-    public Position         currenPlayerPosition = new Position();
+    //    public Position         currenPlayerPosition = new Position();
     public  Dot    TOGGLE_ON_OFF;
     public  Dot    TARGET_NEAREST_ENEMY;
     public  Dot    ADD_WAYPOINT;

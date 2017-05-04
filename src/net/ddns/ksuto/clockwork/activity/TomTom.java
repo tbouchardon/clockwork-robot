@@ -12,13 +12,15 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 public class TomTom {
     
     private static final int KEY_J = 74, KEY_Y = 89, KEY_SPACE = 32;
-    private static final int     TURN_DURATION      = 100;
-    private static final int     TURN_BACK_DURATION = 100;
-    public               boolean isRunning          = false;
+    private static final int                      TURN_DURATION      = 100;
+    private static final int                      TURN_BACK_DURATION = 100;
+    public               boolean                  isRunning          = false;
+    public               java.util.List<Position> path               = new ArrayList<>();
     private TBoPeripheralRobotHelper peripherals;
     private boolean  isFlying              = false;
     private Position playersLastPosition   = null;
@@ -39,14 +41,15 @@ public class TomTom {
         getCoordinates(qrCode, peripherals);
     }
     
-    public void getCoordinates(QrCode qrCode, TBoPeripheralRobotHelper peripherals) {
-    
+    public Position getCoordinates(QrCode qrCode, TBoPeripheralRobotHelper peripherals) {
+        
         TboTools_Debug.sout("getCoordinates");
-    
-        BufferedImage biCapturedScreen = qrCode.captureQrCode(peripherals);
+        
+        BufferedImage biCapturedScreen     = qrCode.captureQrCode(peripherals);
+        Position      currenPlayerPosition = new Position();
         
         int xPos = 0;
-    
+        
         if (biCapturedScreen.getRGB(6, 7) == RGBConverter.WHITE) {
             xPos += 524288;
         }
@@ -107,7 +110,7 @@ public class TomTom {
         if (biCapturedScreen.getRGB(13, 8) == RGBConverter.WHITE) {
             xPos += 1;
         }
-        qrCode.currenPlayerPosition.xPos = xPos;
+        currenPlayerPosition.xPos = xPos;
         
         int yPos = 0;
         if (biCapturedScreen.getRGB(6, 10) == RGBConverter.WHITE) {
@@ -170,7 +173,9 @@ public class TomTom {
         if (biCapturedScreen.getRGB(13, 11) == RGBConverter.WHITE) {
             yPos += 1;
         }
-        qrCode.currenPlayerPosition.yPos = yPos;
+        currenPlayerPosition.yPos = yPos;
+        
+        return currenPlayerPosition;
     }
     
     public void stuckProtocol() {
@@ -208,6 +213,30 @@ public class TomTom {
         isRunning = false;
     }
     
+    public void addWayPoint(QrCode qrCode) {
+        
+        Position currenPlayerPosition = getCoordinates(qrCode, peripherals);
+        path.add(new Position(currenPlayerPosition));
+        String output = "";
+        for (Position position : path) {
+            String formattedX = String.format("%06d", position.xPos);
+            String formattedY = String.format("%06d", position.yPos);
+            output += formattedX.substring(0, 2) + "," + formattedX.substring(2, 4) + "-" +
+                      formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
+        }
+        TboTools_Debug.sout(output);
+        QrCode.typeInChat(peripherals, "/kto wpadded");
+        peripherals.robot.delay(500);
+    }
+    
+    public void clearWayPoints() {
+        
+        path.clear();
+        pathIndex = 0;
+        QrCode.typeInChat(peripherals, "/kto wpcleared");
+        peripherals.robot.delay(500);
+    }
+    
     void drive(QrCode qrCode, TBoPeripheralRobotHelper peripherals, boolean actionPossible, boolean actionEnCours, Boolean inCombat, long lastActionTime, double playerHealth) {
         
         if (!qrCode.DRIVE_MOD.active) {
@@ -217,8 +246,8 @@ public class TomTom {
         if (playerHealth < 50) {
             return;
         }
-        
-        //        TboTools_Debug.sout("--------------------------------- drive ----------------------------------");
+    
+        TboTools_Debug.sout("-------------------------------------------------------------------");
         
         // En cas de cible active (actions engagées) il y a moins de 2 secondes
         long lastActionDelay = System.currentTimeMillis() - lastActionTime;
@@ -235,7 +264,7 @@ public class TomTom {
         qrCode.cameraDrive(peripherals);
         
         // Arrêter de courrir et retour si il n'y a plus de points de cheminement
-        if (qrCode.path.isEmpty()) {
+        if (path.isEmpty()) {
             pathIndex = 0;
             if (isRunning) {
                 runStop();
@@ -250,52 +279,50 @@ public class TomTom {
         }
         
         // Retourner au point de départ si la fonction LOOP est activée et qu'il n'y a plus de points de cheminement
-        if (qrCode.DRIVE_LOOP.active && pathIndex > qrCode.path.size() - 1) {
+        if (qrCode.DRIVE_LOOP.active && pathIndex > path.size() - 1) {
             TboTools_Debug.sout("loop");
             pathIndex = 0;
         }
         
         // Si l'on est à cours de points de cheminement, on vide la liste, on arrête de courrir et retour
-        if (pathIndex > qrCode.path.size() - 1) {
-            qrCode.path.clear();
+        if (pathIndex > path.size() - 1) {
+            path.clear();
             if (isRunning) {
                 runStop();
             }
             pathIndex = 0;
             return;
         }
-        
-        Position path = qrCode.path.get(pathIndex); //coordonnées destination
-        getCoordinates(qrCode, peripherals); //position du personage
-        
-        TboTools_Debug.sout("Position courante : qrCode.currenPlayerPosition.xPos = " + qrCode.currenPlayerPosition.xPos + ", qrCode.currenPlayerPosition.yPos = " + qrCode
-                                                                                                                                                                             .currenPlayerPosition
-                                                                                                                                                                             .yPos);
+    
+        Position destination          = path.get(pathIndex); //coordonnées destination
+        Position currenPlayerPosition = getCoordinates(qrCode, peripherals); //position du personage
+    
+        TboTools_Debug.sout("Position courante : currenPlayerPosition.xPos = " + currenPlayerPosition.xPos + ", currenPlayerPosition.yPos = " + currenPlayerPosition.yPos);
         if (playersLastPosition == null) {
-            playersLastPosition = new Position(qrCode.currenPlayerPosition);
-            lastRemainingDistance = Math.sqrt(Math.pow(path.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(path.yPos - qrCode.currenPlayerPosition.yPos, 2));
+            playersLastPosition = new Position(currenPlayerPosition);
+            lastRemainingDistance = Math.sqrt(Math.pow(destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow(destination.yPos - currenPlayerPosition.yPos, 2));
             return;
         }
         
         // Calcul de l'équation de la droite passant par la position précédente et le point de cheminement actuel
-        TboTools_Debug.sout("Destination : path.xPos = " + path.xPos + ", path.yPos = " + path.yPos);
+        TboTools_Debug.sout("Destination : destination.xPos = " + destination.xPos + ", destination.yPos = " + destination.yPos);
         TboTools_Debug.sout("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
-        
-        double a = ((double) path.yPos - (double) playersLastPosition.yPos) / ((double) path.xPos - (double) playersLastPosition.xPos); // a = (yB - yA) / (xB - xA)
+    
+        double a = ((double) destination.yPos - (double) playersLastPosition.yPos) / ((double) destination.xPos - (double) playersLastPosition.xPos); // a = (yB - yA) / (xB - xA)
         
         //Si les deux points sont trop proches, le déplacement parfaitement vertical, ou horizontal, "a" peut être en erreur. On attend donc la prochaine passe. Retour.
         TboTools_Debug.sout("a = " + a);
         if (Double.isNaN(a) || Double.isInfinite(a)) {
-            playersLastPosition = new Position(qrCode.currenPlayerPosition);
+            playersLastPosition = new Position(currenPlayerPosition);
             return;
         }
-        double b = path.yPos - (a * path.xPos); // b = y - ax
-        
-        double y = a * qrCode.currenPlayerPosition.xPos + b; // y = ax + b
+        double b = destination.yPos - (a * destination.xPos); // b = y - ax
+    
+        double y = a * currenPlayerPosition.xPos + b; // y = ax + b
         
         // Regarder la remainingDistance restante
-        double remainingDistance = Math.sqrt(Math.pow(path.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(path.yPos - qrCode.currenPlayerPosition.yPos, 2));
-        double traveledDistance  = Math.sqrt(Math.pow(playersLastPosition.xPos - qrCode.currenPlayerPosition.xPos, 2) + Math.pow(playersLastPosition.yPos - qrCode.currenPlayerPosition.yPos, 2));
+        double remainingDistance = Math.sqrt(Math.pow(destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow(destination.yPos - currenPlayerPosition.yPos, 2));
+        double traveledDistance  = Math.sqrt(Math.pow(playersLastPosition.xPos - currenPlayerPosition.xPos, 2) + Math.pow(playersLastPosition.yPos - currenPlayerPosition.yPos, 2));
         
         // puisque :
         //        a² = b² + c² − 2bc.cos(α)
@@ -310,8 +337,8 @@ public class TomTom {
         // conversion de radians en degrés
         angleC = Math.toDegrees(angleC);
         angleB = Math.toDegrees(angleB);
-        
-        TboTools_Debug.sout(y + " = " + a + " * " + qrCode.currenPlayerPosition.xPos + " + " + b + "( Actual = " + qrCode.currenPlayerPosition.yPos + ")");
+    
+        TboTools_Debug.sout(y + " = " + a + " * " + currenPlayerPosition.xPos + " + " + b + "( Actual = " + currenPlayerPosition.yPos + ")");
         TboTools_Debug.sout("lastRemainingDistance = " + lastRemainingDistance);
         TboTools_Debug.sout("remainingDistance = " + remainingDistance);
         TboTools_Debug.sout("traveledDistance = " + traveledDistance);
@@ -324,9 +351,9 @@ public class TomTom {
         
         // Tourner de turnDuration (milisecondes) en fonction de la position du personnage par rapport à la droite précédement calculée
         // Si à xA > xB, on se déplace d'est en ouest
-        if (qrCode.currenPlayerPosition.xPos > path.xPos) {
+        if (currenPlayerPosition.xPos > destination.xPos) {
             // Si yJoueur (là où le joueur est) > yCalculé (là où le joueur devrait être), le joueur est trop au sud par rapport à position idéale (les coordonnées en y étant inversées).
-            if (qrCode.currenPlayerPosition.yPos > y) {
+            if (currenPlayerPosition.yPos > y) {
                 turnRight(turnDuration);
             }
             // sinon le joueur est trop au nord
@@ -336,7 +363,7 @@ public class TomTom {
         }
         // Si à xA < xB, on se déplace d'ouest en est
         else {
-            if (qrCode.currenPlayerPosition.yPos > y) {
+            if (currenPlayerPosition.yPos > y) {
                 turnLeft(turnDuration);
             }
             else {
@@ -345,8 +372,8 @@ public class TomTom {
         }
         
         lastRemainingDistance = remainingDistance;
-        
-        playersLastPosition = new Position(qrCode.currenPlayerPosition);
+    
+        playersLastPosition = new Position(currenPlayerPosition);
         
         // On passe au point de cheminement suivant si le point actuel est atteint
         if (remainingDistance <= traveledDistance * 1.5) {
