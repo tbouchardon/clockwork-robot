@@ -151,7 +151,7 @@ public class Automaton {
     
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
-            hitKey(key2hit, shiftModifier, ctrlModifier, altModifier);
+            hitKey(key2hit, altModifier, ctrlModifier, shiftModifier);
         }
     
         if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
@@ -168,14 +168,14 @@ public class Automaton {
         else { peripherals.robot.delay(750); }
     }
     
-    private void hitKey(Key key2hit, boolean shiftModifier, boolean ctrlModifier, boolean altModifier) {
+    private void hitKey(Key key2hit, boolean altModifier, boolean ctrlModifier, boolean shiftModifier) {
         
         
         
         clockWork_UI.setTextField(key2hit.key);
         clockWork_UI.setiGrey(iGreyColor);
-    
-        peripherals.getKeyboard().pressKey(key2hit.hitKey);
+        
+        peripherals.getKeyboard().pressKey(key2hit.hitKey, altModifier, ctrlModifier, shiftModifier);
         
     }
     
