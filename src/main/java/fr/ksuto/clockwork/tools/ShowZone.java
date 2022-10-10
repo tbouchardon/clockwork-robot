@@ -4,8 +4,6 @@ import fr.ksuto.prh.PeripheralRobotHelper;
 
 import java.awt.*;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import javax.swing.*;
@@ -26,15 +24,6 @@ public class ShowZone extends JFrame {
         
         setAlwaysOnTop(true);
         setUndecorated(true);
-        try {
-            Method method;
-            method = Class.forName("com.sun.awt.AWTUtilities").getMethod("setWindowOpaque", Window.class, boolean.class);
-            method.invoke(null, this, false);
-        }
-        catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        
         setSize(peripherals.getScreen().SCREEN_WIDTH, peripherals.getScreen().SCREEN_HEIGHT);
         setLocation(0, 0);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -78,21 +67,22 @@ public class ShowZone extends JFrame {
     }
     
     public void zone(String sName, int iWidth, int iHeight, int iXPosition, int iYPosition, int iRColor, int iGColor, int iBColor, int iOpacity) {
-        
-        setLayout(new GridBagLayout());
+    
         setAlwaysOnTop(true);
         setUndecorated(true);
-        setLocationRelativeTo(null);
+        setSize(iWidth, iHeight);
         setLocation(iXPosition, iYPosition);
-        
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+        setBackground(new Color(0, 0, 0, 0));
+    
         TitledBorder tb = new TitledBorder(sName);
         tb.setBorder(new LineBorder(new Color(iRColor, iGColor, iBColor)));
         tb.setTitleColor(new Color(iRColor, iGColor, iBColor));
-        
+    
         setVisible(true);
-        
+    
         setBackground(new Color(0, 0, 0, 0));
-        setSize(iWidth, iHeight);
     }
     
     public static class Zone {

@@ -116,7 +116,7 @@ class Fisher {
     
     void setup() throws AWTException {
         
-        Position resultsWoW = PictureSearch.getDefault(InterfaceEnum.WOW).getFirstResult().getFirstPosition();
+        Position resultsWoW = PictureSearch.getDefault(InterfaceEnum.WOW).search().getFirstResult().getFirstPosition();
         if (resultsWoW != null) {
             int iWoWSize = peripherals.getScreen().SCREEN_WIDTH - (resultsWoW.getX() * 2);
             Debug.sout("WoW Width = " + iWoWSize);

@@ -3,7 +3,6 @@ package fr.ksuto.clockwork;
 import fr.ksuto.clockwork.activity.Automaton;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
-import fr.ksuto.prh.tools.Debug;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -16,21 +15,32 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
+import com.google.inject.Inject;
+
 @SuppressWarnings({"Duplicates"})
 public class ClockWork_UI extends JDialog {
     
-    private final JTextField            jTextFieldCast = new JTextField("/Please Auto Config ");
-    private final PeripheralRobotHelper peripherals;
-    private       int                   iRed           = 250, iGreen = 250, iBlue = 250, iGrey = 0;
-    private JButton   autoConfButton;
-    private JButton   jButtonFish;
-    private QrCode    qrCode = new QrCode();
-    private Automaton automaton;
+    final JTextField jTextFieldCast = new JTextField("/Please Auto Config ");
+    @Inject
+    PeripheralRobotHelper peripherals;
+    private int iRed = 250, iGreen = 250, iBlue = 250, iGrey = 0;
+    private JButton autoConfButton;
+    private JButton jButtonFish;
+    private QrCode  qrCode = new QrCode();
+    Automaton automaton;
     
-    @SuppressWarnings("ConstantConditions")
-    private ClockWork_UI(PeripheralRobotHelper peripherals) throws IOException {
+    public ClockWork_UI() {
+    
+    }
+    
+    public void initAutomaton() {
         
-        this.peripherals = peripherals;
+        automaton = new Automaton(peripherals, this);
+    }
+    
+    ;
+    
+    public void initUI() throws IOException {
         
         JPanel panel = new JPanel() {
             
@@ -70,20 +80,6 @@ public class ClockWork_UI extends JDialog {
         
         final Timer fadeOutActionTimer = new Timer(30, fadeOutAction);
         fadeOutActionTimer.start();
-    }
-    
-    public static void main(String[] args) throws InterruptedException, IOException, AWTException {
-        
-        PeripheralRobotHelper peripherals = new PeripheralRobotHelper();
-        
-        ClockWork_UI ui = new ClockWork_UI(peripherals);
-        Debug.sout("new UI");
-        ui.jTextFieldCast.requestFocus();
-        ui.automaton = new Automaton(peripherals, ui);
-        Debug.sout("new Automaton");
-        while (ui.getQrCode().getKeys().isEmpty()) {peripherals.robot.delay(200);}
-        ui.automaton.play();
-        System.exit(0);
     }
     
     public void dojButtonFishClick() {
@@ -168,7 +164,7 @@ public class ClockWork_UI extends JDialog {
         URL url = getClass().getResource("/Pictures/icons/Default.jpg");
         if (url != null) {setIconImage(ImageIO.read(url));}
         setAlwaysOnTop(true);
-        setPreferredSize(new Dimension(200, 61));
+        setPreferredSize(new Dimension(200, 71));
         setResizable(false);
         setLocation(peripherals.getScreen().SCREEN_WIDTH - 270, peripherals.getScreen().SCREEN_HEIGHT - 131);
         getContentPane().setBackground(new Color(iRed, iGreen, iBlue));

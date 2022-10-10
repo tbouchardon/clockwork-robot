@@ -53,7 +53,7 @@ public class TomTom {
                       formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
         }
         Debug.sout(output);
-        QrCode.typeInChat(peripherals, "/kto wpadded");
+        QrCode.typeInChat(peripherals, "/clk wpadded");
         peripherals.robot.delay(500);
     }
     
@@ -61,7 +61,7 @@ public class TomTom {
         
         path.clear();
         pathIndex = 0;
-        QrCode.typeInChat(peripherals, "/kto wpcleared");
+        QrCode.typeInChat(peripherals, "/clk wpcleared");
         peripherals.robot.delay(500);
     }
     
@@ -269,7 +269,7 @@ public class TomTom {
             if (isRunning) {
                 runStop();
             }
-            QrCode.typeInChat(peripherals, "/kto drive");
+            QrCode.typeInChat(peripherals, "/clk drive");
             return;
         }
         

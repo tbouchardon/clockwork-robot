@@ -10,7 +10,7 @@ public class Key extends Dot {
     
     }
     
-    Key(int hitKey, int xPosition, int yPosition, String key) {
+    public Key(int hitKey, int xPosition, int yPosition, String key) {
         
         this.hitKey = hitKey;
         this.xPosition = xPosition;
@@ -18,8 +18,14 @@ public class Key extends Dot {
         this.key = key;
     }
     
-    Key(int hitKey) {
+    public Key(int hitKey) {
         
         this.hitKey = hitKey;
+    }
+    
+    public Key(int hitKey, String key) {
+        
+        this.hitKey = hitKey;
+        this.key = key;
     }
 }
