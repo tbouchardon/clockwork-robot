@@ -68,6 +68,7 @@ public class ShowZone extends JFrame {
     
     public void zone(String sName, int iWidth, int iHeight, int iXPosition, int iYPosition, int iRColor, int iGColor, int iBColor, int iOpacity) {
     
+        dispose();
         setAlwaysOnTop(true);
         setUndecorated(true);
         setSize(iWidth, iHeight);

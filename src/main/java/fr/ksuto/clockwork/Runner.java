@@ -20,7 +20,7 @@ public class Runner {
         Debug.sout("new UI");
         runner.ui.initUI();
         runner.ui.initAutomaton();
-        runner.ui.jTextFieldCast.requestFocus();
+        runner.ui.castLogTextfield.requestFocus();
         Debug.sout("new Automaton");
         while (runner.ui.getQrCode().getKeys().isEmpty()) {runner.ui.peripherals.robot.delay(200);}
         runner.ui.automaton.play();

@@ -11,6 +11,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Objects;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,14 +19,17 @@ import javax.swing.*;
 import com.google.inject.Inject;
 
 @SuppressWarnings({"Duplicates"})
-public class ClockWork_UI extends JDialog {
+public class ClockWork_UI {
     
-    final JTextField jTextFieldCast = new JTextField("/Please Auto Config ");
+    private static final int BLUE = 250;
     @Inject
     PeripheralRobotHelper peripherals;
-    private int iRed = 250, iGreen = 250, iBlue = 250, iGrey = 0;
+    private static final int GREEN = 250;
+    private static final int RED   = 250;
+    JTextField castLogTextfield;
+    private int     iGrey  = 0;
     private JButton autoConfButton;
-    private JButton jButtonFish;
+    private JButton fishButton;
     private QrCode  qrCode = new QrCode();
     Automaton automaton;
     
@@ -38,13 +42,17 @@ public class ClockWork_UI extends JDialog {
         automaton = new Automaton(peripherals, this);
     }
     
-    ;
+    public void dojButtonFishClick() {
+        
+        fishButton.doClick();
+    }
     
     public void initUI() throws IOException {
         
+        JDialog ui = new JDialog();
         JPanel panel = new JPanel() {
             
-            private final BufferedImage bufferedImage = ImageIO.read(getClass().getResource("/Pictures/background.png"));
+            private final BufferedImage bufferedImage = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Pictures/background.png")));
             
             @Override
             protected void paintComponent(Graphics g) {
@@ -54,37 +62,49 @@ public class ClockWork_UI extends JDialog {
             }
         };
         
-        initMainPanel(panel);
+        ui.setContentPane(panel);
+        ui.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
+        ui.setTitle("ClockWork");
+        URL url = getClass().getResource("/Pictures/icons/Default.jpg");
+        if (url != null) {ui.setIconImage(ImageIO.read(url));}
+        ui.setAlwaysOnTop(true);
+        ui.setPreferredSize(new Dimension(210, 71));
+        ui.setResizable(false);
+        ui.setLocation(peripherals.getScreen().SCREEN_WIDTH - 270, peripherals.getScreen().SCREEN_HEIGHT - 131);
+        ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
+        
+        ui.addWindowListener(new WindowAdapter() {
+            
+            public void windowClosing(WindowEvent evt) {
+                
+                System.exit(0);
+            }
+        });
         
         autoConfButton = new JButton();
-        initautoConfButton();
-        add(autoConfButton);
+        initautoConfButton(autoConfButton);
+        ui.add(autoConfButton);
         
-        jButtonFish = new JButton();
-        initFishButton();
-        add(jButtonFish);
+        fishButton = new JButton();
+        initFishButton(fishButton);
+        ui.add(fishButton);
         
-        jTextFieldCast.setPreferredSize(new Dimension(140, 30));
-        initTextField();
-        add(jTextFieldCast);
+        castLogTextfield = new JTextField("/Please Auto Config ");
+        initTextField(castLogTextfield);
+        ui.add(castLogTextfield);
         
-        pack();
-        setVisible(true);
+        ui.pack();
+        ui.setVisible(true);
         
         ActionListener fadeOutAction = actionEvent -> {
             if (iGrey < 240) {
                 iGrey += 10;
-                jTextFieldCast.setBackground(new Color(iGrey, iGrey, iGrey));
+                castLogTextfield.setBackground(new Color(iGrey, iGrey, iGrey));
             }
         };
         
         final Timer fadeOutActionTimer = new Timer(30, fadeOutAction);
         fadeOutActionTimer.start();
-    }
-    
-    public void dojButtonFishClick() {
-        
-        jButtonFish.doClick();
     }
     
     private ActionListener autoConfButtonListener() {
@@ -115,19 +135,19 @@ public class ClockWork_UI extends JDialog {
         
         return actionEvent -> {
             if (automaton.status == Status.RUN) {
-                jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.down.png"));
+                fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.down.png"));
                 automaton.status = Status.FISHING;
-                
+    
                 autoConfButton.setEnabled(false);
-                jButtonFish.setEnabled(true);
+                fishButton.setEnabled(true);
             }
             else if (automaton.status == Status.FISHING) {
-                jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
+                fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
                 
                 automaton.status = Status.RUN;
-                
+    
                 autoConfButton.setEnabled(true);
-                jButtonFish.setEnabled(true);
+                fishButton.setEnabled(true);
             }
         };
     }
@@ -136,59 +156,37 @@ public class ClockWork_UI extends JDialog {
         
         try {
             URL url = getClass().getResource(resource);
-            return new ImageIcon(ImageIO.read(url));
+            return new ImageIcon(ImageIO.read(Objects.requireNonNull(url)));
         }
         catch (IOException ignore) {
         }
         return null;
     }
     
-    private void initFishButton() {
+    private void initFishButton(JButton fishButton) {
         
-        jButtonFish.setPreferredSize(new Dimension(25, 30));
-        jButtonFish.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
-        jButtonFish.setMargin(new Insets(0, 0, 0, 0));
-        jButtonFish.setBorder(null);
-        jButtonFish.setBackground(new Color(255, 255, 255, 0));
-        jButtonFish.setOpaque(false);
-        jButtonFish.setToolTipText("Using (H) to Fish and (W) for Lure shortcuts (Shift W) for Bait");
-        jButtonFish.setEnabled(false);
-        jButtonFish.addActionListener(fishButtonListener());
+        fishButton.setPreferredSize(new Dimension(25, 30));
+        fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
+        fishButton.setMargin(new Insets(0, 0, 0, 0));
+        fishButton.setBorder(null);
+        fishButton.setBackground(new Color(255, 255, 255, 0));
+        fishButton.setOpaque(false);
+        fishButton.setToolTipText("Using (H) to Fish and (W) for Lure shortcuts (Shift W) for Bait");
+        fishButton.setEnabled(false);
+        fishButton.addActionListener(fishButtonListener());
     }
     
-    private void initMainPanel(JPanel panel) throws IOException {
+    private void initTextField(JTextField castLogTextfield) {
         
-        setContentPane(panel);
-        setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
-        setTitle("ClockWork");
-        URL url = getClass().getResource("/Pictures/icons/Default.jpg");
-        if (url != null) {setIconImage(ImageIO.read(url));}
-        setAlwaysOnTop(true);
-        setPreferredSize(new Dimension(200, 71));
-        setResizable(false);
-        setLocation(peripherals.getScreen().SCREEN_WIDTH - 270, peripherals.getScreen().SCREEN_HEIGHT - 131);
-        getContentPane().setBackground(new Color(iRed, iGreen, iBlue));
-        
-        //        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            
-            public void windowClosing(WindowEvent evt) {
-                
-                System.exit(0);
-            }
-        });
+        castLogTextfield.setEditable(false);
+        castLogTextfield.setOpaque(false);
+        castLogTextfield.setHorizontalAlignment(JTextField.CENTER);
+        castLogTextfield.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+        castLogTextfield.setPreferredSize(new Dimension(140, 30));
+        castLogTextfield.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
     }
     
-    private void initTextField() {
-        
-        jTextFieldCast.setEditable(false);
-        jTextFieldCast.setOpaque(false);
-        jTextFieldCast.setHorizontalAlignment(JTextField.CENTER);
-        jTextFieldCast.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-        jTextFieldCast.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
-    }
-    
-    private void initautoConfButton() {
+    private void initautoConfButton(JButton autoConfButton) {
         
         autoConfButton.setPreferredSize(new Dimension(25, 30));
         autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.up.png"));
@@ -196,6 +194,7 @@ public class ClockWork_UI extends JDialog {
         autoConfButton.setBorder(null);
         autoConfButton.setBackground(new Color(255, 255, 255, 0));
         autoConfButton.setOpaque(false);
+        autoConfButton.setToolTipText("Using (H) to Fish and (W) for Lure shortcuts (Shift W) for Bait");
         autoConfButton.addActionListener(autoConfButtonListener());
     }
     
@@ -210,15 +209,15 @@ public class ClockWork_UI extends JDialog {
     }
     
     private void setEnabledButtonFish(boolean b) {
-        
-        jButtonFish.setEnabled(b);
+    
+        fishButton.setEnabled(b);
     }
     
     public void setTextField(String sKey) {
-        
-        String sTemp = jTextFieldCast.getText() + " " + sKey;
+    
+        String sTemp = castLogTextfield.getText() + " " + sKey;
         while (sTemp.length() > 17) {sTemp = sTemp.substring(1);}
-        jTextFieldCast.setText(sTemp);
+        castLogTextfield.setText(sTemp);
     }
     
     public void setiGrey(int iGrey) {

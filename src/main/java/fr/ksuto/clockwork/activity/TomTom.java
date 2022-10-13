@@ -203,7 +203,9 @@ public class TomTom {
     }
     
     public void runStop() {
-        
+    
+        if (!isRunning) {return;}
+    
         peripherals.robot.keyPress(KeyEvent.VK_S);
         peripherals.robot.delay(i_DELAY);
         peripherals.robot.keyRelease(KeyEvent.VK_S);
@@ -252,11 +254,11 @@ public class TomTom {
         // En cas de cible active (actions engagées) il y a moins de 2 secondes
         long lastActionDelay = System.currentTimeMillis() - lastActionTime;
         if (actionPossible || actionEnCours || inCombat || lastActionDelay < 2000) {
-            // Passage en camera position combat (Pour pouvoir loot plus facilement)
+            // Passage en caméra position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
             
             // Arréter de courrir et retour en cas de cible active
-            if (isRunning) {runStop();}
+            runStop();
             return;
         }
         
@@ -266,9 +268,7 @@ public class TomTom {
         // Arrêter de courrir et retour si il n'y a plus de points de cheminement
         if (path.isEmpty()) {
             pathIndex = 0;
-            if (isRunning) {
-                runStop();
-            }
+            runStop();
             QrCode.typeInChat(peripherals, "/clk drive");
             return;
         }
@@ -283,13 +283,11 @@ public class TomTom {
             Debug.sout("loop");
             pathIndex = 0;
         }
-        
-        // Si l'on est à cours de points de cheminement, on vide la liste, on arrête de courrir et retour
+    
+        // Si l’on est à court de points de cheminement, on vide la liste, on arrête de courrir et retour
         if (pathIndex > path.size() - 1) {
             path.clear();
-            if (isRunning) {
-                runStop();
-            }
+            runStop();
             pathIndex = 0;
             return;
         }
@@ -424,7 +422,8 @@ public class TomTom {
     }
     
     private void runStart() {
-        
+    
+        if (isRunning) {return;}
         Debug.sout("Run Start/Stop");
         peripherals.robot.keyPress(KEY_J);
         peripherals.robot.delay(i_DELAY);

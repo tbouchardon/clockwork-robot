@@ -70,7 +70,7 @@ public class Automaton {
     }
     
     private void checkParty(BufferedImage capturedScreen, QrCode qrCode) {
-        
+    
         for (ComplexKey raidMember : qrCode.raid) {
             
             raidMember.updateActive(capturedScreen);
