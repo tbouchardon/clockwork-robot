@@ -21,30 +21,37 @@ import com.google.inject.Inject;
 @SuppressWarnings({"Duplicates"})
 public class ClockWork_UI {
     
-    private static final int BLUE = 250;
-    @Inject
-    PeripheralRobotHelper peripherals;
+    private static final int BLUE  = 250;
     private static final int GREEN = 250;
     private static final int RED   = 250;
+    @Inject
+    PeripheralRobotHelper peripherals;
     JTextField castLogTextfield;
+    Automaton  automaton;
     private int     iGrey  = 0;
     private JButton autoConfButton;
     private JButton fishButton;
     private QrCode  qrCode = new QrCode();
-    Automaton automaton;
     
     public ClockWork_UI() {
     
     }
     
-    public void initAutomaton() {
+    public void appendLog(String sKey) {
         
-        automaton = new Automaton(peripherals, this);
+        String sTemp = castLogTextfield.getText() + " " + sKey;
+        while (sTemp.length() > 17) {sTemp = sTemp.substring(1);}
+        castLogTextfield.setText(sTemp);
     }
     
     public void dojButtonFishClick() {
         
         fishButton.doClick();
+    }
+    
+    public void initAutomaton() {
+        
+        automaton = new Automaton(peripherals, this);
     }
     
     public void initUI() throws IOException {
@@ -70,7 +77,7 @@ public class ClockWork_UI {
         ui.setAlwaysOnTop(true);
         ui.setPreferredSize(new Dimension(210, 71));
         ui.setResizable(false);
-        ui.setLocation(peripherals.getScreen().SCREEN_WIDTH - 270, peripherals.getScreen().SCREEN_HEIGHT - 131);
+        ui.setLocation(peripherals.getScreen().SCREEN_WIDTH - 270, peripherals.getScreen().SCREEN_HEIGHT - 95);
         ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
         
         ui.addWindowListener(new WindowAdapter() {
@@ -116,7 +123,10 @@ public class ClockWork_UI {
             SwingUtilities.invokeLater(() -> {
                 try {
                     qrCode = new QrCode();
-                    qrCode.init(peripherals);
+                    boolean initialized = qrCode.init(peripherals);
+                    if (initialized) {
+                        appendLog("      Done      ");
+                    }
                 }
                 catch (AWTException | IOException e) {
                     e.printStackTrace();
@@ -211,13 +221,6 @@ public class ClockWork_UI {
     private void setEnabledButtonFish(boolean b) {
     
         fishButton.setEnabled(b);
-    }
-    
-    public void setTextField(String sKey) {
-    
-        String sTemp = castLogTextfield.getText() + " " + sKey;
-        while (sTemp.length() > 17) {sTemp = sTemp.substring(1);}
-        castLogTextfield.setText(sTemp);
     }
     
     public void setiGrey(int iGrey) {

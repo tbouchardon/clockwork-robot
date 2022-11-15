@@ -1,21 +1,23 @@
 package fr.ksuto.clockwork.tools;
 
+import fr.ksuto.clockwork.activity.Fisherman;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.peripherals.Screen;
+import lombok.Data;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.*;
-import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
+
+import org.apache.commons.lang3.StringUtils;
 
 @SuppressWarnings("serial")
 public class ShowZone extends JFrame {
     
-    private PeripheralRobotHelper peripherals;
     //private JPanel panel;
-    private ArrayList<Zone>       zoneList = new ArrayList<>();
+    public  ArrayList<Zone>       zoneList = new ArrayList<>();
+    private PeripheralRobotHelper peripherals;
     private PaintPane             paintPane;
     
     public ShowZone(PeripheralRobotHelper peripherals) {
@@ -24,10 +26,11 @@ public class ShowZone extends JFrame {
         
         setAlwaysOnTop(true);
         setUndecorated(true);
-        setSize(peripherals.getScreen().SCREEN_WIDTH, peripherals.getScreen().SCREEN_HEIGHT);
+        setSize(Screen.SCREEN_WIDTH, Screen.SCREEN_HEIGHT);
         setLocation(0, 0);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        setBackground(new Color(0, 0, 0, 0));
         paintPane = new PaintPane();
         add(paintPane);
         pack();
@@ -35,16 +38,29 @@ public class ShowZone extends JFrame {
         setVisible(true);
     }
     
-    public static void main(String[] args) throws InterruptedException, IOException, AWTException {
+    public static void main(String[] args) throws AWTException {
         
-        final Dimension dim_D         = new Dimension(Toolkit.getDefaultToolkit().getScreenSize());
-        int             SCREEN_WIDTH  = (int) dim_D.getWidth();
-        int             SCREEN_HEIGHT = (int) dim_D.getHeight();
+        PeripheralRobotHelper peripheralRobotHelper = new PeripheralRobotHelper();
         
-        int      iWidth  = 100;
-        int      iHeight = 50;
-        ShowZone show    = new ShowZone(new PeripheralRobotHelper());
-        show.addZone(new Zone(show, 100, 50, SCREEN_WIDTH / 2 - iWidth / 2, SCREEN_HEIGHT / 2 - iHeight));
+        ShowZone show = new ShowZone(peripheralRobotHelper);
+        ShowZone.Zone zone = new ShowZone.Zone("Fishing Zone",
+                                               Fisherman.STARTING_WIDTH,
+                                               Fisherman.STARTING_HEIGHT,
+                                               Screen.SCREEN_WIDTH / 2 - Fisherman.STARTING_WIDTH / 2,
+                                               Screen.SCREEN_HEIGHT / 2 - Fisherman.STARTING_HEIGHT / 2 + Fisherman.Y_OFFSET,
+                                               150, 150, 200, 0);
+        show.addZone(zone);
+        
+        //        while (true) {
+        //            peripheralRobotHelper.robot.delay(500);
+        //            int offset = new Random().ints(50, 200)
+        //                                 .findFirst()
+        //                                 .getAsInt();
+        //            show.changeZoneSize(startWidth + offset,
+        //                                startHeight + offset,
+        //                                Screen.SCREEN_WIDTH / 2 - (startWidth / 2) - offset / 2,
+        //                                Screen.SCREEN_HEIGHT / 2 - (startHeight) + Fisherman.Y_OFFSET - offset / 2);
+        //        }
     }
     
     public void addZone(Zone zone) {
@@ -53,11 +69,22 @@ public class ShowZone extends JFrame {
         paintPane.repaint();
     }
     
-    public void changeSize(int iWidth, int iHeight, int iXPosition, int iYPosition) {
+    public void changeZoneSize(int width, int height, int xPosition, int yPosition) {
+        
+        if (zoneList.size() != 1) {return;}
+        
+        Zone zone = zoneList.get(0);
+        
+        changeZoneSize(zone, width, height, xPosition, yPosition);
+    }
+    
+    public void changeZoneSize(Zone zone, int width, int height, int xPosition, int yPosition) {
         //panel.setPreferredSize(new Dimension(iWidth, iHeight));
-        setSize(iWidth, iHeight);
-        setLocation(iXPosition, iYPosition);
-        // repaint();
+        zone.width = width;
+        zone.height = height;
+        zone.xPosition = xPosition;
+        zone.yPosition = yPosition;
+        repaint();
     }
     
     public void removeZone(Zone zone) {
@@ -66,53 +93,48 @@ public class ShowZone extends JFrame {
         paintPane.repaint();
     }
     
-    public void zone(String sName, int iWidth, int iHeight, int iXPosition, int iYPosition, int iRColor, int iGColor, int iBColor, int iOpacity) {
-    
-        dispose();
-        setAlwaysOnTop(true);
-        setUndecorated(true);
-        setSize(iWidth, iHeight);
-        setLocation(iXPosition, iYPosition);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
-        setBackground(new Color(0, 0, 0, 0));
-    
-        TitledBorder tb = new TitledBorder(sName);
-        tb.setBorder(new LineBorder(new Color(iRColor, iGColor, iBColor)));
-        tb.setTitleColor(new Color(iRColor, iGColor, iBColor));
-    
-        setVisible(true);
-    
-        setBackground(new Color(0, 0, 0, 0));
+    public void setError(Zone zone) {
+        
+        zone.status = Zone.ZoneStatus.ERROR;
+        paintPane.repaint();
     }
     
+    public void setOK(Zone zone) {
+        
+        zone.status = Zone.ZoneStatus.OK;
+        paintPane.repaint();
+    }
+    
+    public void setWarning(Zone zone) {
+        
+        zone.status = Zone.ZoneStatus.WARNING;
+        paintPane.repaint();
+    }
+    
+    @Data
     public static class Zone {
         
-        ZoneStatus zoneStatus = ZoneStatus.OK;
-        ShowZone   showZone;
+        ZoneStatus status = ZoneStatus.OK;
+        String     name   = "";
+        int        xPosition;
+        int        yPosition;
+        int        red    = 100;
+        int        green  = 255;
+        int        blue   = 255;
+        int        alpha  = 1;
+        private int width;
+        private int height;
         
-        String name    = "";
-        int    width;
-        int    height;
-        int    xPosition;
-        int    yPosition;
-        int    rColor  = 100;
-        int    gColor  = 255;
-        int    bColor  = 255;
-        int    opacity = 1;
-        
-        public Zone(ShowZone showZone, int width, int height, int xPosition, int yPosition) {
+        public Zone(int width, int height, int xPosition, int yPosition) {
             
-            this.showZone = showZone;
             this.width = width;
             this.height = height;
             this.xPosition = xPosition;
             this.yPosition = yPosition;
         }
         
-        public Zone(ShowZone showZone, String name, int width, int height, int xPosition, int yPosition) {
+        public Zone(String name, int width, int height, int xPosition, int yPosition) {
             
-            this.showZone = showZone;
             this.name = name;
             this.width = width;
             this.height = height;
@@ -120,51 +142,52 @@ public class ShowZone extends JFrame {
             this.yPosition = yPosition;
         }
         
-        public Zone(ShowZone showZone, String name, int width, int height, int xPosition, int yPosition, int rColor, int gColor, int bColor, int opacity) {
+        public Zone(String name, int width, int height, int xPosition, int yPosition, int red, int green, int blue, int alpha) {
             
-            this.showZone = showZone;
             this.name = name;
             this.width = width;
             this.height = height;
             this.xPosition = xPosition;
             this.yPosition = yPosition;
-            this.rColor = rColor;
-            this.gColor = gColor;
-            this.bColor = bColor;
-            this.opacity = opacity;
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+            this.alpha = alpha;
         }
         
-        public void setError() {
+        public int getX1() {
             
-            zoneStatus = ZoneStatus.ERROR;
-            showZone.paintPane.repaint();
+            return xPosition;
         }
         
-        public void setOK() {
+        public int getX2() {
             
-            zoneStatus = ZoneStatus.OK;
-            showZone.paintPane.repaint();
+            return xPosition + width;
         }
         
-        public void setWarning() {
+        public int getY1() {
             
-            zoneStatus = ZoneStatus.WARNING;
-            showZone.paintPane.repaint();
+            return yPosition;
+        }
+        
+        public int getY2() {
+            
+            return yPosition + height;
         }
         
         public boolean isError() {
             
-            return zoneStatus == ZoneStatus.ERROR;
+            return status == Zone.ZoneStatus.ERROR;
         }
         
         public boolean isOK() {
             
-            return zoneStatus == ZoneStatus.OK;
+            return status == Zone.ZoneStatus.OK;
         }
         
         public boolean isWarning() {
             
-            return zoneStatus == ZoneStatus.WARNING;
+            return status == Zone.ZoneStatus.WARNING;
         }
         
         private enum ZoneStatus {
@@ -192,15 +215,19 @@ public class ShowZone extends JFrame {
             g2d.setStroke(new BasicStroke(2));
             
             for (Zone zone : zoneList) {
-                
-                if (zone.isOK()) {g2d.setColor(new Color(zone.rColor, zone.gColor, zone.bColor));}
+    
+                if (zone.isOK()) {g2d.setColor(new Color(zone.red, zone.green, zone.blue));}
                 if (zone.isWarning()) {g2d.setColor(Color.ORANGE);}
                 if (zone.isError()) {g2d.setColor(Color.RED);}
-                
+    
                 g2d.drawLine(zone.xPosition, zone.yPosition, zone.xPosition + zone.width, zone.yPosition);
                 g2d.drawLine(zone.xPosition + zone.width, zone.yPosition, zone.xPosition + zone.width, zone.yPosition + zone.height);
                 g2d.drawLine(zone.xPosition + zone.width, zone.yPosition + zone.height, zone.xPosition, zone.yPosition + zone.height);
                 g2d.drawLine(zone.xPosition, zone.yPosition + zone.height, zone.xPosition, zone.yPosition);
+    
+                if (StringUtils.isNotBlank(zone.name)) {
+                    g2d.drawString(zone.name, zone.xPosition, zone.yPosition - 5);
+                }
             }
             
             g2d.dispose();

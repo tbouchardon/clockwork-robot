@@ -24,12 +24,12 @@ class Healer {
     private       long                  lastSearch     = 0;
     private       ArrayList<Player>     raid           = new ArrayList<>();
     private       Player                woundedPlayer  = null;
-    private       ShowZone              showZone;
+    private       ShowZone              healbotZone;
     
     private Healer(PeripheralRobotHelper peripherals) {
-        
+    
         this.peripherals = peripherals;
-        showZone = new ShowZone(peripherals);
+        healbotZone = new ShowZone(peripherals);
     }
     
     public static void main(String[] args) throws AWTException, InterruptedException {
@@ -124,10 +124,10 @@ class Healer {
                         if (!exists) {
                             if (hbMaxBarWidth < tempWitdh + 4) {hbMaxBarWidth = tempWitdh + 4;}
                             if (hbMaxBarHeight < tempHeight + 4) {hbMaxBarHeight = tempHeight + 4;}
-                            
+    
                             Player player = new Player(x, y, System.currentTimeMillis());
-                            player.zone = new ShowZone.Zone(showZone, hbMaxBarWidth, hbMaxBarHeight, x - 2, y - 2);
-                            showZone.addZone(player.zone);
+                            player.zone = new ShowZone.Zone(hbMaxBarWidth, hbMaxBarHeight, x - 2, y - 2);
+                            healbotZone.addZone(player.zone);
                             raid.add(player);
                             Debug.sout(hbMinBarWidth + " " + hbMinBarHeight);
                         }
@@ -145,13 +145,13 @@ class Healer {
                 iFound--;
             }
             if (System.currentTimeMillis() - player.lastSeen > 10000) {
-                if (!player.zone.isWarning()) {player.zone.setWarning();}
+                if (!player.zone.isWarning()) {healbotZone.setWarning(player.zone);}
             }
             else {
-                if (!player.zone.isOK()) {player.zone.setOK();}
+                if (!player.zone.isOK()) {healbotZone.setOK(player.zone);}
             }
             if (System.currentTimeMillis() - player.lastSeen > 180000) {
-                showZone.removeZone(player.zone);
+                healbotZone.removeZone(player.zone);
                 raid.remove(i);
             }
         }

@@ -2,6 +2,7 @@ package fr.ksuto.clockwork.entities.qrcode;
 
 import static fr.ksuto.prh.properties.Constants.i_DELAY;
 
+import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.entities.ColorBlock;
 import fr.ksuto.prh.helpers.ColorSearch;
@@ -28,7 +29,9 @@ public class QrCode {
     public        int            xPosition = 0, yPosition = 0;
     public  Dot              inCombat;
     public  Dot              casting;
+    @Deprecated
     public  Dot              stepBack;
+    public  Dot              turnAround;
     public  Dot              playerHealth;
     public  Dot              playerMana;
     public  Dot              numberOfTargets;
@@ -47,6 +50,7 @@ public class QrCode {
     public  Dot              DEBUG_MOD;
     private Camera           cameraPosition;
     private Dot              qrCodePosition;
+    private BufferedImage    capturedQrCode;
     
     public static void typeInChat(PeripheralRobotHelper peripherals, String s) {
         
@@ -104,25 +108,37 @@ public class QrCode {
     
     public BufferedImage captureQrCode(PeripheralRobotHelper peripherals) {
     
-        BufferedImage screenCapture = peripherals.robot.createScreenCapture(new Rectangle(xPosition, yPosition, 16, 16));
+        BufferedImage capture = peripherals.robot.createScreenCapture(new Rectangle(xPosition, yPosition, 16, 16));
     
         try {
             BufferedWriter writer     = null;
             File           outputfile = new File("qrCode.jpg");
-            ImageIO.write(screenCapture, "png", outputfile);
+            ImageIO.write(capture, "png", outputfile);
         }
         catch (IOException e) {
         }
     
-        return screenCapture;
+        this.capturedQrCode = capture;
+    
+        //        File outputfile = new File("qrCode.png");
+        //        try {
+        //            ImageIO.write(capture, "png", outputfile);
+        //        }
+        //        catch (IOException e) {
+        //            e.printStackTrace();
+        //        }
+    
+        return capture;
     }
+    
+    public boolean hasTarget() {return (targetReaction.getRgb(capturedQrCode) != RGBConverter.BLACK);}
     
     public boolean init(PeripheralRobotHelper peripherals) throws AWTException, IOException {
         
         Robot robot = peripherals.robot;
         
         Debug.sout("Starting AutoConfig");
-    
+        
         ColorBlock qrCodePosition = null;
         boolean    bFound         = false;
         
@@ -142,17 +158,17 @@ public class QrCode {
     
             robot.delay(750);
         }
-    
-        if (qrCodePosition != null) {
         
+        if (qrCodePosition != null) {
+            
             xPosition = qrCodePosition.getFirstPosition().getX();
             yPosition = qrCodePosition.getFirstPosition().getY();
-        
+            
             this.qrCodePosition = new Dot(xPosition, yPosition);
-        
+            
             Debug.sout("Found QrCode : X = " + xPosition + ", Y = " + yPosition + ", carrying on.");
-            peripherals.robot.mouseMove(xPosition, yPosition);
-        
+            //            peripherals.robot.mouseMove(xPosition, yPosition);
+            
             robot.delay(i_DELAY);
             bFound = true;
         }
@@ -181,10 +197,11 @@ public class QrCode {
             keys.add(new Key(KeyEvent.VK_3, 4, 5, "3"));
             keys.add(new Key(KeyEvent.VK_2, 3, 5, "2"));
             keys.add(new Key(KeyEvent.VK_1, 2, 5, "1"));
-            
+    
             inCombat = new Dot(2, 2);
             casting = new Dot(3, 2);
             stepBack = new Dot(4, 2);
+            turnAround = new Dot(5, 2);
     
             playerHealth = new Dot(12, 2);
             playerMana = new Dot(13, 2);
@@ -248,9 +265,7 @@ public class QrCode {
             raid.add(new ComplexKey(KeyEvent.VK_S, 1, 4, "s", true, true, false, index++)); //raid39
             raid.add(new ComplexKey(KeyEvent.VK_T, 1, 3, "t", true, true, false, index)); //raid40
     
-            QrCode.startKsuto(peripherals, this.qrCodePosition);
-    
-            //            QrCode.pressKey(peripherals, KeyEvent.VK_ESCAPE);
+            //            QrCode.startKsuto(peripherals, this.qrCodePosition);
     
             Debug.sout("AutoConfig Done");
     
@@ -258,15 +273,47 @@ public class QrCode {
         }
         else {
             Debug.sout("AutoConfig Failed");
-            
+    
             return false;
         }
+    }
+    
+    public void update() {
+        
+        inCombat.updateActive(capturedQrCode);
+        casting.updateActive(capturedQrCode);
+        stepBack.updateActive(capturedQrCode);
+        turnAround.updateActive(capturedQrCode);
+        TOGGLE_ON_OFF.updateActive(capturedQrCode);
+        TARGET_NEAREST_ENEMY.updateActive(capturedQrCode);
+        ADD_WAYPOINT.updateActive(capturedQrCode);
+        CLEAR_WAYPOINTS.updateActive(capturedQrCode);
+        DRIVE_MOD.updateActive(capturedQrCode);
+        DRIVE_LOOP.updateActive(capturedQrCode);
+        DEBUG_MOD.updateActive(capturedQrCode);
+    }
+    
+    public BufferedImage getCapturedQrCode() {
+        
+        return capturedQrCode;
     }
     
     public ArrayList<Key> getKeys() {
         
         return keys;
     }
+    
+    public int getNumberOfTargets()  {return (int) Math.floor(100D / 255D * (double) playerHealth.getRed(capturedQrCode) + 0.5);}
+    
+    public double getPlayerHealth()  {return 100D / 255D * (double) playerHealth.getRed(capturedQrCode);}
+    
+    public double getPlayerMana()    {return 100D / 255D * (double) playerMana.getBlue(capturedQrCode);}
+    
+    public double getTargetHealth()  {return 100D / 255D * (double) targetHealth.getRed(capturedQrCode);}
+    
+    public double getTargetMana()    {return 100D / 255D * (double) targetMana.getBlue(capturedQrCode);}
+    
+    public boolean isTargetHostile() {return (targetReaction.getRgb(capturedQrCode) == RGBConverter.RED);}
     
     public enum Camera {
         DRIVE,
