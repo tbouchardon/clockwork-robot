@@ -28,10 +28,11 @@ public class ClockWork_UI {
     PeripheralRobotHelper peripherals;
     JTextField castLogTextfield;
     Automaton  automaton;
-    private int     iGrey  = 0;
+    private int     iGrey      = 0;
     private JButton autoConfButton;
     private JButton fishButton;
-    private QrCode  qrCode = new QrCode();
+    private QrCode  qrCode     = new QrCode();
+    private boolean shouldExit = false;
     
     public ClockWork_UI() {
     
@@ -83,8 +84,8 @@ public class ClockWork_UI {
         ui.addWindowListener(new WindowAdapter() {
             
             public void windowClosing(WindowEvent evt) {
-                
-                System.exit(0);
+    
+                shouldExit = true;
             }
         });
         
@@ -213,13 +214,18 @@ public class ClockWork_UI {
         return qrCode;
     }
     
+    public boolean isShouldExit() {
+        
+        return shouldExit;
+    }
+    
     private void setEnabledButtonAutoconf(boolean b) {
         
         autoConfButton.setEnabled(b);
     }
     
     private void setEnabledButtonFish(boolean b) {
-    
+        
         fishButton.setEnabled(b);
     }
     

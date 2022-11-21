@@ -20,6 +20,7 @@ public class TomTom {
     private static final int                         KEY_Y                 = 89;
     private static final int                         TURN_BACK_DURATION    = 100;
     private static final int                         TURN_DURATION         = 100;
+    private final        Random                      random                = new Random();
     public               boolean                     isRunning             = false;
     public               java.util.List<ClkPosition> path                  = new ArrayList<>();
     private              PeripheralRobotHelper       peripherals;
@@ -260,7 +261,7 @@ public class TomTom {
         if (actionPossible || actionEnCours || Boolean.TRUE.equals(inCombat) || lastActionDelay < 2000) {
             // Passage en caméra position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
-        
+    
             // Arréter de courrir et retour en cas de cible active
             runStop();
             return;
@@ -383,11 +384,10 @@ public class TomTom {
         }
     
         // Poney mod! xD
-        Random random = new Random();
-        int    jump   = (random.nextInt() * 25);
+        int jump = (random.nextInt() * 25);
         Debug.sout("jump ? " + jump);
         if (jump == 1) {peripherals.getKeyboard().pressKey(KEY_SPACE);}
-        if (traveledDistance < 460) { // 469 étant la distance moyenne dans l'eau, on ne peut pas faire plus sans prendre le risque de confondre
+        if (traveledDistance < 460) { // 469 étant la distance moyenne dans l’eau, on ne peut pas faire plus sans prendre le risque de confondre
             closeStep++;
             Debug.sout("closeStep = " + closeStep);
         }

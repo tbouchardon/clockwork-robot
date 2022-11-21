@@ -40,18 +40,20 @@ public class Automaton {
         
         robot = new Robot();
         
-        while (true) {
-            
+        while (!ui.isShouldExit()) {
+    
             QrCode qrCode = ui.getQrCode();
-            
+    
             robot.delay(100);
-            
+    
             if (status == ClockWork_UI.Status.FISHING) {
                 fish();
             }
-            
+    
             searchForSomethingToDo(qrCode);
         }
+    
+        System.exit(0);
     }
     
     private void checkParty(BufferedImage capturedQrCode, QrCode qrCode) {
