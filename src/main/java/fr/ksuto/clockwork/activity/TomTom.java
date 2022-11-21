@@ -8,15 +8,16 @@ import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.tools.Debug;
 
-import java.awt.*;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class TomTom {
     
-    private static final int KEY_J = 74, KEY_Y = 89, KEY_SPACE = 32;
+    private static final int                         KEY_J                 = 74;
+    private static final int                         KEY_SPACE             = 32;
+    private static final int                         KEY_Y                 = 89;
     private static final int                         TURN_BACK_DURATION    = 100;
     private static final int                         TURN_DURATION         = 100;
     public               boolean                     isRunning             = false;
@@ -31,11 +32,12 @@ public class TomTom {
     private              int                         closeStep             = 0;
     private              double                      angleB;
     
-    TomTom(PeripheralRobotHelper peripherals) throws AWTException {
+    TomTom(PeripheralRobotHelper peripherals) {
         
         this.peripherals = peripherals;
     }
     
+    @SuppressWarnings("unused")
     public void addCurrentPositionToPathList(QrCode qrCode, PeripheralRobotHelper peripherals) {
         
         getCoordinates(qrCode, peripherals);
@@ -213,19 +215,21 @@ public class TomTom {
     }
     
     public void stuckProtocol() {
-        
+    
         Debug.sout("Trying to unstuck...");
-        
+    
         runStop();
-        
+    
+        stepBackward(500);
+    
         peripherals.robot.keyPress(40); // Recule
-        
+    
         peripherals.robot.keyPress(32); // Saute
         peripherals.robot.delay(100);
         peripherals.robot.keyRelease(32); // Stop Saute
-        
+    
         peripherals.robot.delay(900);
-        
+    
         peripherals.robot.keyPress(32); // Saute
         
         if (turnedRight) {turnLeft(500);}
@@ -253,10 +257,10 @@ public class TomTom {
         
         // En cas de cible active (actions engagées) il y a moins de 2 secondes
         long lastActionDelay = System.currentTimeMillis() - lastActionTime;
-        if (actionPossible || actionEnCours || inCombat || lastActionDelay < 2000) {
+        if (actionPossible || actionEnCours || Boolean.TRUE.equals(inCombat) || lastActionDelay < 2000) {
             // Passage en caméra position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
-            
+        
             // Arréter de courrir et retour en cas de cible active
             runStop();
             return;
@@ -298,7 +302,7 @@ public class TomTom {
         Debug.sout("Position courante : currenPlayerPosition.xPos = " + currenPlayerPosition.xPos + ", currenPlayerPosition.yPos = " + currenPlayerPosition.yPos);
         if (playersLastPosition == null) {
             playersLastPosition = new ClkPosition(currenPlayerPosition);
-            lastRemainingDistance = Math.sqrt(Math.pow(destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow(destination.yPos - currenPlayerPosition.yPos, 2));
+            lastRemainingDistance = Math.sqrt(Math.pow((double) destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) destination.yPos - currenPlayerPosition.yPos, 2));
             return;
         }
         
@@ -315,13 +319,13 @@ public class TomTom {
             return;
         }
         double b = destination.yPos - (a * destination.xPos); // b = y - ax
-        
+    
         double y = a * currenPlayerPosition.xPos + b; // y = ax + b
-        
+    
         // Regarder la remainingDistance restante
-        double remainingDistance = Math.sqrt(Math.pow(destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow(destination.yPos - currenPlayerPosition.yPos, 2));
-        double traveledDistance  = Math.sqrt(Math.pow(playersLastPosition.xPos - currenPlayerPosition.xPos, 2) + Math.pow(playersLastPosition.yPos - currenPlayerPosition.yPos, 2));
-        
+        double remainingDistance = Math.sqrt(Math.pow((double) destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) destination.yPos - currenPlayerPosition.yPos, 2));
+        double traveledDistance  = Math.sqrt(Math.pow((double) playersLastPosition.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) playersLastPosition.yPos - currenPlayerPosition.yPos, 2));
+    
         // puisque :
         //        a² = b² + c² − 2bc.cos(α)
         //        b² = a² + c² − 2ac.cos(β)
@@ -368,18 +372,19 @@ public class TomTom {
                 turnRight(turnDuration);
             }
         }
-        
+    
         lastRemainingDistance = remainingDistance;
-        
+    
         playersLastPosition = new ClkPosition(currenPlayerPosition);
-        
+    
         // On passe au point de cheminement suivant si le point actuel est atteint
         if (remainingDistance <= traveledDistance * 1.5) {
             pathIndex++;
         }
-        
+    
         // Poney mod! xD
-        int jump = (int) (Math.random() * 25);
+        Random random = new Random();
+        int    jump   = (random.nextInt() * 25);
         Debug.sout("jump ? " + jump);
         if (jump == 1) {peripherals.getKeyboard().pressKey(KEY_SPACE);}
         if (traveledDistance < 460) { // 469 étant la distance moyenne dans l'eau, on ne peut pas faire plus sans prendre le risque de confondre
@@ -388,37 +393,8 @@ public class TomTom {
         }
         else {closeStep = 0;}
         if (closeStep > 10) {stuckProtocol();}
-        
-        peripherals.robot.delay(100);
-    }
     
-    private void fly() throws AWTException {
-        
-        peripherals.getKeyboard().typeString("y");
-        
-        for (int n = 1; n <= 4; n++) {
-            peripherals.robot.keyPress(KeyEvent.VK_HOME);
-            peripherals.robot.keyRelease(KeyEvent.VK_HOME);
-            peripherals.robot.delay(i_DELAY);
-        }
-        
-        peripherals.robot.delay(2000);
-        
-        peripherals.getMouse().dragLeft2Right(10, InputEvent.BUTTON3_DOWN_MASK);
-        
-        for (int n = 1; n <= 3; n++) {
-            peripherals.robot.keyPress(KeyEvent.VK_END);
-            peripherals.robot.keyRelease(KeyEvent.VK_END);
-            peripherals.robot.delay(i_DELAY);
-        }
-        
-        peripherals.getKeyboard().typeString("j");
-        isRunning = true;
-        peripherals.robot.delay(i_DELAY);
-        peripherals.robot.keyPress(KEY_SPACE);
-        peripherals.robot.delay(10000);
-        peripherals.robot.keyRelease(KEY_SPACE);
-        isFlying = true;
+        peripherals.robot.delay(100);
     }
     
     private void runStart() {

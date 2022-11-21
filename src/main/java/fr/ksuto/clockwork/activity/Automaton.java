@@ -16,28 +16,22 @@ import java.awt.image.BufferedImage;
 
 public class Automaton {
     
-    private static final int                   iGreyColor          = 100;
+    private static final int                   GREY_COLOR            = 100;
+    private static final long                  TURN_AROUND_COOL_DOWN = 4000;
     private final        PeripheralRobotHelper peripherals;
-    private final        long                  turnAroundCoolDown  = 4000;
     private final        ClockWork_UI          ui;
-    public               ClockWork_UI.Status   status              = ClockWork_UI.Status.RUN;
-    public               boolean               stepingBack         = false;
+    public               ClockWork_UI.Status   status                = ClockWork_UI.Status.RUN;
     private              Robot                 robot;
     private              TomTom                tomtom;
-    private              boolean               wasInCombat         = false;
-    private              long                  lastActionTime      = 0;
-    private              long                  lockTurnAroundUntil = System.currentTimeMillis();
+    private              boolean               wasInCombat           = false;
+    private              long                  lastActionTime        = 0;
+    private              long                  lockTurnAroundUntil   = System.currentTimeMillis();
     
     public Automaton(PeripheralRobotHelper peripherals, ClockWork_UI autoHitControl) {
         
         this.peripherals = peripherals;
         this.ui = autoHitControl;
-        try {
-            tomtom = new TomTom(peripherals);
-        }
-        catch (AWTException e) {
-            e.printStackTrace();
-        }
+        tomtom = new TomTom(peripherals);
     }
     
     public void play() throws Exception {
@@ -46,7 +40,6 @@ public class Automaton {
         
         robot = new Robot();
         
-        //noinspection InfiniteLoopStatement
         while (true) {
             
             QrCode qrCode = ui.getQrCode();
@@ -74,23 +67,6 @@ public class Automaton {
         }
     }
     
-    private void faceEnemy() {
-        
-        peripherals.robot.keyPress(40); // Recule
-        peripherals.robot.keyPress(32); // Saute
-        peripherals.robot.keyPress(39); // Tourne
-        peripherals.robot.delay(100);
-        peripherals.robot.keyRelease(32); // Stop Saute
-        peripherals.robot.delay(400);
-        peripherals.robot.keyRelease(39); // Stop Tourne
-        peripherals.robot.delay(500);
-        peripherals.robot.keyPress(32); // Saute
-        peripherals.robot.delay(100);
-        peripherals.robot.keyRelease(32); // Stop Saute
-        peripherals.robot.delay(900);
-        peripherals.robot.keyRelease(40); // Stop Recule
-    }
-    
     private void fish() throws Exception {
         
         Fisherman natPagle = new Fisherman(ui, peripherals);
@@ -110,9 +86,9 @@ public class Automaton {
     private void hitKey(Key key2hit, boolean altModifier, boolean ctrlModifier, boolean shiftModifier) {
         
         String key = shiftModifier ? key2hit.key.toUpperCase() : key2hit.key.toLowerCase();
-        
+    
         ui.appendLog(key);
-        ui.setiGrey(iGreyColor);
+        ui.setiGrey(GREY_COLOR);
         
         peripherals.getKeyboard().pressKey(key2hit.hitKey, altModifier, ctrlModifier, shiftModifier);
     }
@@ -131,25 +107,25 @@ public class Automaton {
         if (!qrCode.TOGGLE_ON_OFF.active) {
             return;
         }
-        
+    
         if (qrCode.ADD_WAYPOINT.active) {
             tomtom.addWayPoint(qrCode);
         }
-        
+    
         if (qrCode.CLEAR_WAYPOINTS.active) {
             tomtom.clearWayPoints();
         }
-        
-        if (wasInCombat && !qrCode.inCombat.active) {
-            //            tryToLoot();
+    
+        if (wasInCombat && !qrCode.inCombat.active && qrCode.DRIVE_MOD.active) {
+            tryToLoot();
         }
-        
+    
         Key     key2hit       = null;
         int     bestPriority  = -1;
         boolean shiftModifier = false;
         boolean ctrlModifier  = false;
         boolean altModifier   = false;
-        
+    
         checkParty(qrCode.getCapturedQrCode(), qrCode);
         
         // Check Stance
@@ -162,30 +138,25 @@ public class Automaton {
             switch (stance) {
                 case 112:
                     key2hit = new Key(KeyEvent.VK_F1, "F1");
-                    ;
                     break;
                 case 113:
                     key2hit = new Key(KeyEvent.VK_F2, "F2");
-                    ;
                     break;
                 case 114:
                     key2hit = new Key(KeyEvent.VK_F3, "F3");
-                    ;
                     break;
                 case 115:
                     key2hit = new Key(KeyEvent.VK_F4, "F4");
-                    ;
                     break;
                 case 116:
                     key2hit = new Key(KeyEvent.VK_F5, "F5");
-                    ;
                     break;
                 default:
                     key2hit = new Key(0x0, "");
             }
         }
-        
-        if (key2hit != null) {System.out.println("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
+    
+        if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
         
         for (Key key : qrCode.getKeys()) {
             rgbConverter = new RGBConverter(qrCode.getCapturedQrCode(), key.xPosition, key.yPosition);
@@ -196,8 +167,8 @@ public class Automaton {
             
             if (active &&
                 priority > bestPriority) {
-                
-                if (key2hit != null) {System.out.println("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
+    
+                if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
                 key2hit = key;
                 ctrlModifier = keyMod == 1;
                 altModifier = keyMod == 2;
@@ -205,8 +176,8 @@ public class Automaton {
                 bestPriority = priority;
             }
         }
-        
-        if (key2hit != null) {System.out.println("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
+    
+        if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
         
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
@@ -219,10 +190,8 @@ public class Automaton {
         
         tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, qrCode.getPlayerHealth());
         
-        if (qrCode.stepBack.active && qrCode.DRIVE_MOD.active) {faceEnemy();}
-        
         if (qrCode.turnAround.active && System.currentTimeMillis() > lockTurnAroundUntil && qrCode.DRIVE_MOD.active) {
-            lockTurnAroundUntil = System.currentTimeMillis() + turnAroundCoolDown;
+            lockTurnAroundUntil = System.currentTimeMillis() + TURN_AROUND_COOL_DOWN;
             turnAround();
         }
         
@@ -234,7 +203,7 @@ public class Automaton {
     
     private void targetPartyMember(ComplexKey raidMember) {
     
-        System.out.println("Target party member " + raidMember.index);
+        Debug.sout("Target party member " + raidMember.index);
     
         switch (raidMember.index) {
         
@@ -250,22 +219,24 @@ public class Automaton {
             case 4:
                 peripherals.getKeyboard().pressKey(KeyEvent.VK_F5, false, false, true);
                 break;
+            default:
+                Debug.sout("ERROR : Unexpected raidMember.index value: " + raidMember.index);
         }
     }
     
     private void targetRaidMember(ComplexKey raidMember) {
     
-        System.out.println("Target raid member " + raidMember.index);
+        Debug.sout("Target raid member " + raidMember.index);
     
         peripherals.getKeyboard().pressKey(raidMember.hitKey, raidMember.alt, raidMember.ctrl, raidMember.shift);
     }
     
     private void tryToLoot() {
-        
+    
         peripherals.robot.delay(500);
-        
-        int hitZoneX = peripherals.getScreen().SCREEN_WIDTH / 2 + (int) ((double) peripherals.getScreen().SCREEN_WIDTH / 100d * 4.6875);
-        int hitZoneY = peripherals.getScreen().SCREEN_HEIGHT / 2 + (int) ((double) peripherals.getScreen().SCREEN_HEIGHT / 100d * 14.8148);
+    
+        int hitZoneX = Screen.SCREEN_WIDTH / 2 + (int) (Screen.SCREEN_WIDTH / 100d * 4.6875);
+        int hitZoneY = Screen.SCREEN_HEIGHT / 2 + (int) (Screen.SCREEN_HEIGHT / 100d * 14.8148);
     
         peripherals.robot.keyPress(KeyEvent.VK_SHIFT);
         peripherals.getMouse().clickRight(hitZoneX, hitZoneY);

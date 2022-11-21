@@ -23,8 +23,6 @@ import java.util.Date;
 
 import javax.imageio.ImageIO;
 
-//import clockwork.AutoGrind_UI.Status;
-
 public class Fisherman {
     
     public static final int                   BAIT_TIME       = 5 * 60000; // Shift + W
@@ -34,8 +32,8 @@ public class Fisherman {
     public static final int                   Y_OFFSET        = -190;
     private final       PeripheralRobotHelper peripherals;
     private final       ClockWork_UI          ui;
-    int heightOffset = 0, widthOffset = 0;
-    //    private             double                iRatio           = 1;
+    int heightOffset = 0;
+    int widthOffset  = 0;
     private long     lCurrentBaitTime = 0;
     private long     lCurrentLureTime = 0;
     private ShowZone show;
@@ -48,46 +46,51 @@ public class Fisherman {
     }
     
     boolean fish(CaptureScheduler captureScheduler) {
-        
-        int[] currentCoordinates, initialCoordinates, averagePosition;
+    
+        int[] currentCoordinates;
+        int[] initialCoordinates;
+        int[] averagePosition;
         int   loop = 1;
-        
+    
         if (new Date().getTime() - lCurrentLureTime > LURE_TIME) {
             lCurrentLureTime = new Date().getTime();
             ui.appendLog("w");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_W);
             peripherals.robot.delay(3000);
         }
-        
+    
         if (new Date().getTime() - lCurrentBaitTime > BAIT_TIME) {
             lCurrentBaitTime = new Date().getTime();
             ui.appendLog("W");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_W, false, false, true);
             peripherals.robot.delay(1000);
         }
-        
+    
         ui.appendLog("h");
         peripherals.getKeyboard().pressKey(KeyEvent.VK_H);
-        
-        long fishingTime = new Date().getTime(), currentTime = new Date().getTime();
-        
+    
+        long fishingTime = new Date().getTime();
+        long currentTime = new Date().getTime();
+    
         peripherals.robot.delay(2500);
-        
+    
         currentCoordinates = searchBobber(captureScheduler.getLastImage(), true, null);
         initialCoordinates = currentCoordinates;
         averagePosition = currentCoordinates;
-        
+    
         if (initialCoordinates == null) {
             Debug.sout("Bobber not found =(");
             
             ShowZone.Zone zone             = show.zoneList.get(0);
             BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(zone.getX1(), zone.getY1(), zone.getWidth(), zone.getHeight()));
-            
+        
             try {
                 File outputfile = new File(System.currentTimeMillis() + ".jpg");
                 ImageIO.write(biCapturedScreen, "png", outputfile);
             }
-            catch (IOException ignored) {}
+            catch (IOException ignored) {
+                Debug.sout("ERROR  : Écriture impossible !");
+            }
             
             return true;
         }
@@ -128,9 +131,9 @@ public class Fisherman {
             }
             if (blobberFoundTime == null && distance >= 6) {blobberFoundTime = new Date().getTime();}
             if (blobberFoundTime != null && new Date().getTime() - blobberFoundTime > 1000) {
-                
+    
                 Debug.sout("Got a catch ? Bobber Moving (distance = " + maxDistance + ")");
-                System.out.println("loops/s : " + (loop / ((currentTime - fishingTime) / 1000)));
+                Debug.sout("loops/s : " + (loop / ((currentTime - fishingTime) / 1000)));
                 
                 ui.appendLog("ϡ" + maxDistance);
                 peripherals.getMouse().clickLeft();
@@ -168,8 +171,6 @@ public class Fisherman {
         if (resultsWoW != null) {
             int iWoWSize = Screen.SCREEN_WIDTH - (resultsWoW.getX() * 2);
             Debug.sout("WoW Width = " + iWoWSize);
-            //            iRatio = (double) iWoWSize / (double) Screen.SCREEN_WIDTH;
-            //            Debug.sout("Ratio = " + iRatio);
         }
     
         show = new ShowZone(peripherals);
@@ -199,22 +200,27 @@ public class Fisherman {
     }
     
     private int[] searchBobber(BufferedImage biCapturedScreen, boolean autoIncreaseSearchArea, int[] knownCoordinates) {
-        
+    
         int iCapturedRGB;
-        int r, g, b;
-        
-        if (show.zoneList.isEmpty()) {return null;}
+        int r;
+        int g;
+        int b;
+    
+        if (show.zoneList.isEmpty()) {return new int[0];}
         ShowZone.Zone searchZone = show.zoneList.get(0);
-        
-        int x1 = searchZone.getX1(), x2 = searchZone.getX2(), y1 = searchZone.getY1(), y2 = searchZone.getY2();
-        
+    
+        int x1 = searchZone.getX1();
+        int x2 = searchZone.getX2();
+        int y1 = searchZone.getY1();
+        int y2 = searchZone.getY2();
+    
         if (knownCoordinates != null) {
             x1 = knownCoordinates[0] - 10;
             x2 = knownCoordinates[0] + 10;
             y1 = knownCoordinates[1] - 10;
             y2 = knownCoordinates[1] + 10;
         }
-        
+    
         for (int count = 0; count < 4; count++) {
             for (int y = y1; y < y2; y++) {
                 for (int x = x1; x < x2; x++) {
@@ -255,6 +261,6 @@ public class Fisherman {
                                 Screen.SCREEN_WIDTH / 2 - (STARTING_WIDTH + widthOffset) / 2,
                                 Screen.SCREEN_HEIGHT / 2 - (STARTING_HEIGHT + heightOffset) / 2 + Y_OFFSET);
         }
-        return null;
+        return new int[0];
     }
 }

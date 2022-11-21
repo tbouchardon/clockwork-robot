@@ -4,6 +4,7 @@ import fr.ksuto.clockwork.entities.Player;
 import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.peripherals.Screen;
 import fr.ksuto.tools.Debug;
 
 import java.awt.*;
@@ -32,7 +33,7 @@ class Healer {
         healbotZone = new ShowZone(peripherals);
     }
     
-    public static void main(String[] args) throws AWTException, InterruptedException {
+    public static void main(String[] args) throws AWTException {
         
         PeripheralRobotHelper peripherals = new PeripheralRobotHelper();
         
@@ -44,7 +45,7 @@ class Healer {
             Debug.sout("" + i);
         }
         
-        BufferedImage capturedScreen = robot.createScreenCapture(new Rectangle(0, 0, peripherals.getScreen().SCREEN_WIDTH, peripherals.getScreen().SCREEN_HEIGHT));
+        BufferedImage capturedScreen = robot.createScreenCapture(new Rectangle(0, 0, Screen.SCREEN_WIDTH, Screen.SCREEN_HEIGHT));
         double        time           = System.currentTimeMillis();
         bot.lookForHealbotMembers(capturedScreen);
         Debug.sout("lookForHealbotMembers time : " + (System.currentTimeMillis() - time));
@@ -66,9 +67,9 @@ class Healer {
             currentWoundedPlayer = watchOverPlayers(biCapturedScreen);
             if (currentWoundedPlayer != null && !currentWoundedPlayer.equals(woundedPlayer)) {
                 woundedPlayer = currentWoundedPlayer;
-                
-                peripherals.robot.mouseRelease(InputEvent.BUTTON1_MASK);
-                peripherals.robot.mouseRelease(InputEvent.BUTTON3_MASK);
+    
+                peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                peripherals.robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
                 int x = MouseInfo.getPointerInfo().getLocation().x;
                 int y = MouseInfo.getPointerInfo().getLocation().y;
                 peripherals.robot.mouseMove(woundedPlayer.xPosition + 5, woundedPlayer.yPosition + 5);
@@ -80,21 +81,25 @@ class Healer {
     }
     
     private ArrayList<Player> lookForHealbotMembers(BufferedImage capturedScreen) {
-        
-        int maxRed = 50, minGreen = 150, maxBlue = 40;
-        int red, green, blue;
-        
-        for (int x = peripherals.getScreen().SCREEN_WIDTH / 2; x < peripherals.getScreen().SCREEN_WIDTH; x++) {
-            for (int y = 0; y < peripherals.getScreen().SCREEN_HEIGHT; y++) {
-                
+    
+        int maxRed   = 50;
+        int minGreen = 150;
+        int maxBlue  = 40;
+        int red;
+        int green;
+        int blue;
+    
+        for (int x = Screen.SCREEN_WIDTH / 2; x < Screen.SCREEN_WIDTH; x++) {
+            for (int y = 0; y < Screen.SCREEN_HEIGHT; y++) {
+            
                 int tempWitdh  = 0;
                 int tempHeight = 0;
-                
+            
                 RGBConverter rgbConverter = new RGBConverter(capturedScreen, x, y).invoke();
                 red = rgbConverter.getRed();
                 green = rgbConverter.getGreen();
                 blue = rgbConverter.getBlue();
-                
+            
                 if ((red < maxRed) && (green > minGreen) && (blue < maxBlue)) {
                     
                     while ((red < maxRed) && (green > minGreen) && (blue < maxBlue)) {
@@ -162,17 +167,19 @@ class Healer {
     }
     
     private Player watchOverPlayers(BufferedImage capturedScreen) {
-        
+    
         int    capturedRGB;
-        int    r, g, b;
+        int    r;
+        int    g;
+        int    b;
         Player mostWoundedPlayer = null;
-        
-        while ((raid.size() == 0 && System.currentTimeMillis() - lastSearch > 1000) ||
+    
+        while ((raid.isEmpty() && System.currentTimeMillis() - lastSearch > 1000) ||
                (System.currentTimeMillis() - lastSearch > 10000)) {raid = lookForHealbotMembers(capturedScreen);}
-        
+    
         if (!raid.isEmpty()) {
             for (Player p : raid) {
-                
+            
                 capturedRGB = capturedScreen.getRGB(p.xPosition, p.yPosition);
                 r = (capturedRGB >> 16) & 0xFF;
                 g = (capturedRGB >> 8) & 0xFF;
@@ -191,7 +198,6 @@ class Healer {
             }
             if (mostWoundedPlayer == null) {mostWoundedPlayer = raid.get(0);}
         }
-        //		Debug.sout("mostWoundedPlayer : " + mostWoundedPlayer.xPosition + " " + mostWoundedPlayer.yPosition);
         return mostWoundedPlayer;
     }
 }
