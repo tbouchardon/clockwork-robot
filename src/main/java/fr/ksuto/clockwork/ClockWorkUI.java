@@ -3,6 +3,8 @@ package fr.ksuto.clockwork;
 import fr.ksuto.clockwork.activity.Automaton;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.peripherals.Screen;
+import fr.ksuto.tools.Debug;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -19,7 +21,7 @@ import javax.swing.*;
 import com.google.inject.Inject;
 
 @SuppressWarnings({"Duplicates"})
-public class ClockWork_UI {
+public class ClockWorkUI {
     
     private static final int BLUE  = 250;
     private static final int GREEN = 250;
@@ -34,8 +36,9 @@ public class ClockWork_UI {
     private QrCode  qrCode     = new QrCode();
     private boolean shouldExit = false;
     
-    public ClockWork_UI() {
-    
+    public ClockWorkUI() {
+        // Constructeur vide nécessaire pour le fonctionnement
+        // Son abscence empêche la fermeture correcte de l’application
     }
     
     public void appendLog(String sKey) {
@@ -59,8 +62,8 @@ public class ClockWork_UI {
         
         JDialog ui = new JDialog();
         JPanel panel = new JPanel() {
-            
-            private final BufferedImage bufferedImage = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Pictures/background.png")));
+    
+            private final transient BufferedImage bufferedImage = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Pictures/background.png")));
             
             @Override
             protected void paintComponent(Graphics g) {
@@ -78,13 +81,14 @@ public class ClockWork_UI {
         ui.setAlwaysOnTop(true);
         ui.setPreferredSize(new Dimension(210, 71));
         ui.setResizable(false);
-        ui.setLocation(peripherals.getScreen().SCREEN_WIDTH - 270, peripherals.getScreen().SCREEN_HEIGHT - 95);
+        ui.setLocation(Screen.SCREEN_WIDTH - 270, Screen.SCREEN_HEIGHT - 95);
         ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
         
         ui.addWindowListener(new WindowAdapter() {
-            
-            public void windowClosing(WindowEvent evt) {
     
+            @Override
+            public void windowClosing(WindowEvent evt) {
+        
                 shouldExit = true;
             }
         });
@@ -130,7 +134,7 @@ public class ClockWork_UI {
                     }
                 }
                 catch (AWTException | IOException e) {
-                    e.printStackTrace();
+                    Debug.sout(e.getLocalizedMessage());
                 }
                 if (!qrCode.getKeys().isEmpty()) {
                     setEnabledButtonAutoconf(true);
@@ -164,12 +168,13 @@ public class ClockWork_UI {
     }
     
     private ImageIcon getImageIconFromResourse(String resource) {
-        
+    
         try {
             URL url = getClass().getResource(resource);
             return new ImageIcon(ImageIO.read(Objects.requireNonNull(url)));
         }
-        catch (IOException ignore) {
+        catch (IOException e) {
+            Debug.sout("ERROR : Impossible de charger l'icone");
         }
         return null;
     }
@@ -191,7 +196,7 @@ public class ClockWork_UI {
         
         castLogTextfield.setEditable(false);
         castLogTextfield.setOpaque(false);
-        castLogTextfield.setHorizontalAlignment(JTextField.CENTER);
+        castLogTextfield.setHorizontalAlignment(SwingConstants.CENTER);
         castLogTextfield.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
         castLogTextfield.setPreferredSize(new Dimension(140, 30));
         castLogTextfield.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));

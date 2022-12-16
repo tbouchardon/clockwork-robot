@@ -3,7 +3,7 @@ package fr.ksuto.clockwork.activity;
 import static fr.ksuto.prh.properties.Constants.i_DELAY;
 
 import fr.ksuto.bot.generated.enums.InterfaceEnum;
-import fr.ksuto.clockwork.ClockWork_UI;
+import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.entities.Position;
@@ -31,14 +31,14 @@ public class Fisherman {
     public static final int                   STARTING_WIDTH  = 180;
     public static final int                   Y_OFFSET        = -190;
     private final       PeripheralRobotHelper peripherals;
-    private final       ClockWork_UI          ui;
+    private final       ClockWorkUI           ui;
     int heightOffset = 0;
     int widthOffset  = 0;
     private long     lCurrentBaitTime = 0;
     private long     lCurrentLureTime = 0;
     private ShowZone show;
     
-    Fisherman(ClockWork_UI ui, PeripheralRobotHelper peripherals) {
+    Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals) {
         
         this.ui = ui;
         

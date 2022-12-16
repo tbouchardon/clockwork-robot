@@ -6,16 +6,15 @@ import fr.ksuto.prh.peripherals.Screen;
 import lombok.Data;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import javax.swing.*;
 
 import org.apache.commons.lang3.StringUtils;
 
-@SuppressWarnings("serial")
 public class ShowZone extends JFrame {
     
-    //private JPanel panel;
     public  ArrayList<Zone>       zoneList = new ArrayList<>();
     private PeripheralRobotHelper peripherals;
     private PaintPane             paintPane;
@@ -50,17 +49,6 @@ public class ShowZone extends JFrame {
                                                Screen.SCREEN_HEIGHT / 2 - Fisherman.STARTING_HEIGHT / 2 + Fisherman.Y_OFFSET,
                                                150, 150, 200, 0);
         show.addZone(zone);
-        
-        //        while (true) {
-        //            peripheralRobotHelper.robot.delay(500);
-        //            int offset = new Random().ints(50, 200)
-        //                                 .findFirst()
-        //                                 .getAsInt();
-        //            show.changeZoneSize(startWidth + offset,
-        //                                startHeight + offset,
-        //                                Screen.SCREEN_WIDTH / 2 - (startWidth / 2) - offset / 2,
-        //                                Screen.SCREEN_HEIGHT / 2 - (startHeight) + Fisherman.Y_OFFSET - offset / 2);
-        //        }
     }
     
     public void addZone(Zone zone) {
@@ -79,7 +67,6 @@ public class ShowZone extends JFrame {
     }
     
     public void changeZoneSize(Zone zone, int width, int height, int xPosition, int yPosition) {
-        //panel.setPreferredSize(new Dimension(iWidth, iHeight));
         zone.width = width;
         zone.height = height;
         zone.xPosition = xPosition;
@@ -112,7 +99,7 @@ public class ShowZone extends JFrame {
     }
     
     @Data
-    public static class Zone {
+    public static class Zone implements Serializable {
         
         ZoneStatus status = ZoneStatus.OK;
         String     name   = "";
@@ -235,8 +222,8 @@ public class ShowZone extends JFrame {
         
         @Override
         public Dimension getPreferredSize() {
-            
-            return new Dimension(peripherals.getScreen().SCREEN_WIDTH, peripherals.getScreen().SCREEN_HEIGHT);
+    
+            return new Dimension(Screen.SCREEN_WIDTH, Screen.SCREEN_HEIGHT);
         }
     }
 }

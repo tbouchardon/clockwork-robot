@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <proxies>
+        <proxy>
+            <protocol>http</protocol>
+            <active>true</active>
+            <host>direct.proxy.i2</host>
+            <port>8080</port>
+            <nonProxyHosts>172.*|*.din.developpement-durable.gouv.fr|*.i2|*.agriculture</nonProxyHosts>
+        </proxy>
+    </proxies>
+
+</settings>

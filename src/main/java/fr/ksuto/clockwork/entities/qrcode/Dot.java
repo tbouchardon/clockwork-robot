@@ -57,8 +57,8 @@ public class Dot {
     }
     
     public boolean updateActive(BufferedImage bufferedImage) {
-        
-        active = bufferedImage.getRGB(xPosition, yPosition) == RGBConverter.WHITE;
+    
+        active = bufferedImage.getRGB(xPosition, yPosition) == RGBConverter.ARGB_WHITE;
         
         return active;
     }

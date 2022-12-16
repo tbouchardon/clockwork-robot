@@ -7,11 +7,11 @@ import java.awt.image.BufferedImage;
  */
 public class RGBConverter {
     
-    public static final int BLACK = -16777216;
-    public static final int BLUE  = -16776961;
-    public static final int GREEN = -16711936;
-    public static final int RED   = -65536;
-    public static final int WHITE = -1;
+    public static final int ARGB_BLACK = -16777216;
+    public static final int ARGB_BLUE  = -16776961;
+    public static final int ARGB_GREEN = -16711936;
+    public static final int ARGB_RED   = -65536;
+    public static final int ARGB_WHITE = -1;
     
     private final BufferedImage capturedScreen;
     private final int           x;
@@ -30,7 +30,6 @@ public class RGBConverter {
     public RGBConverter invoke() {
         
         int capturedRGB;
-        //Debug.sout(x + " " + y);
         capturedRGB = capturedScreen.getRGB(x, y);
         red = (capturedRGB >> 16) & 0xFF;
         green = (capturedRGB >> 8) & 0xFF;

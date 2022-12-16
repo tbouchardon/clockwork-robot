@@ -1,6 +1,6 @@
 package fr.ksuto.clockwork.activity;
 
-import fr.ksuto.clockwork.ClockWork_UI;
+import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.entities.qrcode.ComplexKey;
 import fr.ksuto.clockwork.entities.qrcode.Key;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
@@ -19,15 +19,15 @@ public class Automaton {
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
     private final        PeripheralRobotHelper peripherals;
-    private final        ClockWork_UI          ui;
-    public               ClockWork_UI.Status   status                = ClockWork_UI.Status.RUN;
+    private final        ClockWorkUI           ui;
+    public               ClockWorkUI.Status    status                = ClockWorkUI.Status.RUN;
     private              Robot                 robot;
     private              TomTom                tomtom;
     private              boolean               wasInCombat           = false;
     private              long                  lastActionTime        = 0;
     private              long                  lockTurnAroundUntil   = System.currentTimeMillis();
     
-    public Automaton(PeripheralRobotHelper peripherals, ClockWork_UI autoHitControl) {
+    public Automaton(PeripheralRobotHelper peripherals, ClockWorkUI autoHitControl) {
         
         this.peripherals = peripherals;
         this.ui = autoHitControl;
@@ -46,7 +46,7 @@ public class Automaton {
     
             robot.delay(100);
     
-            if (status == ClockWork_UI.Status.FISHING) {
+            if (status == ClockWorkUI.Status.FISHING) {
                 fish();
             }
     
@@ -80,7 +80,7 @@ public class Automaton {
         }
         peripherals.getScreen().stopCapture();
         natPagle.leave();
-        if (status == ClockWork_UI.Status.FISHING) {
+        if (status == ClockWorkUI.Status.FISHING) {
             ui.dojButtonFishClick();
         }
     }
@@ -100,7 +100,7 @@ public class Automaton {
         qrCode.captureQrCode(peripherals);
         
         // On ne fait rien si l’addon n’est pas visible
-        if (qrCode.getCapturedQrCode().getRGB(0, 0) != RGBConverter.GREEN) {
+        if (qrCode.getCapturedQrCode().getRGB(0, 0) != RGBConverter.ARGB_GREEN) {
             return;
         }
         

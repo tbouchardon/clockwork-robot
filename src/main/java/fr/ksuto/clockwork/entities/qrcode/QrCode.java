@@ -131,7 +131,7 @@ public class QrCode {
         return capture;
     }
     
-    public boolean hasTarget() {return (targetReaction.getRgb(capturedQrCode) != RGBConverter.BLACK);}
+    public boolean hasTarget() {return (targetReaction.getRgb(capturedQrCode) != RGBConverter.ARGB_BLACK);}
     
     public boolean init(PeripheralRobotHelper peripherals) throws AWTException, IOException {
         
@@ -313,7 +313,7 @@ public class QrCode {
     
     public double getTargetMana()    {return 100D / 255D * (double) targetMana.getBlue(capturedQrCode);}
     
-    public boolean isTargetHostile() {return (targetReaction.getRgb(capturedQrCode) == RGBConverter.RED);}
+    public boolean isTargetHostile() {return (targetReaction.getRgb(capturedQrCode) == RGBConverter.ARGB_RED);}
     
     public enum Camera {
         DRIVE,

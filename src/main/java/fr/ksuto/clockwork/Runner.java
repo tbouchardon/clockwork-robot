@@ -8,7 +8,7 @@ import com.google.inject.Inject;
 public class Runner {
     
     @Inject
-    ClockWork_UI ui;
+    ClockWorkUI ui;
     
     public static void main(String[] args) throws Exception {
     

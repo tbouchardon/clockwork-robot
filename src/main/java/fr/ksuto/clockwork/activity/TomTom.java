@@ -77,127 +77,127 @@ public class TomTom {
         
         int xPos = 0;
         
-        if (biCapturedScreen.getRGB(6, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 524288;
         }
-        if (biCapturedScreen.getRGB(7, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 262144;
         }
-        if (biCapturedScreen.getRGB(8, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 131072;
         }
-        if (biCapturedScreen.getRGB(9, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 65536;
         }
-        if (biCapturedScreen.getRGB(10, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 32768;
         }
-        if (biCapturedScreen.getRGB(11, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 16384;
         }
-        if (biCapturedScreen.getRGB(12, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 8192;
         }
-        if (biCapturedScreen.getRGB(13, 7) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 7) == RGBConverter.ARGB_WHITE) {
             xPos += 4096;
         }
-        if (biCapturedScreen.getRGB(2, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(2, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 2048;
         }
-        if (biCapturedScreen.getRGB(3, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(3, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 1024;
         }
-        if (biCapturedScreen.getRGB(4, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(4, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 512;
         }
-        if (biCapturedScreen.getRGB(5, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(5, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 256;
         }
-        if (biCapturedScreen.getRGB(6, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 128;
         }
-        if (biCapturedScreen.getRGB(7, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 64;
         }
-        if (biCapturedScreen.getRGB(8, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 32;
         }
-        if (biCapturedScreen.getRGB(9, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 16;
         }
-        if (biCapturedScreen.getRGB(10, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 8;
         }
-        if (biCapturedScreen.getRGB(11, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 4;
         }
-        if (biCapturedScreen.getRGB(12, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 2;
         }
-        if (biCapturedScreen.getRGB(13, 8) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 8) == RGBConverter.ARGB_WHITE) {
             xPos += 1;
         }
         currenPlayerPosition.xPos = xPos;
         
         int yPos = 0;
-        if (biCapturedScreen.getRGB(6, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 524288;
         }
-        if (biCapturedScreen.getRGB(7, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 262144;
         }
-        if (biCapturedScreen.getRGB(8, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 131072;
         }
-        if (biCapturedScreen.getRGB(9, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 65536;
         }
-        if (biCapturedScreen.getRGB(10, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 32768;
         }
-        if (biCapturedScreen.getRGB(11, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 16384;
         }
-        if (biCapturedScreen.getRGB(12, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 8192;
         }
-        if (biCapturedScreen.getRGB(13, 10) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 10) == RGBConverter.ARGB_WHITE) {
             yPos += 4096;
         }
-        if (biCapturedScreen.getRGB(2, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(2, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 2048;
         }
-        if (biCapturedScreen.getRGB(3, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(3, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 1024;
         }
-        if (biCapturedScreen.getRGB(4, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(4, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 512;
         }
-        if (biCapturedScreen.getRGB(5, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(5, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 256;
         }
-        if (biCapturedScreen.getRGB(6, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(6, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 128;
         }
-        if (biCapturedScreen.getRGB(7, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(7, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 64;
         }
-        if (biCapturedScreen.getRGB(8, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(8, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 32;
         }
-        if (biCapturedScreen.getRGB(9, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(9, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 16;
         }
-        if (biCapturedScreen.getRGB(10, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(10, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 8;
         }
-        if (biCapturedScreen.getRGB(11, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(11, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 4;
         }
-        if (biCapturedScreen.getRGB(12, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(12, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 2;
         }
-        if (biCapturedScreen.getRGB(13, 11) == RGBConverter.WHITE) {
+        if (biCapturedScreen.getRGB(13, 11) == RGBConverter.ARGB_WHITE) {
             yPos += 1;
         }
         currenPlayerPosition.yPos = yPos;
