@@ -1,7 +1,5 @@
 package fr.ksuto.clockwork.entities.qrcode;
 
-import static fr.ksuto.prh.properties.Constants.i_DELAY;
-
 import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.entities.ColorBlock;
@@ -56,9 +54,9 @@ public class QrCode {
         
         peripherals.robot.keyPress(KeyEvent.VK_ENTER);
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
-        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.delay(100);
         peripherals.getKeyboard().typeString(s);
-        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.delay(100);
         peripherals.robot.keyPress(KeyEvent.VK_ENTER);
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
     }
@@ -73,7 +71,7 @@ public class QrCode {
         peripherals.robot.mouseMove(dot.xPosition, dot.yPosition);
         peripherals.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.delay(100);
         
         openCloseKsuto(peripherals);
     }
@@ -89,7 +87,7 @@ public class QrCode {
         for (int n = 1; n <= 2; n++) {
             peripherals.robot.keyPress(KeyEvent.VK_HOME);
             peripherals.robot.keyRelease(KeyEvent.VK_HOME);
-            peripherals.robot.delay(i_DELAY);
+            peripherals.robot.delay(100);
         }
     }
     
@@ -102,7 +100,7 @@ public class QrCode {
         for (int n = 1; n <= 5; n++) {
             peripherals.robot.keyPress(KeyEvent.VK_END);
             peripherals.robot.keyRelease(KeyEvent.VK_END);
-            peripherals.robot.delay(i_DELAY);
+            peripherals.robot.delay(100);
         }
     }
     
@@ -169,15 +167,14 @@ public class QrCode {
             Debug.sout("Found QrCode : X = " + xPosition + ", Y = " + yPosition + ", carrying on.");
             //            peripherals.robot.mouseMove(xPosition, yPosition);
             
-            robot.delay(i_DELAY);
+            robot.delay(100);
             bFound = true;
         }
         
         if (bFound) {
+            
+            robot.delay(100);
     
-            robot.delay(i_DELAY);
-    
-            // L'ordre d'ajout correspond à l'ordre de priorité. L'interface WoW et celui-ci doivent correspondre.
             keys.add(new Key(KeyEvent.VK_Q, 2, 4, "Q"));
             keys.add(new Key(KeyEvent.VK_D, 3, 4, "D"));
             keys.add(new Key(KeyEvent.VK_R, 4, 4, "R"));

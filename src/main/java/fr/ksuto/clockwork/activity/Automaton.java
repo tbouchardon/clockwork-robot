@@ -41,18 +41,18 @@ public class Automaton {
         robot = new Robot();
         
         while (!ui.isShouldExit()) {
-    
+            
             QrCode qrCode = ui.getQrCode();
-    
+            
             robot.delay(100);
-    
+            
             if (status == ClockWorkUI.Status.FISHING) {
                 fish();
             }
-    
+            
             searchForSomethingToDo(qrCode);
         }
-    
+        
         System.exit(0);
     }
     
@@ -85,14 +85,14 @@ public class Automaton {
         }
     }
     
-    private void hitKey(Key key2hit, boolean altModifier, boolean ctrlModifier, boolean shiftModifier) {
+    private void hitKey(Key key2hit, boolean altModifier, boolean ctrlModifier, boolean shiftModifier, int duration) {
         
         String key = shiftModifier ? key2hit.key.toUpperCase() : key2hit.key.toLowerCase();
-    
+        
         ui.appendLog(key);
         ui.setiGrey(GREY_COLOR);
         
-        peripherals.getKeyboard().pressKey(key2hit.hitKey, altModifier, ctrlModifier, shiftModifier);
+        peripherals.getKeyboard().pressKey(key2hit.hitKey, altModifier, ctrlModifier, shiftModifier, duration);
     }
     
     private void searchForSomethingToDo(QrCode qrCode) {
@@ -109,25 +109,26 @@ public class Automaton {
         if (!qrCode.TOGGLE_ON_OFF.active) {
             return;
         }
-    
+        
         if (qrCode.ADD_WAYPOINT.active) {
             tomtom.addWayPoint(qrCode);
         }
-    
+        
         if (qrCode.CLEAR_WAYPOINTS.active) {
             tomtom.clearWayPoints();
         }
-    
+        
         if (wasInCombat && !qrCode.inCombat.active && qrCode.DRIVE_MOD.active) {
             tryToLoot();
         }
-    
-        Key     key2hit       = null;
-        int     bestPriority  = -1;
-        boolean shiftModifier = false;
-        boolean ctrlModifier  = false;
-        boolean altModifier   = false;
-    
+        
+        Key     key2hit              = null;
+        int     bestPriority         = -1;
+        int     bestPriorityDuration = 0;
+        boolean shiftModifier        = false;
+        boolean ctrlModifier         = false;
+        boolean altModifier          = false;
+        
         checkParty(qrCode.getCapturedQrCode(), qrCode);
         
         // Check Stance
@@ -157,33 +158,38 @@ public class Automaton {
                     key2hit = new Key(0x0, "");
             }
         }
-    
+        
         if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
         
+        String keyStatus = "";
         for (Key key : qrCode.getKeys()) {
             rgbConverter = new RGBConverter(qrCode.getCapturedQrCode(), key.xPosition, key.yPosition);
             rgbConverter.invoke();
             int     keyMod   = (int) Math.floor(rgbConverter.getRed() + 0.5);
             int     priority = (int) Math.floor(rgbConverter.getGreen() + 0.5);
-            boolean active   = rgbConverter.getBlue() != 0;
+            int     duration = (int) (Math.floor(rgbConverter.getBlue() + 0.5) / 255.0 * 30.0 * 1000.0);
+            boolean active   = priority != 0;
+            keyStatus += key.key + " : " + active + " | ";
             
-            if (active &&
-                priority > bestPriority) {
-    
-                if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
+            if (active && priority > bestPriority) {
+                
                 key2hit = key;
                 ctrlModifier = keyMod == 1;
                 altModifier = keyMod == 2;
                 shiftModifier = keyMod == 4;
                 bestPriority = priority;
+                bestPriorityDuration = duration;
+                
+                Debug.sout("key2hit = " + key2hit.key + ", mod = " + keyMod + ", bestPriority = " + bestPriority);
             }
         }
-    
-        if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
+        Debug.sout(keyStatus);
+        
+        if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority + ", bestPriorityDuration = " + bestPriorityDuration);}
         
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
-            hitKey(key2hit, altModifier, ctrlModifier, shiftModifier);
+            hitKey(key2hit, altModifier, ctrlModifier, shiftModifier, bestPriorityDuration);
         }
         
         if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
@@ -201,14 +207,16 @@ public class Automaton {
         
         if (key2hit == null) {peripherals.robot.delay(200);}
         else {peripherals.robot.delay(750);}
+        
+        Debug.sout("Key2hit is null");
     }
     
     private void targetPartyMember(ComplexKey raidMember) {
-    
-        Debug.sout("Target party member " + raidMember.index);
-    
-        switch (raidMember.index) {
         
+        Debug.sout("Target party member " + raidMember.index);
+        
+        switch (raidMember.index) {
+            
             case 1:
                 peripherals.getKeyboard().pressKey(KeyEvent.VK_F2, false, false, true);
                 break;
@@ -227,19 +235,19 @@ public class Automaton {
     }
     
     private void targetRaidMember(ComplexKey raidMember) {
-    
+        
         Debug.sout("Target raid member " + raidMember.index);
-    
+        
         peripherals.getKeyboard().pressKey(raidMember.hitKey, raidMember.alt, raidMember.ctrl, raidMember.shift);
     }
     
     private void tryToLoot() {
-    
+        
         peripherals.robot.delay(500);
-    
+        
         int hitZoneX = Screen.SCREEN_WIDTH / 2 + (int) (Screen.SCREEN_WIDTH / 100d * 4.6875);
         int hitZoneY = Screen.SCREEN_HEIGHT / 2 + (int) (Screen.SCREEN_HEIGHT / 100d * 14.8148);
-    
+        
         peripherals.robot.keyPress(KeyEvent.VK_SHIFT);
         peripherals.getMouse().clickRight(hitZoneX, hitZoneY);
         peripherals.getMouse().clickRight(hitZoneX, hitZoneY - 100);

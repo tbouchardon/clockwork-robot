@@ -1,7 +1,5 @@
 package fr.ksuto.clockwork.activity;
 
-import static fr.ksuto.prh.properties.Constants.i_DELAY;
-
 import fr.ksuto.bot.generated.enums.InterfaceEnum;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.tools.ShowZone;
@@ -181,12 +179,12 @@ public class Fisherman {
                                                Screen.SCREEN_HEIGHT / 2 - STARTING_HEIGHT / 2 + Y_OFFSET,
                                                150, 150, 200, 0);
         show.addZone(zone);
-    
-        peripherals.robot.delay(i_DELAY);
+        
+        peripherals.robot.delay(100);
         peripherals.robot.mouseMove(Screen.SCREEN_WIDTH / 2, Screen.SCREEN_HEIGHT / 2 + 10);
         peripherals.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.delay(100);
     
         peripherals.getKeyboard().pressKey(KeyEvent.VK_X);
     

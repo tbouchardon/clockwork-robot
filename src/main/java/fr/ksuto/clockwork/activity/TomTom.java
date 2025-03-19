@@ -1,7 +1,5 @@
 package fr.ksuto.clockwork.activity;
 
-import static fr.ksuto.prh.properties.Constants.i_DELAY;
-
 import fr.ksuto.clockwork.entities.ClkPosition;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.clockwork.tools.RGBConverter;
@@ -210,7 +208,7 @@ public class TomTom {
         if (!isRunning) {return;}
     
         peripherals.robot.keyPress(KeyEvent.VK_S);
-        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.delay(100);
         peripherals.robot.keyRelease(KeyEvent.VK_S);
         isRunning = false;
     }
@@ -402,7 +400,7 @@ public class TomTom {
         if (isRunning) {return;}
         Debug.sout("Run Start/Stop");
         peripherals.robot.keyPress(KEY_J);
-        peripherals.robot.delay(i_DELAY);
+        peripherals.robot.delay(100);
         peripherals.robot.keyRelease(KEY_J);
         isRunning = true;
     }

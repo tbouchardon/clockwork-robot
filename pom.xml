@@ -37,7 +37,7 @@
     </build>
 
     <groupId>fr.ksuto</groupId>
-    <artifactId>clockwork</artifactId>
+    <artifactId>Clockwork_Java</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
 
