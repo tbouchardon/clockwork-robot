@@ -18,6 +18,17 @@ public class Automaton {
     
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
+
+    private static final int MODIFIER_CTRL = 1;
+    private static final int MODIFIER_ALT = 2;
+    private static final int MODIFIER_SHIFT = 4;
+
+    private static final int STANCE_1 = 112;
+    private static final int STANCE_2 = 113;
+    private static final int STANCE_3 = 114;
+    private static final int STANCE_4 = 115;
+    private static final int STANCE_5 = 116;
+
     private final        PeripheralRobotHelper peripherals;
     private final        ClockWorkUI           ui;
     public Status status = Status.RUN;
@@ -137,19 +148,19 @@ public class Automaton {
             int stance = (int) Math.floor(rgbConverter.getBlue() + 0.5);
             
             switch (stance) {
-                case 112:
+                case STANCE_1:
                     key2hit = new Key(KeyEvent.VK_F1, "F1");
                     break;
-                case 113:
+                case STANCE_2:
                     key2hit = new Key(KeyEvent.VK_F2, "F2");
                     break;
-                case 114:
+                case STANCE_3:
                     key2hit = new Key(KeyEvent.VK_F3, "F3");
                     break;
-                case 115:
+                case STANCE_4:
                     key2hit = new Key(KeyEvent.VK_F4, "F4");
                     break;
-                case 116:
+                case STANCE_5:
                     key2hit = new Key(KeyEvent.VK_F5, "F5");
                     break;
                 default:
@@ -172,9 +183,9 @@ public class Automaton {
             if (active && priority > bestPriority) {
                 
                 key2hit = key;
-                ctrlModifier = keyMod == 1;
-                altModifier = keyMod == 2;
-                shiftModifier = keyMod == 4;
+                ctrlModifier = keyMod == MODIFIER_CTRL;
+                altModifier = keyMod == MODIFIER_ALT;
+                shiftModifier = keyMod == MODIFIER_SHIFT;
                 bestPriority = priority;
                 bestPriorityDuration = duration;
                 
