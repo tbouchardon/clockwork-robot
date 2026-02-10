@@ -20,7 +20,7 @@ public class Automaton {
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
     private final        PeripheralRobotHelper peripherals;
     private final        ClockWorkUI           ui;
-    public               ClockWorkUI.Status    status                = ClockWorkUI.Status.RUN;
+    public Status status = Status.RUN;
     private              Robot                 robot;
     private              TomTom                tomtom;
     private              boolean               wasInCombat           = false;
@@ -45,8 +45,8 @@ public class Automaton {
             QrCode qrCode = ui.getQrCode();
             
             robot.delay(100);
-            
-            if (status == ClockWorkUI.Status.FISHING) {
+
+            if (status == Status.FISHING) {
                 fish();
             }
             
@@ -80,7 +80,7 @@ public class Automaton {
         }
         peripherals.getScreen().stopCapture();
         natPagle.leave();
-        if (status == ClockWorkUI.Status.FISHING) {
+        if (status == Status.FISHING) {
             ui.dojButtonFishClick();
         }
     }
@@ -267,5 +267,9 @@ public class Automaton {
             robot.delay(2);
         }
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+    }
+
+    public enum Status {
+        RUN, PAUSE, FISHING, TOMTOM //STOP, CONFIG,
     }
 }

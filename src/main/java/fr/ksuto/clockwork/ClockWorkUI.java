@@ -171,18 +171,17 @@ public class ClockWorkUI {
     private ActionListener fishButtonListener() {
         
         return actionEvent -> {
-            if (automaton.status == Status.RUN) {
+            if (automaton.status == Automaton.Status.RUN) {
                 fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.down.png"));
-                automaton.status = Status.FISHING;
-
+                automaton.status = Automaton.Status.FISHING;
+                
                 autoConfButton.setEnabled(false);
                 fishButton.setEnabled(true);
-            }
-            else if (automaton.status == Status.FISHING) {
+            } else if (automaton.status == Automaton.Status.FISHING) {
                 fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
-                
-                automaton.status = Status.RUN;
 
+                automaton.status = Automaton.Status.RUN;
+                
                 autoConfButton.setEnabled(true);
                 fishButton.setEnabled(true);
             }
@@ -254,9 +253,5 @@ public class ClockWorkUI {
     public void setiGrey(int iGrey) {
         
         this.iGrey = iGrey;
-    }
-    
-    public enum Status {
-        RUN, PAUSE, FISHING, TOMTOM //STOP, CONFIG,
     }
 }
