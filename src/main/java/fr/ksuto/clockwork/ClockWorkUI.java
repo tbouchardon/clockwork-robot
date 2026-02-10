@@ -17,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings({"Duplicates"})
 public class ClockWorkUI {
@@ -122,25 +123,39 @@ public class ClockWorkUI {
         return actionEvent -> {
             
             autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.down.png"));
-            
-            SwingUtilities.invokeLater(() -> {
-                try {
+            setEnabledButtonAutoconf(false); // Disable the button while working
+
+            SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Boolean doInBackground() throws AWTException, IOException {
                     qrCode = new QrCode();
-                    boolean initialized = qrCode.init(peripherals);
-                    if (initialized) {
-                        appendLog("      Done      ");
+                    return qrCode.init(peripherals);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        boolean initialized = get();
+                        if (initialized) {
+                            appendLog("      Done      ");
+                        }
+                        if (!qrCode.getKeys().isEmpty()) {
+                            setEnabledButtonFish(true);
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        // Handle exceptions from doInBackground() or get()
+                        Throwable cause = e.getCause();
+                        Debug.sout(cause != null ? cause.getLocalizedMessage() : e.getLocalizedMessage());
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        // This runs whether the background task succeeded or failed
+                        autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.up.png"));
+                        setEnabledButtonAutoconf(true);
                     }
                 }
-                catch (AWTException | IOException e) {
-                    Debug.sout(e.getLocalizedMessage());
-                }
-                if (!qrCode.getKeys().isEmpty()) {
-                    setEnabledButtonAutoconf(true);
-                    setEnabledButtonFish(true);
-                }
-                
-                autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.up.png"));
-            });
+            };
+
+            worker.execute();
         };
     }
     
