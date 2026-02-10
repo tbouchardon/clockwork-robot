@@ -82,6 +82,7 @@ public class ClockWorkUI {
         ui.setResizable(false);
         ui.setLocation(Screen.SCREEN_WIDTH - 270, Screen.SCREEN_HEIGHT - 95);
         ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
+        ui.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         
         ui.addWindowListener(new WindowAdapter() {
 

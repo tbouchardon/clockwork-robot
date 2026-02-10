@@ -52,8 +52,6 @@ public class Automaton {
             
             searchForSomethingToDo(qrCode);
         }
-        
-        System.exit(0);
     }
     
     private void checkParty(BufferedImage capturedQrCode, QrCode qrCode) {
