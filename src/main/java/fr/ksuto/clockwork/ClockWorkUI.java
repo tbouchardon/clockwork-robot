@@ -141,6 +141,15 @@ public class ClockWorkUI {
                         }
                         if (!qrCode.getKeys().isEmpty()) {
                             setEnabledButtonFish(true);
+                            // Start the automaton in a new thread
+                            new Thread(() -> {
+                                try {
+                                    automaton.play();
+                                } catch (Exception e) {
+                                    Debug.sout("Error in automaton: " + e.getLocalizedMessage());
+                                    Thread.currentThread().interrupt();
+                                }
+                            }).start();
                         }
                     } catch (InterruptedException | ExecutionException e) {
                         // Handle exceptions from doInBackground() or get()
