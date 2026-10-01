@@ -6,3 +6,9 @@
 **/out/
 
 qrCode.jpg
+
+### Gradle ###
+.gradle/
+build/
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar

@@ -1,0 +1,4 @@
+# Scripts du wrapper Gradle : fins de ligne imposées quel que soit core.autocrlf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
