@@ -62,7 +62,14 @@ public class Automaton {
             robot.delay(100);
 
             if (status == Status.FISHING) {
-                fish();
+                try {
+                    fish();
+                }
+                catch (Exception e) {
+                    // Une erreur de pêche ne doit pas arrêter tout l'automate
+                    logger.error("Pêche interrompue", e);
+                    status = Status.RUN;
+                }
             }
             
             searchForSomethingToDo(qrCode);

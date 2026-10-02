@@ -6,8 +6,6 @@ import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
-import fr.ksuto.prh.entities.ColorBlock;
-import fr.ksuto.prh.helpers.ColorSearch;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -87,9 +85,33 @@ public class QrCode {
         update();
         if (TOGGLE_ON_OFF.active) {return false;}
         
-        logger.info("Addon désactivé : envoi de /clk toggle");
-        openCloseKsuto(peripherals);
+        logger.info("Addon désactivé : clic sur le QR code pour donner le focus à WoW, puis /clk toggle");
+        startKsuto(peripherals, qrCodePosition);
         return true;
+    }
+    
+    /**
+     * Coin haut gauche du QR code : un carré de 16×16 dont les quatre coins sont vert pur. Vrai que l'addon soit
+     * allumé (seuls les coins sont verts) ou éteint (le carré entier est vert).
+     *
+     * @return la position à l'écran, ou null si absent
+     */
+    static Point findQrCode(Frame screen) {
+        
+        for (int y = 0; y + 15 < screen.height(); y++) {
+            for (int x = 0; x + 15 < screen.width(); x++) {
+                if (screen.rgb(x, y) == Rgb.ARGB_GREEN
+                    && screen.rgb(x + 15, y) == Rgb.ARGB_GREEN
+                    && screen.rgb(x, y + 15) == Rgb.ARGB_GREEN
+                    && screen.rgb(x + 15, y + 15) == Rgb.ARGB_GREEN
+                    // vrai coin : ni à droite ni en dessous d'un autre pixel vert
+                    && (x == 0 || screen.rgb(x - 1, y) != Rgb.ARGB_GREEN)
+                    && (y == 0 || screen.rgb(x, y - 1) != Rgb.ARGB_GREEN)) {
+                    return new Point(screen.x() + x, screen.y() + y);
+                }
+            }
+        }
+        return null;
     }
     
     public void cameraCombat(PeripheralRobotHelper peripherals) {
@@ -135,14 +157,12 @@ public class QrCode {
         
         logger.debug("Starting AutoConfig");
         
-        ColorBlock qrCodePosition = null;
-        boolean    bFound         = false;
+        Point   qrCodePosition = null;
+        boolean bFound         = false;
         
         for (int i = 7; i >= 0; i--) {
     
-            ColorSearch colorSearch = ColorSearch.getDefault(0, 255, 0, 256, 256);
-            colorSearch.search();
-            qrCodePosition = colorSearch.getFirstResult();
+            qrCodePosition = findQrCode(Capture.screen());
     
             if (qrCodePosition != null) {
                 break;
@@ -157,8 +177,8 @@ public class QrCode {
         
         if (qrCodePosition != null) {
             
-            xPosition = qrCodePosition.getFirstPosition().getX();
-            yPosition = qrCodePosition.getFirstPosition().getY();
+            xPosition = qrCodePosition.x;
+            yPosition = qrCodePosition.y;
             
             this.qrCodePosition = new Dot(xPosition, yPosition);
             
