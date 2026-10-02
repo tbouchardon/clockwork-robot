@@ -1,5 +1,7 @@
 package fr.ksuto.clockwork.activity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import fr.ksuto.clockwork.entities.Player;
 import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
@@ -7,7 +9,6 @@ import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.peripherals.Screen;
-import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
  * Created by Admin on 05/04/2015!
  */
 class Healer {
+    
+    private static final Logger logger = LoggerFactory.getLogger(Healer.class);
     
     private final PeripheralRobotHelper peripherals;
     private       int                   hbMaxBarWidth  = 0;
@@ -43,13 +46,13 @@ class Healer {
         Robot robot = new Robot();
         for (int i = 3; i != 0; i--) {
             robot.delay(1000);
-            Debug.sout("" + i);
+            logger.debug("" + i);
         }
         
         Frame         capturedScreen = Capture.screen();
         double        time           = System.currentTimeMillis();
         bot.lookForHealbotMembers(capturedScreen);
-        Debug.sout("lookForHealbotMembers time : " + (System.currentTimeMillis() - time));
+        logger.debug("lookForHealbotMembers time : " + (System.currentTimeMillis() - time));
         
         for (Player p : bot.raid) {
             robot.mouseMove(p.xPosition, p.yPosition);
@@ -134,7 +137,7 @@ class Healer {
                             player.zone = new ShowZone.Zone(hbMaxBarWidth, hbMaxBarHeight, x - 2, y - 2);
                             healbotZone.addZone(player.zone);
                             raid.add(player);
-                            Debug.sout(hbMinBarWidth + " " + hbMinBarHeight);
+                            logger.debug(hbMinBarWidth + " " + hbMinBarHeight);
                         }
                     }
                 }
@@ -145,7 +148,7 @@ class Healer {
         for (int i = raid.size() - 1; i >= 0; i--) {
             Player player = raid.get(i);
             
-            Debug.sout("delta lastseen : " + (System.currentTimeMillis() - player.lastSeen));
+            logger.debug("delta lastseen : " + (System.currentTimeMillis() - player.lastSeen));
             if (System.currentTimeMillis() - player.lastSeen > 1000) {
                 iFound--;
             }
@@ -161,7 +164,7 @@ class Healer {
             }
         }
         
-        Debug.sout("raid size = " + raid.size() + ", found = " + iFound);
+        logger.debug("raid size = " + raid.size() + ", found = " + iFound);
         lastSearch = System.currentTimeMillis();
         return raid;
     }

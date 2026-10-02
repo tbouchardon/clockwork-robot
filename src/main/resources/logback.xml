@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="fr/ksuto/logger/logback-ksuto.xml"/>
+    <!-- Fenêtre de log Swing : décommenter pour l'afficher -->
+    <!-- <include resource="fr/ksuto/logger/logback-ksuto-swing.xml"/> -->
+
+    <!-- Niveaux par package : DEBUG pour ClockWork (équivalent de l'ancien Debug.sout), WARN pour le reste -->
+    <logger name="fr.ksuto.clockwork" level="DEBUG"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

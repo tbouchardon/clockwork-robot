@@ -1,5 +1,7 @@
 package fr.ksuto.clockwork.activity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.entities.qrcode.ComplexKey;
 import fr.ksuto.clockwork.entities.qrcode.Key;
@@ -8,13 +10,14 @@ import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.peripherals.Screen;
-import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Automaton {
+    
+    private static final Logger logger = LoggerFactory.getLogger(Automaton.class);
     
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
@@ -47,7 +50,7 @@ public class Automaton {
     
     public void play() throws Exception {
         
-        Debug.sout("");
+        logger.debug("");
         
         robot = new Robot();
         
@@ -167,7 +170,7 @@ public class Automaton {
             }
         }
         
-        if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
+        if (key2hit != null) {logger.debug("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
         
         String keyStatus = "";
         for (Key key : qrCode.getKeys()) {
@@ -186,12 +189,12 @@ public class Automaton {
                 bestPriority = priority;
                 bestPriorityDuration = duration;
                 
-                Debug.sout("key2hit = " + key2hit.key + ", mod = " + keyMod + ", bestPriority = " + bestPriority);
+                logger.debug("key2hit = " + key2hit.key + ", mod = " + keyMod + ", bestPriority = " + bestPriority);
             }
         }
-        Debug.sout(keyStatus);
+        logger.debug(keyStatus);
         
-        if (key2hit != null) {Debug.sout("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority + ", bestPriorityDuration = " + bestPriorityDuration);}
+        if (key2hit != null) {logger.debug("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority + ", bestPriorityDuration = " + bestPriorityDuration);}
         
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
@@ -214,12 +217,12 @@ public class Automaton {
         if (key2hit == null) {peripherals.robot.delay(200);}
         else {peripherals.robot.delay(750);}
         
-        Debug.sout("Key2hit is null");
+        logger.debug("Key2hit is null");
     }
     
     private void targetPartyMember(ComplexKey raidMember) {
         
-        Debug.sout("Target party member " + raidMember.index);
+        logger.debug("Target party member " + raidMember.index);
         
         switch (raidMember.index) {
             
@@ -236,13 +239,13 @@ public class Automaton {
                 peripherals.getKeyboard().pressKey(KeyEvent.VK_F5, false, false, true);
                 break;
             default:
-                Debug.sout("ERROR : Unexpected raidMember.index value: " + raidMember.index);
+                logger.debug("ERROR : Unexpected raidMember.index value: " + raidMember.index);
         }
     }
     
     private void targetRaidMember(ComplexKey raidMember) {
         
-        Debug.sout("Target raid member " + raidMember.index);
+        logger.debug("Target raid member " + raidMember.index);
         
         peripherals.getKeyboard().pressKey(raidMember.hitKey, raidMember.alt, raidMember.ctrl, raidMember.shift);
     }

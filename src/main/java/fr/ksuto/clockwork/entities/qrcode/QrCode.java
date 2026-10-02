@@ -1,12 +1,13 @@
 package fr.ksuto.clockwork.entities.qrcode;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.entities.ColorBlock;
 import fr.ksuto.prh.helpers.ColorSearch;
-import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -19,6 +20,8 @@ import java.util.List;
  * Created by Administrateur on 19/05/15!
  */
 public class QrCode {
+    
+    private static final Logger logger = LoggerFactory.getLogger(QrCode.class);
     
     private final ArrayList<Key> keys      = new ArrayList<>();
     public        int            xPosition = 0, yPosition = 0;
@@ -114,7 +117,7 @@ public class QrCode {
         
         Robot robot = peripherals.robot;
         
-        Debug.sout("Starting AutoConfig");
+        logger.debug("Starting AutoConfig");
         
         ColorBlock qrCodePosition = null;
         boolean    bFound         = false;
@@ -143,7 +146,7 @@ public class QrCode {
             
             this.qrCodePosition = new Dot(xPosition, yPosition);
             
-            Debug.sout("Found QrCode : X = " + xPosition + ", Y = " + yPosition + ", carrying on.");
+            logger.debug("Found QrCode : X = " + xPosition + ", Y = " + yPosition + ", carrying on.");
             //            peripherals.robot.mouseMove(xPosition, yPosition);
             
             robot.delay(100);
@@ -243,12 +246,12 @@ public class QrCode {
     
             //            QrCode.startKsuto(peripherals, this.qrCodePosition);
     
-            Debug.sout("AutoConfig Done");
+            logger.debug("AutoConfig Done");
     
             return true;
         }
         else {
-            Debug.sout("AutoConfig Failed");
+            logger.debug("AutoConfig Failed");
     
             return false;
         }

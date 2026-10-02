@@ -1,5 +1,7 @@
 package fr.ksuto.clockwork.activity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import fr.ksuto.bot.generated.enums.InterfaceEnum;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.tools.ShowZone;
@@ -11,7 +13,6 @@ import fr.ksuto.prh.entities.Position;
 import fr.ksuto.prh.helpers.PictureSearch;
 import fr.ksuto.prh.peripherals.Screen;
 import fr.ksuto.prh.research.paralelism.CaptureScheduler;
-import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -25,6 +26,8 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 
 public class Fisherman {
+    
+    private static final Logger logger = LoggerFactory.getLogger(Fisherman.class);
     
     public static final int                   BAIT_TIME       = 5 * 60000; // Shift + W
     public static final int                   LURE_TIME       = 10 * 60000; // W
@@ -80,7 +83,7 @@ public class Fisherman {
         averagePosition = currentCoordinates;
     
         if (initialCoordinates == null) {
-            Debug.sout("Bobber not found =(");
+            logger.debug("Bobber not found =(");
             
             ShowZone.Zone zone             = show.zoneList.get(0);
             BufferedImage biCapturedScreen = Capture.zone(zone.getX1(), zone.getY1(), zone.getWidth(), zone.getHeight()).image();
@@ -90,7 +93,7 @@ public class Fisherman {
                 ImageIO.write(biCapturedScreen, "png", outputfile);
             }
             catch (IOException ignored) {
-                Debug.sout("ERROR  : Écriture impossible !");
+                logger.debug("ERROR  : Écriture impossible !");
             }
             
             return true;
@@ -107,7 +110,7 @@ public class Fisherman {
             
             if (currentCoordinates == null) {
                 
-                Debug.sout("Blobber lost, trying to catch anyway.");
+                logger.debug("Blobber lost, trying to catch anyway.");
                 ui.appendLog("ϡ?");
                 peripherals.getMouse().clickLeft();
                 peripherals.robot.delay(2000);
@@ -123,7 +126,7 @@ public class Fisherman {
             // Check if mouse moved (and shall exit fishing modh)
             if (Point2D.distance(MouseInfo.getPointerInfo().getLocation().x, MouseInfo.getPointerInfo().getLocation().y, initialCoordinates[0], initialCoordinates[1]) > 20) {
                 
-                Debug.sout("Mouse moved, exiting. (" + MouseInfo.getPointerInfo().getLocation().x + " != " + initialCoordinates[0] + ")");
+                logger.debug("Mouse moved, exiting. (" + MouseInfo.getPointerInfo().getLocation().x + " != " + initialCoordinates[0] + ")");
                 return false;
             }
             
@@ -133,8 +136,8 @@ public class Fisherman {
             if (blobberFoundTime == null && distance >= 6) {blobberFoundTime = new Date().getTime();}
             if (blobberFoundTime != null && new Date().getTime() - blobberFoundTime > 1000) {
     
-                Debug.sout("Got a catch ? Bobber Moving (distance = " + maxDistance + ")");
-                Debug.sout("loops/s : " + (loop / ((currentTime - fishingTime) / 1000)));
+                logger.debug("Got a catch ? Bobber Moving (distance = " + maxDistance + ")");
+                logger.debug("loops/s : " + (loop / ((currentTime - fishingTime) / 1000)));
                 
                 ui.appendLog("ϡ" + maxDistance);
                 peripherals.getMouse().clickLeft();
@@ -145,7 +148,7 @@ public class Fisherman {
             currentTime = new Date().getTime();
             if ((currentCoordinates[0] == 0) && (currentTime - fishingTime > 4000)) {
                 
-                Debug.sout("Bobber not found after 4 seconds");
+                logger.debug("Bobber not found after 4 seconds");
                 return true;
             }
             
@@ -171,7 +174,7 @@ public class Fisherman {
         Position resultsWoW = PictureSearch.getDefault(InterfaceEnum.WOW).search().getFirstResult().getFirstPosition();
         if (resultsWoW != null) {
             int iWoWSize = Screen.SCREEN_WIDTH - (resultsWoW.getX() * 2);
-            Debug.sout("WoW Width = " + iWoWSize);
+            logger.debug("WoW Width = " + iWoWSize);
         }
     
         show = new ShowZone(peripherals);

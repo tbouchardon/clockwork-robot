@@ -1,17 +1,20 @@
 package fr.ksuto.clockwork.activity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import fr.ksuto.clockwork.entities.ClkPosition;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
-import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class TomTom {
+    
+    private static final Logger logger = LoggerFactory.getLogger(TomTom.class);
     
     private static final int                         KEY_J                 = 74;
     private static final int                         KEY_SPACE             = 32;
@@ -53,7 +56,7 @@ public class TomTom {
             output += formattedX.substring(0, 2) + "," + formattedX.substring(2, 4) + "-" +
                       formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
         }
-        Debug.sout(output);
+        logger.debug(output);
         QrCode.typeInChat(peripherals, "/clk wpadded");
         peripherals.robot.delay(500);
     }
@@ -68,7 +71,7 @@ public class TomTom {
     
     public ClkPosition getCoordinates(QrCode qrCode, PeripheralRobotHelper peripherals) {
         
-        Debug.sout("getCoordinates");
+        logger.debug("getCoordinates");
         
         Frame         capturedQrCode       = qrCode.captureQrCode(peripherals);
         ClkPosition   currenPlayerPosition = new ClkPosition();
@@ -108,7 +111,7 @@ public class TomTom {
     
     public void stuckProtocol() {
     
-        Debug.sout("Trying to unstuck...");
+        logger.debug("Trying to unstuck...");
     
         runStop();
     
@@ -145,7 +148,7 @@ public class TomTom {
             return;
         }
         
-        Debug.sout("-------------------------------------------------------------------");
+        logger.debug("-------------------------------------------------------------------");
         
         // En cas de cible active (actions engagées) il y a moins de 2 secondes
         long lastActionDelay = System.currentTimeMillis() - lastActionTime;
@@ -176,7 +179,7 @@ public class TomTom {
         
         // Retourner au point de départ si la fonction LOOP est activée et qu'il n'y a plus de points de cheminement
         if (qrCode.DRIVE_LOOP.active && pathIndex > path.size() - 1) {
-            Debug.sout("loop");
+            logger.debug("loop");
             pathIndex = 0;
         }
     
@@ -191,7 +194,7 @@ public class TomTom {
         ClkPosition destination          = path.get(pathIndex); //coordonnées destination
         ClkPosition currenPlayerPosition = getCoordinates(qrCode, peripherals); //position du personage
         
-        Debug.sout("Position courante : currenPlayerPosition.xPos = " + currenPlayerPosition.xPos + ", currenPlayerPosition.yPos = " + currenPlayerPosition.yPos);
+        logger.debug("Position courante : currenPlayerPosition.xPos = " + currenPlayerPosition.xPos + ", currenPlayerPosition.yPos = " + currenPlayerPosition.yPos);
         if (playersLastPosition == null) {
             playersLastPosition = new ClkPosition(currenPlayerPosition);
             lastRemainingDistance = Math.sqrt(Math.pow((double) destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) destination.yPos - currenPlayerPosition.yPos, 2));
@@ -199,13 +202,13 @@ public class TomTom {
         }
         
         // Calcul de l'équation de la droite passant par la position précédente et le point de cheminement actuel
-        Debug.sout("Destination : destination.xPos = " + destination.xPos + ", destination.yPos = " + destination.yPos);
-        Debug.sout("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
+        logger.debug("Destination : destination.xPos = " + destination.xPos + ", destination.yPos = " + destination.yPos);
+        logger.debug("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
         
         double a = ((double) destination.yPos - (double) playersLastPosition.yPos) / ((double) destination.xPos - (double) playersLastPosition.xPos); // a = (yB - yA) / (xB - xA)
         
         //Si les deux points sont trop proches, le déplacement parfaitement vertical, ou horizontal, "a" peut être en erreur. On attend donc la prochaine passe. Retour.
-        Debug.sout("a = " + a);
+        logger.debug("a = " + a);
         if (Double.isNaN(a) || Double.isInfinite(a)) {
             playersLastPosition = new ClkPosition(currenPlayerPosition);
             return;
@@ -232,11 +235,11 @@ public class TomTom {
         angleC = Math.toDegrees(angleC);
         angleB = Math.toDegrees(angleB);
         
-        Debug.sout(y + " = " + a + " * " + currenPlayerPosition.xPos + " + " + b + "( Actual = " + currenPlayerPosition.yPos + ")");
-        Debug.sout("lastRemainingDistance = " + lastRemainingDistance);
-        Debug.sout("remainingDistance = " + remainingDistance);
-        Debug.sout("traveledDistance = " + traveledDistance);
-        Debug.sout("angleC = " + angleC + "°");
+        logger.debug(y + " = " + a + " * " + currenPlayerPosition.xPos + " + " + b + "( Actual = " + currenPlayerPosition.yPos + ")");
+        logger.debug("lastRemainingDistance = " + lastRemainingDistance);
+        logger.debug("remainingDistance = " + remainingDistance);
+        logger.debug("traveledDistance = " + traveledDistance);
+        logger.debug("angleC = " + angleC + "°");
         
         // Plus l'angle interne est grand, moins on doit tourner. Résultat en Milisecondes, partant du principe que 1000ms équivaut à un demi tour.
         int turnDuration = (int) (1000d / 180d * (180d - angleC));
@@ -276,11 +279,11 @@ public class TomTom {
     
         // Poney mod! xD
         int jump = random.nextInt(25);
-        Debug.sout("jump ? " + jump);
+        logger.debug("jump ? " + jump);
         if (jump == 1) {peripherals.getKeyboard().pressKey(KEY_SPACE);}
         if (traveledDistance < 460) { // 469 étant la distance moyenne dans l’eau, on ne peut pas faire plus sans prendre le risque de confondre
             closeStep++;
-            Debug.sout("closeStep = " + closeStep);
+            logger.debug("closeStep = " + closeStep);
         }
         else {closeStep = 0;}
         if (closeStep > 10) {stuckProtocol();}
@@ -291,7 +294,7 @@ public class TomTom {
     private void runStart() {
     
         if (isRunning) {return;}
-        Debug.sout("Run Start/Stop");
+        logger.debug("Run Start/Stop");
         peripherals.robot.keyPress(KEY_J);
         peripherals.robot.delay(100);
         peripherals.robot.keyRelease(KEY_J);
@@ -300,7 +303,7 @@ public class TomTom {
     
     private void stepBackward(int iTime) {
         
-        Debug.sout("Recule");
+        logger.debug("Recule");
         
         peripherals.robot.keyPress(40);
         peripherals.robot.delay(iTime);
@@ -309,7 +312,7 @@ public class TomTom {
     
     private void stepForward(int iTime) {
         
-        Debug.sout("Avance");
+        logger.debug("Avance");
         
         peripherals.robot.keyPress(38);
         peripherals.robot.delay(iTime);
@@ -318,14 +321,14 @@ public class TomTom {
     
     private void turnLeft(int iTime) {
         
-        Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
+        logger.debug("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
         
         if (isFlying && !isRunning) {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
         
-        Debug.sout("Tourne à Gauche");
+        logger.debug("Tourne à Gauche");
         
         peripherals.robot.keyPress(37);
         peripherals.robot.delay(iTime);
@@ -337,14 +340,14 @@ public class TomTom {
     
     private void turnRight(int iTime) {
         
-        Debug.sout("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
+        logger.debug("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
         
         if (isFlying && !isRunning) {
             peripherals.getKeyboard().typeString("j");
             isRunning = true;
         }
         
-        Debug.sout("Tourne à Droite");
+        logger.debug("Tourne à Droite");
         
         peripherals.robot.keyPress(39);
         peripherals.robot.delay(iTime);

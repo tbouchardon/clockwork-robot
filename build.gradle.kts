@@ -9,6 +9,7 @@ version = "1.0"
 dependencies {
     implementation(libs.ksuto.peripherals)
     implementation(libs.ksuto.commons)
+    implementation(libs.ksuto.logger)
     implementation(libs.commons.lang3)
 }
 

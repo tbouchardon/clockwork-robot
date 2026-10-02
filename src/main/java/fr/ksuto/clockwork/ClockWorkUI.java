@@ -1,11 +1,12 @@
 package fr.ksuto.clockwork;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import fr.ksuto.clockwork.activity.Automaton;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.peripherals.Screen;
-import fr.ksuto.commons.helpers.Debug;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -21,6 +22,8 @@ import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings({"Duplicates"})
 public class ClockWorkUI {
+    
+    private static final Logger logger = LoggerFactory.getLogger(ClockWorkUI.class);
     
     private static final int BLUE  = 250;
     private static final int GREEN = 250;
@@ -147,7 +150,7 @@ public class ClockWorkUI {
                                 try {
                                     automaton.play();
                                 } catch (Exception e) {
-                                    Debug.sout("Error in automaton: " + e.getLocalizedMessage());
+                                    logger.debug("Error in automaton: " + e.getLocalizedMessage());
                                     Thread.currentThread().interrupt();
                                 }
                             }).start();
@@ -155,7 +158,7 @@ public class ClockWorkUI {
                     } catch (InterruptedException | ExecutionException e) {
                         // Handle exceptions from doInBackground() or get()
                         Throwable cause = e.getCause();
-                        Debug.sout(cause != null ? cause.getLocalizedMessage() : e.getLocalizedMessage());
+                        logger.debug(cause != null ? cause.getLocalizedMessage() : e.getLocalizedMessage());
                         Thread.currentThread().interrupt();
                     } finally {
                         // This runs whether the background task succeeded or failed
@@ -196,7 +199,7 @@ public class ClockWorkUI {
             return new ImageIcon(ImageIO.read(Objects.requireNonNull(url)));
         }
         catch (IOException e) {
-            Debug.sout("ERROR : Impossible de charger l'icone");
+            logger.debug("ERROR : Impossible de charger l'icone");
         }
         return null;
     }
