@@ -79,6 +79,19 @@ public final class Spellbook {
         return ids.getOrDefault(normalize(reference), Set.of());
     }
 
+    /**
+     * Le sort et ceux qui lui sont liés (forme de base, variante) : la recommandation de Blizzard désigne la forme de
+     * base (ex. 73899) alors que le bouton contient la variante active (51505, Explosion de lave).
+     */
+    public Set<Integer> related(int id) {
+
+        Set<Integer> related = new HashSet<>(Set.of(id));
+        for (Set<Integer> group : ids.values()) {
+            if (group.contains(id)) {related.addAll(group);}
+        }
+        return related;
+    }
+
     public String nameOf(int id) {
 
         return names.getOrDefault(id, String.valueOf(id));

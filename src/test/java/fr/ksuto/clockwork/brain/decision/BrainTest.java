@@ -163,6 +163,15 @@ class BrainTest {
     }
     
     @Test
+    void findsTheButtonOfTheRecommendedBaseSpell() {
+
+        // Blizzard recommande la forme de base 73899, le bouton contient Explosion de lave 51505 (cas réel)
+        String yaml = "assisted:\n  follow: true\nrules: []\n";
+
+        assertEquals("2", decide(yaml, state(73899, 80, ready("1", 188196), ready("2", 51505))).orElseThrow().key());
+    }
+
+    @Test
     void usesSpellsBoundWithModifiers() {
 
         String yaml = "rules:\n  - cast: Explosion de lave\n    priority: 100\n  - cast: Éclair\n";

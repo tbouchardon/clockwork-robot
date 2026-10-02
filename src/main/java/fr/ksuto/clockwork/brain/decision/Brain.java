@@ -73,8 +73,12 @@ public final class Brain {
 
     private Optional<Decision> assisted(GameState state, Rotation rotation, Spellbook spellbook) {
 
-        return state.keyForSpell(state.recommendedSpell())
+        if (state.recommendedSpell() == 0) {return Optional.empty();}
+        Set<Integer> recommended = spellbook.related(state.recommendedSpell());
+        return state.keys().values().stream()
+                    .filter(key -> recommended.contains(key.spellId()))
                     .filter(KeyState::ready)
+                    .findFirst()
                     .map(key -> new Decision(key.key(), key.spellId(), rotation.assistedPriority(),
                                              "recommandation de Blizzard (" + spellbook.nameOf(key.spellId()) + ")"));
     }
