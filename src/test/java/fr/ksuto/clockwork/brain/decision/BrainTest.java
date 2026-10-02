@@ -172,6 +172,16 @@ class BrainTest {
     }
 
     @Test
+    void ignoresBlizzardRecommendationWithoutHostileTarget() {
+
+        String yaml = "assisted:\n  follow: true\nrules: []\n";
+        Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
+        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, 1, keys);
+
+        assertTrue(decide(yaml, noTarget).isEmpty());
+    }
+
+    @Test
     void usesSpellsBoundWithModifiers() {
 
         String yaml = "rules:\n  - cast: Explosion de lave\n    priority: 100\n  - cast: Éclair\n";

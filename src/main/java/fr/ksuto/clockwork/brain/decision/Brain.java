@@ -73,7 +73,11 @@ public final class Brain {
 
     private Optional<Decision> assisted(GameState state, Rotation rotation, Spellbook spellbook) {
 
-        if (state.recommendedSpell() == 0) {return Optional.empty();}
+        // Comme la rotation assistée de l'addon : seulement contre une cible ennemie vivante (Blizzard recommande
+        // aussi des sorts offensifs sans cible, et un sort sans cible n'est pas « hors de portée »)
+        if (state.recommendedSpell() == 0 || !state.hasTarget() || !state.targetHostile() || state.targetHealth() <= 0) {
+            return Optional.empty();
+        }
         Set<Integer> recommended = spellbook.related(state.recommendedSpell());
         return state.keys().values().stream()
                     .filter(key -> recommended.contains(key.spellId()))
