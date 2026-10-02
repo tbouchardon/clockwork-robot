@@ -86,6 +86,15 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void deadTargetIsNotHostile() {
+
+        GameState state = QrCodeV2Reader.read(v2().set(11, 3, 0.5, 0.5, 0.5).frame()).orElseThrow();
+
+        assertTrue(state.hasTarget());
+        assertFalse(state.targetHostile());
+    }
+
+    @Test
     void readsKeyStateHistoryAndSpell() {
 
         // Touche "3" : position 3 -> état (4, 6), historique (4, 9), sort (5, 3)
