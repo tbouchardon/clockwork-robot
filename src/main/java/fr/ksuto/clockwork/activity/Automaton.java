@@ -3,6 +3,10 @@ package fr.ksuto.clockwork.activity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import fr.ksuto.clockwork.ClockWorkUI;
+import fr.ksuto.clockwork.brain.BrainService;
+import fr.ksuto.clockwork.brain.decision.Brain;
+import fr.ksuto.clockwork.brain.perception.GameState;
+import fr.ksuto.clockwork.brain.perception.QrCodeV2Reader;
 import fr.ksuto.clockwork.entities.qrcode.ComplexKey;
 import fr.ksuto.clockwork.entities.qrcode.Key;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
@@ -14,6 +18,7 @@ import fr.ksuto.prh.peripherals.Screen;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.Optional;
 
 public class Automaton {
     
@@ -37,6 +42,7 @@ public class Automaton {
     public Status status = Status.RUN;
     private              Robot                 robot;
     private              TomTom                tomtom;
+    private final        BrainService          brain                 = new BrainService();
     private              boolean               wasInCombat           = false;
     private              long                  lastActionTime        = 0;
     private              long                  lockTurnAroundUntil   = System.currentTimeMillis();
@@ -206,6 +212,23 @@ public class Automaton {
         }
         logger.debug(keyStatus);
         
+        // Cerveau Java : avec une rotation YAML et une grille v2, il choisit la touche à la place de l'addon
+        if (brain.isActive()) {
+            Optional<GameState> state = QrCodeV2Reader.read(qrCode.getCapturedQrCode());
+            if (state.isPresent()) {
+                Optional<Brain.Decision> decision = brain.decide(state.get());
+                key2hit = decision.flatMap(d -> keyNamed(qrCode, d.key())).orElse(null);
+                altModifier = false;
+                ctrlModifier = false;
+                shiftModifier = false;
+                bestPriorityDuration = 0;
+                decision.ifPresent(d -> logger.debug("Cerveau : touche {} ({}, priorité {})", d.key(), d.reason(), d.priority()));
+            }
+            else {
+                reportState("Cerveau inactif : grille v1, l'addon décide seul (addon à mettre à jour)");
+            }
+        }
+        
         if (key2hit != null) {logger.debug("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority + ", bestPriorityDuration = " + bestPriorityDuration);}
         
         if (key2hit != null) {
@@ -240,6 +263,11 @@ public class Automaton {
         if (newState.equals(state)) {return;}
         state = newState;
         logger.info(newState);
+    }
+    
+    private static Optional<Key> keyNamed(QrCode qrCode, String name) {
+        
+        return qrCode.getKeys().stream().filter(key -> key.key.equals(name)).findFirst();
     }
     
     private void targetPartyMember(ComplexKey raidMember) {

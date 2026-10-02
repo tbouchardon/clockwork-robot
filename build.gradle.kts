@@ -11,8 +11,12 @@ dependencies {
     implementation(libs.ksuto.commons)
     implementation(libs.ksuto.logger)
     implementation(libs.commons.lang3)
+    implementation(libs.snakeyaml)
+    implementation(libs.jexl)
 }
 
 application {
     mainClass = "fr.ksuto.clockwork.Runner"
+    // FlatLaf charge sa bibliothèque native (barre de titre Windows)
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }

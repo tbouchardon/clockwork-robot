@@ -1,0 +1,42 @@
+# Rotation du cerveau Java de ClockWork.
+# Pour l'activer : copier ce fichier en rotation.yaml dans le dossier de lancement de ClockWork.
+# Il est rechargé à chaud à chaque enregistrement ; sans rotation.yaml, c'est l'addon qui décide seul.
+#
+# Une règle s'applique si son sort est sur une touche sans modificateur, prêt (utilisable, sans temps de recharge,
+# pas hors de portée) et si sa condition « when » est vraie. La plus haute priorité l'emporte.
+# Les sorts se désignent par leur nom (dictionnaire exporté par l'addon à chaque /reload) ou par leur identifiant.
+#
+# Dans les conditions (syntaxe JEXL : &&, ||, !, <, >, ==) :
+#   player.health  player.power   player.combat   player.casting      (% et booléens)
+#   target.exists  target.hostile target.health   target.power
+#   enemies                       ennemis en combat à proximité
+#   assisted                      nom du sort recommandé par Blizzard
+#   spell.ready('Nom')  spell.cooldown('Nom')  spell.usable('Nom')  spell.inRange('Nom')  spell.proc('Nom')
+#   spell.sinceCast('Nom')  spell.sinceCastOnTarget('Nom')
+#       secondes depuis le dernier lancement (toutes cibles / sur la cible actuelle), plafonnées à 60 s :
+#       au-delà, ou jamais lancé, la valeur est infinie
+
+spec: Chaman Élémentaire (exemple)
+
+# Recommandation de Blizzard en repli : elle passe devant les règles de priorité inférieure
+assisted:
+  follow: true
+  priority: 50
+
+rules:
+  - cast: Afflux de soins
+    when: "player.health < 40"
+    priority: 200
+
+  # Horion de flammes dure 18 s : on le réapplique sur la cible après 13 s (fenêtre de 30 %)
+  - cast: Horion de flammes
+    when: "target.hostile && spell.sinceCastOnTarget('Horion de flammes') > 13"
+    priority: 120
+
+  - cast: Horion de terre
+    when: "target.hostile && player.power > 60"
+    priority: 100
+
+  - cast: Éclair
+    when: "target.hostile"
+    priority: 10
