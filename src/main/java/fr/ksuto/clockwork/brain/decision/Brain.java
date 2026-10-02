@@ -45,6 +45,9 @@ public final class Brain {
 
     public Optional<Decision> decide(GameState state, Rotation rotation, Spellbook spellbook) {
 
+        // Grille pas encore remplie (addon tout juste activé) ou cible hors combat sans mode aggro : rien à faire
+        if (!state.keysReady() || !state.mayAct()) {return Optional.empty();}
+
         MapContext context = context(state, spellbook);
         SpellView  spells  = new SpellView(state, spellbook);
 
@@ -92,8 +95,8 @@ public final class Brain {
 
         MapContext context = new MapContext();
         context.set("player", Map.of("health", state.playerHealth(), "power", state.playerPower(),
-                                     "combat", state.inCombat(), "casting", state.casting()));
-        context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.targetHostile(),
+                                     "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro()));
+        context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.targetHostile(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower()));
         context.set("enemies", state.enemies());
         context.set("assisted", state.recommendedSpell() == 0 ? "" : spellbook.nameOf(state.recommendedSpell()));

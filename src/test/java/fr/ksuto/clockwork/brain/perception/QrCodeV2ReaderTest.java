@@ -54,6 +54,7 @@ class QrCodeV2ReaderTest {
                 .set(12, 2, 0.5, 0, 0).set(13, 2, 0, 0, 0.25)          // PV 50 %, ressource 25 %
                 .set(11, 3, 1, 0, 0).set(12, 3, 0.2, 0, 0)             // cible hostile à 20 %
                 .set(2, 2, 1, 1, 1)                                    // en combat
+                .set(10, 2, 1, 1, 0)                                   // mode aggro, cible en combat
                 .set(2, 3, 3 / 255.0, 0, 0)                            // 3 ennemis
                 .set(7, 2, (facing >> 8) / 255.0, (facing & 0xFF) / 255.0, 0)
                 .set24(6, 2, 51505)                                    // Explosion de lave recommandée
@@ -65,6 +66,8 @@ class QrCodeV2ReaderTest {
         assertTrue(state.targetHostile());
         assertEquals(20, state.targetHealth(), 0.3);
         assertTrue(state.inCombat());
+        assertTrue(state.aggro());
+        assertTrue(state.targetInCombat());
         assertFalse(state.casting());
         assertEquals(3, state.enemies());
         assertEquals(Math.PI, state.facing(), 0.001);

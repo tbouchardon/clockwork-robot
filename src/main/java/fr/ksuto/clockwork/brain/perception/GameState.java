@@ -12,16 +12,36 @@ import java.util.Optional;
  * @param targetHostile    la cible est hostile
  * @param targetHealth     vie de la cible, en %
  * @param targetPower      ressource principale de la cible, en %
+ * @param targetInCombat   la cible est en combat
  * @param inCombat         le joueur est en combat
  * @param casting          le joueur incante
  * @param enemies          ennemis en combat à proximité (barres de vie)
  * @param facing           direction du personnage, en radians (0..2π)
  * @param recommendedSpell sort recommandé par Blizzard (0 si aucun)
+ * @param aggro            mode aggro de l'addon : attaquer aussi une cible qui n'est pas en combat
  * @param keys             état de chaque touche, par nom de touche
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
-                        boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, Map<String, KeyState> keys) {
+                        boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
+                        Map<String, KeyState> keys) {
 
+    /**
+     * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat
+     * quand on est déjà en combat.
+     */
+    public boolean mayAct() {
+        
+        return aggro || !inCombat || targetInCombat;
+    }
+    
+    /**
+     * Les cases des touches sont remplies : l'addon a fait au moins une mise à jour depuis son activation.
+     */
+    public boolean keysReady() {
+        
+        return keys.values().stream().anyMatch(key -> key.spellId() != 0);
+    }
+    
     /**
      * Touche contenant le sort, s'il est sur une barre d'action.
      */

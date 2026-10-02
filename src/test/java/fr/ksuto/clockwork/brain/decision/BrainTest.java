@@ -28,9 +28,14 @@ class BrainTest {
 
     private static GameState state(int recommended, double targetHealth, KeyState... keys) {
 
+        return state(true, true, recommended, targetHealth, keys);
+    }
+
+    private static GameState state(boolean aggro, boolean targetInCombat, int recommended, double targetHealth, KeyState... keys) {
+
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, true, false, 1, 0, recommended, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -157,6 +162,25 @@ class BrainTest {
         assertEquals("4", brain.decide(state(0, 80, ready("1", 188196), ready("4", 470411)), rotation, spellbook).orElseThrow().key());
     }
     
+    @Test
+    void respectsAggroModeLikeTheAddon() {
+
+        String yaml = "rules:\n  - cast: Éclair\n";
+
+        assertTrue(decide(yaml, state(false, false, 0, 80, ready("1", 188196))).isEmpty(),
+                   "sans aggro, en combat : on n'attaque pas une cible hors combat");
+        assertTrue(decide(yaml, state(false, true, 0, 80, ready("1", 188196))).isPresent(), "cible en combat : on riposte");
+        assertTrue(decide(yaml, state(true, false, 0, 80, ready("1", 188196))).isPresent(), "mode aggro : on attaque");
+    }
+
+    @Test
+    void waitsUntilTheAddonHasFilledTheKeys() {
+
+        String yaml = "assisted:\n  follow: true\nrules:\n  - cast: Éclair\n";
+
+        assertTrue(decide(yaml, state(188196, 80, new KeyState("1", 0, 0, false, KeyState.Range.NONE, NEVER, NEVER, false))).isEmpty());
+    }
+
     @Test
     void ruleWithoutCastIsRejectedAtLoading() {
 

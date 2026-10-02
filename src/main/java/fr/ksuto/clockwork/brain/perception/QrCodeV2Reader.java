@@ -46,11 +46,13 @@ public final class QrCodeV2Reader {
                 reaction == Rgb.ARGB_RED,
                 percent(qr.red(12, 3)),
                 percent(qr.blue(13, 3)),
+                qr.green(10, 2) > 127,
                 qr.rgb(2, 2) == Rgb.ARGB_WHITE,
                 qr.rgb(3, 2) == Rgb.ARGB_WHITE,
                 qr.red(2, 3),
                 (qr.red(7, 2) * 256 + qr.green(7, 2)) / 65535.0 * 2 * Math.PI,
                 read24(qr, 6, 2),
+                qr.red(10, 2) > 127,
                 keys));
     }
 
