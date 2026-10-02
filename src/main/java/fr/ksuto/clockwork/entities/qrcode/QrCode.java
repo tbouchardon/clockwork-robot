@@ -76,6 +76,22 @@ public class QrCode {
         openCloseKsuto(peripherals);
     }
     
+    /**
+     * Active l'addon (/clk toggle) s'il est éteint.
+     *
+     * @return vrai si la commande a été envoyée
+     */
+    public boolean ensureAddonActive(PeripheralRobotHelper peripherals) {
+        
+        captureQrCode(peripherals);
+        update();
+        if (TOGGLE_ON_OFF.active) {return false;}
+        
+        logger.info("Addon désactivé : envoi de /clk toggle");
+        openCloseKsuto(peripherals);
+        return true;
+    }
+    
     public void cameraCombat(PeripheralRobotHelper peripherals) {
         
         if (cameraPosition == Camera.COMBAT) {return;}

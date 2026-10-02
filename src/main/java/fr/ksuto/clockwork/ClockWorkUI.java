@@ -35,7 +35,8 @@ public class ClockWorkUI {
     private int     iGrey      = 0;
     private JButton autoConfButton;
     private JButton fishButton;
-    private QrCode  qrCode     = new QrCode();
+    private volatile QrCode qrCode = new QrCode();
+    private Thread  automatonThread;
     private boolean shouldExit = false;
     
     public ClockWorkUI() {
@@ -132,8 +133,14 @@ public class ClockWorkUI {
             SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
                 @Override
                 protected Boolean doInBackground() throws AWTException, IOException {
-                    qrCode = new QrCode();
-                    return qrCode.init(peripherals);
+                    // Le QR code n'est remplacé qu'une fois initialisé : l'automate en cours lit toujours un QR code complet
+                    QrCode candidate = new QrCode();
+                    boolean initialized = candidate.init(peripherals);
+                    if (initialized) {
+                        candidate.ensureAddonActive(peripherals);
+                        qrCode = candidate;
+                    }
+                    return initialized;
                 }
 
                 @Override
@@ -143,17 +150,9 @@ public class ClockWorkUI {
                         if (initialized) {
                             appendLog("      Done      ");
                         }
-                        if (!qrCode.getKeys().isEmpty()) {
+                        if (initialized && !qrCode.getKeys().isEmpty()) {
                             setEnabledButtonFish(true);
-                            // Start the automaton in a new thread
-                            new Thread(() -> {
-                                try {
-                                    automaton.play();
-                                } catch (Exception e) {
-                                    logger.debug("Error in automaton: " + e.getLocalizedMessage());
-                                    Thread.currentThread().interrupt();
-                                }
-                            }).start();
+                            startAutomaton();
                         }
                     } catch (InterruptedException | ExecutionException e) {
                         // Handle exceptions from doInBackground() or get()
@@ -170,6 +169,23 @@ public class ClockWorkUI {
 
             worker.execute();
         };
+    }
+    
+    /**
+     * Démarre l'automate s'il ne tourne pas déjà : une nouvelle Auto Config ne doit pas en lancer un second.
+     */
+    private synchronized void startAutomaton() {
+        
+        if (automatonThread != null && automatonThread.isAlive()) {return;}
+        
+        automatonThread = new Thread(() -> {
+            try {
+                automaton.play();
+            } catch (Exception e) {
+                logger.error("Automate arrêté", e);
+            }
+        }, "automaton");
+        automatonThread.start();
     }
     
     private ActionListener fishButtonListener() {

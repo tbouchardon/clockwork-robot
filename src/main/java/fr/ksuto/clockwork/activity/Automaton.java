@@ -40,6 +40,7 @@ public class Automaton {
     private              boolean               wasInCombat           = false;
     private              long                  lastActionTime        = 0;
     private              long                  lockTurnAroundUntil   = System.currentTimeMillis();
+    private              String                state                 = "";
     
     public Automaton(PeripheralRobotHelper peripherals, ClockWorkUI autoHitControl) {
         
@@ -113,14 +114,18 @@ public class Automaton {
         
         // On ne fait rien si l’addon n’est pas visible
         if (qrCode.getCapturedQrCode().rgb(0, 0) != Rgb.ARGB_GREEN) {
+            reportState("En attente : QR code invisible (WoW masqué, interface cachée ou addon non chargé)");
             return;
         }
         
         qrCode.update();
         
         if (!qrCode.TOGGLE_ON_OFF.active) {
+            reportState("En attente : addon désactivé (/clk toggle en jeu)");
             return;
         }
+        
+        reportState("Actif");
         
         if (qrCode.ADD_WAYPOINT.active) {
             tomtom.addWayPoint(qrCode);
@@ -218,6 +223,16 @@ public class Automaton {
         else {peripherals.robot.delay(750);}
         
         logger.debug("Key2hit is null");
+    }
+    
+    /**
+     * Journalise l'état de l'automate quand il change, pour savoir pourquoi il ne fait rien.
+     */
+    private void reportState(String newState) {
+        
+        if (newState.equals(state)) {return;}
+        state = newState;
+        logger.info(newState);
     }
     
     private void targetPartyMember(ComplexKey raidMember) {
