@@ -2,12 +2,12 @@ package fr.ksuto.clockwork.activity;
 
 import fr.ksuto.clockwork.entities.ClkPosition;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
-import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.capture.Frame;
+import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.tools.Debug;
 
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -70,137 +70,30 @@ public class TomTom {
         
         Debug.sout("getCoordinates");
         
-        BufferedImage biCapturedScreen     = qrCode.captureQrCode(peripherals);
+        Frame         capturedQrCode       = qrCode.captureQrCode(peripherals);
         ClkPosition   currenPlayerPosition = new ClkPosition();
         
-        int xPos = 0;
-        
-        if (biCapturedScreen.getRGB(6, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 524288;
-        }
-        if (biCapturedScreen.getRGB(7, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 262144;
-        }
-        if (biCapturedScreen.getRGB(8, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 131072;
-        }
-        if (biCapturedScreen.getRGB(9, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 65536;
-        }
-        if (biCapturedScreen.getRGB(10, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 32768;
-        }
-        if (biCapturedScreen.getRGB(11, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 16384;
-        }
-        if (biCapturedScreen.getRGB(12, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 8192;
-        }
-        if (biCapturedScreen.getRGB(13, 7) == RGBConverter.ARGB_WHITE) {
-            xPos += 4096;
-        }
-        if (biCapturedScreen.getRGB(2, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 2048;
-        }
-        if (biCapturedScreen.getRGB(3, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 1024;
-        }
-        if (biCapturedScreen.getRGB(4, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 512;
-        }
-        if (biCapturedScreen.getRGB(5, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 256;
-        }
-        if (biCapturedScreen.getRGB(6, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 128;
-        }
-        if (biCapturedScreen.getRGB(7, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 64;
-        }
-        if (biCapturedScreen.getRGB(8, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 32;
-        }
-        if (biCapturedScreen.getRGB(9, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 16;
-        }
-        if (biCapturedScreen.getRGB(10, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 8;
-        }
-        if (biCapturedScreen.getRGB(11, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 4;
-        }
-        if (biCapturedScreen.getRGB(12, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 2;
-        }
-        if (biCapturedScreen.getRGB(13, 8) == RGBConverter.ARGB_WHITE) {
-            xPos += 1;
-        }
-        currenPlayerPosition.xPos = xPos;
-        
-        int yPos = 0;
-        if (biCapturedScreen.getRGB(6, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 524288;
-        }
-        if (biCapturedScreen.getRGB(7, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 262144;
-        }
-        if (biCapturedScreen.getRGB(8, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 131072;
-        }
-        if (biCapturedScreen.getRGB(9, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 65536;
-        }
-        if (biCapturedScreen.getRGB(10, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 32768;
-        }
-        if (biCapturedScreen.getRGB(11, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 16384;
-        }
-        if (biCapturedScreen.getRGB(12, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 8192;
-        }
-        if (biCapturedScreen.getRGB(13, 10) == RGBConverter.ARGB_WHITE) {
-            yPos += 4096;
-        }
-        if (biCapturedScreen.getRGB(2, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 2048;
-        }
-        if (biCapturedScreen.getRGB(3, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 1024;
-        }
-        if (biCapturedScreen.getRGB(4, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 512;
-        }
-        if (biCapturedScreen.getRGB(5, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 256;
-        }
-        if (biCapturedScreen.getRGB(6, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 128;
-        }
-        if (biCapturedScreen.getRGB(7, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 64;
-        }
-        if (biCapturedScreen.getRGB(8, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 32;
-        }
-        if (biCapturedScreen.getRGB(9, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 16;
-        }
-        if (biCapturedScreen.getRGB(10, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 8;
-        }
-        if (biCapturedScreen.getRGB(11, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 4;
-        }
-        if (biCapturedScreen.getRGB(12, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 2;
-        }
-        if (biCapturedScreen.getRGB(13, 11) == RGBConverter.ARGB_WHITE) {
-            yPos += 1;
-        }
-        currenPlayerPosition.yPos = yPos;
+        currenPlayerPosition.xPos = readCoordinate(capturedQrCode, 7, 8);
+        currenPlayerPosition.yPos = readCoordinate(capturedQrCode, 10, 11);
         
         return currenPlayerPosition;
+    }
+    
+    /**
+     * Lit une coordonnée codée sur 20 bits par l'addon (coordinates_functions.lua) :
+     * bits 19 à 12 sur la ligne haute (x = 6 à 13), bits 11 à 0 sur la ligne basse (x = 2 à 13), pixel blanc = 1.
+     */
+    private static int readCoordinate(Frame capturedQrCode, int highRow, int lowRow) {
+        
+        int value = 0;
+        for (int x = 6; x <= 13; x++) {value = value << 1 | bit(capturedQrCode, x, highRow);}
+        for (int x = 2; x <= 13; x++) {value = value << 1 | bit(capturedQrCode, x, lowRow);}
+        return value;
+    }
+    
+    private static int bit(Frame capturedQrCode, int x, int y) {
+        
+        return capturedQrCode.rgb(x, y) == Rgb.ARGB_WHITE ? 1 : 0;
     }
     
     public void runStop() {

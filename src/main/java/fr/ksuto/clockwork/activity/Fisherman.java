@@ -4,6 +4,9 @@ import fr.ksuto.bot.generated.enums.InterfaceEnum;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.capture.Capture;
+import fr.ksuto.prh.capture.Frame;
+import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.entities.Position;
 import fr.ksuto.prh.helpers.PictureSearch;
 import fr.ksuto.prh.peripherals.Screen;
@@ -72,7 +75,7 @@ public class Fisherman {
     
         peripherals.robot.delay(2500);
     
-        currentCoordinates = searchBobber(captureScheduler.getLastImage(), true, null);
+        currentCoordinates = searchBobber(captureScheduler.getLastFrame(), true, null);
         initialCoordinates = currentCoordinates;
         averagePosition = currentCoordinates;
     
@@ -80,7 +83,7 @@ public class Fisherman {
             Debug.sout("Bobber not found =(");
             
             ShowZone.Zone zone             = show.zoneList.get(0);
-            BufferedImage biCapturedScreen = peripherals.robot.createScreenCapture(new Rectangle(zone.getX1(), zone.getY1(), zone.getWidth(), zone.getHeight()));
+            BufferedImage biCapturedScreen = Capture.zone(zone.getX1(), zone.getY1(), zone.getWidth(), zone.getHeight()).image();
         
             try {
                 File outputfile = new File(System.currentTimeMillis() + ".jpg");
@@ -100,7 +103,7 @@ public class Fisherman {
         Long blobberFoundTime = null;
         
         while (currentTime - fishingTime < 21000) {
-            currentCoordinates = searchBobber(captureScheduler.getLastImage(), false, averagePosition);
+            currentCoordinates = searchBobber(captureScheduler.getLastFrame(), false, averagePosition);
             
             if (currentCoordinates == null) {
                 
@@ -197,7 +200,7 @@ public class Fisherman {
         peripherals.robot.delay(300);
     }
     
-    private int[] searchBobber(BufferedImage biCapturedScreen, boolean autoIncreaseSearchArea, int[] knownCoordinates) {
+    private int[] searchBobber(Frame biCapturedScreen, boolean autoIncreaseSearchArea, int[] knownCoordinates) {
     
         int iCapturedRGB;
         int r;
@@ -223,16 +226,16 @@ public class Fisherman {
             for (int y = y1; y < y2; y++) {
                 for (int x = x1; x < x2; x++) {
                     for (int n = 0; n <= 2; ) {
-                        iCapturedRGB = biCapturedScreen.getRGB(x + n, y);
-                        b = (iCapturedRGB) & 0xFF;
-                        g = (iCapturedRGB >> 8) & 0xFF;
-                        r = (iCapturedRGB >> 16) & 0xFF;
+                        iCapturedRGB = biCapturedScreen.rgb(x + n, y);
+                        b = Rgb.blue(iCapturedRGB);
+                        g = Rgb.green(iCapturedRGB);
+                        r = Rgb.red(iCapturedRGB);
                         if ((r > 100) && (g < r - 50) && (b < r - 50) && (g < 100) && (b < 100)) {
                             if (n == 2) {
-                                iCapturedRGB = biCapturedScreen.getRGB(x, y - 5);
-                                b = (iCapturedRGB) & 0xFF;
-                                g = (iCapturedRGB >> 8) & 0xFF;
-                                r = (iCapturedRGB >> 16) & 0xFF;
+                                iCapturedRGB = biCapturedScreen.rgb(x, y - 5);
+                                b = Rgb.blue(iCapturedRGB);
+                                g = Rgb.green(iCapturedRGB);
+                                r = Rgb.red(iCapturedRGB);
                                 if ((b + 10 > r) && (b + 10 > g)) {return new int[]{x + 1, y};}
                             }
                             n++;

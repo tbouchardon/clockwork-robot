@@ -4,15 +4,15 @@ import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.entities.qrcode.ComplexKey;
 import fr.ksuto.clockwork.entities.qrcode.Key;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
-import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.capture.Frame;
+import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.peripherals.Screen;
 import fr.ksuto.tools.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
 
 public class Automaton {
     
@@ -65,7 +65,7 @@ public class Automaton {
         }
     }
     
-    private void checkParty(BufferedImage capturedQrCode, QrCode qrCode) {
+    private void checkParty(Frame capturedQrCode, QrCode qrCode) {
         
         for (ComplexKey raidMember : qrCode.raid) {
             
@@ -109,7 +109,7 @@ public class Automaton {
         qrCode.captureQrCode(peripherals);
         
         // On ne fait rien si l’addon n’est pas visible
-        if (qrCode.getCapturedQrCode().getRGB(0, 0) != RGBConverter.ARGB_GREEN) {
+        if (qrCode.getCapturedQrCode().rgb(0, 0) != Rgb.ARGB_GREEN) {
             return;
         }
         
@@ -141,11 +141,10 @@ public class Automaton {
         checkParty(qrCode.getCapturedQrCode(), qrCode);
         
         // Check Stance
-        RGBConverter rgbConverter = new RGBConverter(qrCode.getCapturedQrCode(), qrCode.stance.xPosition, qrCode.stance.yPosition);
-        rgbConverter.invoke();
-        if (rgbConverter.getBlue() != 0) {
-            bestPriority = (int) Math.floor(rgbConverter.getGreen() + 0.5);
-            int stance = (int) Math.floor(rgbConverter.getBlue() + 0.5);
+        Frame capturedQrCode = qrCode.getCapturedQrCode();
+        if (qrCode.stance.getBlue(capturedQrCode) != 0) {
+            bestPriority = qrCode.stance.getGreen(capturedQrCode);
+            int stance = qrCode.stance.getBlue(capturedQrCode);
             
             switch (stance) {
                 case STANCE_1:
@@ -172,11 +171,9 @@ public class Automaton {
         
         String keyStatus = "";
         for (Key key : qrCode.getKeys()) {
-            rgbConverter = new RGBConverter(qrCode.getCapturedQrCode(), key.xPosition, key.yPosition);
-            rgbConverter.invoke();
-            int     keyMod   = (int) Math.floor(rgbConverter.getRed() + 0.5);
-            int     priority = (int) Math.floor(rgbConverter.getGreen() + 0.5);
-            int     duration = (int) (Math.floor(rgbConverter.getBlue() + 0.5) / 255.0 * 30.0 * 1000.0);
+            int     keyMod   = key.getRed(capturedQrCode);
+            int     priority = key.getGreen(capturedQrCode);
+            int     duration = (int) (key.getBlue(capturedQrCode) / 255.0 * 30.0 * 1000.0);
             boolean active   = priority != 0;
             keyStatus += key.key + " : " + active + " | ";
             

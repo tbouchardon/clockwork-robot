@@ -1,15 +1,16 @@
 package fr.ksuto.clockwork.activity;
 
 import fr.ksuto.clockwork.entities.Player;
-import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.capture.Capture;
+import fr.ksuto.prh.capture.Frame;
+import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.peripherals.Screen;
 import fr.ksuto.tools.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 /**
@@ -45,7 +46,7 @@ class Healer {
             Debug.sout("" + i);
         }
         
-        BufferedImage capturedScreen = robot.createScreenCapture(new Rectangle(0, 0, Screen.SCREEN_WIDTH, Screen.SCREEN_HEIGHT));
+        Frame         capturedScreen = Capture.screen();
         double        time           = System.currentTimeMillis();
         bot.lookForHealbotMembers(capturedScreen);
         Debug.sout("lookForHealbotMembers time : " + (System.currentTimeMillis() - time));
@@ -56,7 +57,7 @@ class Healer {
         }
     }
     
-    void searchForWoundedPlayer(BufferedImage biCapturedScreen) {
+    void searchForWoundedPlayer(Frame biCapturedScreen) {
         
         Player currentWoundedPlayer;
         
@@ -80,7 +81,7 @@ class Healer {
         }
     }
     
-    private ArrayList<Player> lookForHealbotMembers(BufferedImage capturedScreen) {
+    private ArrayList<Player> lookForHealbotMembers(Frame capturedScreen) {
     
         int maxRed   = 50;
         int minGreen = 150;
@@ -95,25 +96,24 @@ class Healer {
                 int tempWitdh  = 0;
                 int tempHeight = 0;
             
-                RGBConverter rgbConverter = new RGBConverter(capturedScreen, x, y).invoke();
-                red = rgbConverter.getRed();
-                green = rgbConverter.getGreen();
-                blue = rgbConverter.getBlue();
+                red = capturedScreen.red(x, y);
+                green = capturedScreen.green(x, y);
+                blue = capturedScreen.blue(x, y);
             
                 if ((red < maxRed) && (green > minGreen) && (blue < maxBlue)) {
                     
                     while ((red < maxRed) && (green > minGreen) && (blue < maxBlue)) {
-                        rgbConverter = new RGBConverter(capturedScreen, x + tempWitdh++, y).invoke();
-                        red = rgbConverter.getRed();
-                        green = rgbConverter.getGreen();
-                        blue = rgbConverter.getBlue();
+                        int rgb = capturedScreen.rgb(x + tempWitdh++, y);
+                        red = Rgb.red(rgb);
+                        green = Rgb.green(rgb);
+                        blue = Rgb.blue(rgb);
                     }
                     
                     do {
-                        rgbConverter = new RGBConverter(capturedScreen, x, y + tempHeight++).invoke();
-                        red = rgbConverter.getRed();
-                        green = rgbConverter.getGreen();
-                        blue = rgbConverter.getBlue();
+                        int rgb = capturedScreen.rgb(x, y + tempHeight++);
+                        red = Rgb.red(rgb);
+                        green = Rgb.green(rgb);
+                        blue = Rgb.blue(rgb);
                     } while ((red < maxRed) && (green > minGreen) && (blue < maxBlue));
                     
                     if (tempWitdh >= hbMinBarWidth - 10 && tempHeight >= hbMinBarHeight - 5) {
@@ -166,7 +166,7 @@ class Healer {
         return raid;
     }
     
-    private Player watchOverPlayers(BufferedImage capturedScreen) {
+    private Player watchOverPlayers(Frame capturedScreen) {
     
         int    capturedRGB;
         int    r;
@@ -180,10 +180,10 @@ class Healer {
         if (!raid.isEmpty()) {
             for (Player p : raid) {
             
-                capturedRGB = capturedScreen.getRGB(p.xPosition, p.yPosition);
-                r = (capturedRGB >> 16) & 0xFF;
-                g = (capturedRGB >> 8) & 0xFF;
-                b = (capturedRGB) & 0xFF;
+                capturedRGB = capturedScreen.rgb(p.xPosition, p.yPosition);
+                r = Rgb.red(capturedRGB);
+                g = Rgb.green(capturedRGB);
+                b = Rgb.blue(capturedRGB);
                 
                 if (b < 15) {
                     p.damage = r + (255 - g);

@@ -1,7 +1,9 @@
 package fr.ksuto.clockwork.entities.qrcode;
 
-import fr.ksuto.clockwork.tools.RGBConverter;
 import fr.ksuto.prh.PeripheralRobotHelper;
+import fr.ksuto.prh.capture.Capture;
+import fr.ksuto.prh.capture.Frame;
+import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.entities.ColorBlock;
 import fr.ksuto.prh.helpers.ColorSearch;
 import fr.ksuto.tools.Debug;
@@ -9,14 +11,9 @@ import fr.ksuto.tools.Debug;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 /**
  * Created by Administrateur on 19/05/15!
@@ -48,7 +45,7 @@ public class QrCode {
     public  Dot              DEBUG_MOD;
     private Camera           cameraPosition;
     private Dot              qrCodePosition;
-    private BufferedImage    capturedQrCode;
+    private Frame            capturedQrCode;
     
     public static void typeInChat(PeripheralRobotHelper peripherals, String s) {
         
@@ -104,32 +101,14 @@ public class QrCode {
         }
     }
     
-    public BufferedImage captureQrCode(PeripheralRobotHelper peripherals) {
+    public Frame captureQrCode(PeripheralRobotHelper peripherals) {
     
-        BufferedImage capture = peripherals.robot.createScreenCapture(new Rectangle(xPosition, yPosition, 16, 16));
+        this.capturedQrCode = Capture.zone(xPosition, yPosition, 16, 16);
     
-        try {
-            BufferedWriter writer     = null;
-            File           outputfile = new File("qrCode.jpg");
-            ImageIO.write(capture, "png", outputfile);
-        }
-        catch (IOException e) {
-        }
-    
-        this.capturedQrCode = capture;
-    
-        //        File outputfile = new File("qrCode.png");
-        //        try {
-        //            ImageIO.write(capture, "png", outputfile);
-        //        }
-        //        catch (IOException e) {
-        //            e.printStackTrace();
-        //        }
-    
-        return capture;
+        return capturedQrCode;
     }
     
-    public boolean hasTarget() {return (targetReaction.getRgb(capturedQrCode) != RGBConverter.ARGB_BLACK);}
+    public boolean hasTarget() {return (targetReaction.getRgb(capturedQrCode) != Rgb.ARGB_BLACK);}
     
     public boolean init(PeripheralRobotHelper peripherals) throws AWTException, IOException {
         
@@ -290,7 +269,7 @@ public class QrCode {
         DEBUG_MOD.updateActive(capturedQrCode);
     }
     
-    public BufferedImage getCapturedQrCode() {
+    public Frame getCapturedQrCode() {
         
         return capturedQrCode;
     }
@@ -300,7 +279,7 @@ public class QrCode {
         return keys;
     }
     
-    public int getNumberOfTargets()  {return (int) Math.floor(100D / 255D * (double) playerHealth.getRed(capturedQrCode) + 0.5);}
+    public int getNumberOfTargets()  {return (int) Math.floor(100D / 255D * (double) numberOfTargets.getRed(capturedQrCode) + 0.5);}
     
     public double getPlayerHealth()  {return 100D / 255D * (double) playerHealth.getRed(capturedQrCode);}
     
@@ -310,7 +289,7 @@ public class QrCode {
     
     public double getTargetMana()    {return 100D / 255D * (double) targetMana.getBlue(capturedQrCode);}
     
-    public boolean isTargetHostile() {return (targetReaction.getRgb(capturedQrCode) == RGBConverter.ARGB_RED);}
+    public boolean isTargetHostile() {return (targetReaction.getRgb(capturedQrCode) == Rgb.ARGB_RED);}
     
     public enum Camera {
         DRIVE,
