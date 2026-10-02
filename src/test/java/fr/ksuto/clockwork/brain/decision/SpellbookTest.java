@@ -24,6 +24,11 @@ class SpellbookTest {
             				["name"] = "Horion de flammes",
             				["base"] = 188389,
             			},
+            			[470411] = {
+            				["override"] = 470411,
+            				["name"] = "Horion de flamme",
+            				["base"] = 470411,
+            			},
             			[51505] = {
             				["base"] = 73899,
             				["name"] = "Explosion de lave",
@@ -42,7 +47,7 @@ class SpellbookTest {
 
         Spellbook spellbook = Spellbook.parse(SAVED_VARIABLES);
 
-        assertEquals(3, spellbook.size());
+        assertEquals(4, spellbook.size());
         assertEquals("Horion de flammes", spellbook.nameOf(188389));
     }
 

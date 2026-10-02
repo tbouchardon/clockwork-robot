@@ -151,8 +151,10 @@ class BrainTest {
         assertTrue(rotation.followAssisted());
         assertEquals("Afflux de soins", rotation.rules().getFirst().cast(), "règles triées par priorité");
         
-        KeyState flameShockAlreadyUp = new KeyState("3", 188389, 0, true, KeyState.Range.IN, 5, 5, false);
+        // Données réelles du chaman : Horion de flamme (variante 470411) sur la touche 4
+        KeyState flameShockAlreadyUp = new KeyState("4", 470411, 0, true, KeyState.Range.IN, 5, 5, false);
         assertEquals("1", brain.decide(state(0, 80, ready("1", 188196), flameShockAlreadyUp), rotation, spellbook).orElseThrow().key());
+        assertEquals("4", brain.decide(state(0, 80, ready("1", 188196), ready("4", 470411)), rotation, spellbook).orElseThrow().key());
     }
     
     @Test

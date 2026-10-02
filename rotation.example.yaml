@@ -28,9 +28,10 @@ rules:
     when: "player.health < 40"
     priority: 200
 
-  # Horion de flammes dure 18 s : on le réapplique sur la cible après 13 s (fenêtre de 30 %)
-  - cast: Horion de flammes
-    when: "target.hostile && spell.sinceCastOnTarget('Horion de flammes') > 13"
+  # Horion de flamme (variante de talent 470411, celle qui est sur la barre) dure 18 s :
+  # on le réapplique sur la cible après 13 s (fenêtre de 30 %)
+  - cast: Horion de flamme
+    when: "target.hostile && spell.sinceCastOnTarget('Horion de flamme') > 13"
     priority: 120
 
   - cast: Horion de terre
