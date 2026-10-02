@@ -6,7 +6,7 @@ import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.entities.ColorBlock;
 import fr.ksuto.prh.helpers.ColorSearch;
-import fr.ksuto.tools.Debug;
+import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;

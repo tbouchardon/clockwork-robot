@@ -11,7 +11,7 @@ import fr.ksuto.prh.entities.Position;
 import fr.ksuto.prh.helpers.PictureSearch;
 import fr.ksuto.prh.peripherals.Screen;
 import fr.ksuto.prh.research.paralelism.CaptureScheduler;
-import fr.ksuto.tools.Debug;
+import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.*;
 import java.awt.event.InputEvent;

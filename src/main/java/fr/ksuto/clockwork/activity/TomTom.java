@@ -5,7 +5,7 @@ import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
-import fr.ksuto.tools.Debug;
+import fr.ksuto.commons.helpers.Debug;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;

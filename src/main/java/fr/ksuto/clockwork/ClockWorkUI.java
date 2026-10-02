@@ -5,7 +5,7 @@ import fr.ksuto.clockwork.activity.Automaton;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.peripherals.Screen;
-import fr.ksuto.tools.Debug;
+import fr.ksuto.commons.helpers.Debug;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
