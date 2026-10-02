@@ -3,7 +3,7 @@ package fr.ksuto.clockwork.brain.perception;
 /**
  * État d'une touche d'action, lu dans le QR code v2.
  *
- * @param key               touche ("1".."=", "Q".."G")
+ * @param key               combinaison : touche ("1".."=", "Q".."G"), éventuellement préfixée de "SHIFT-", "CTRL-" ou "ALT-"
  * @param spellId           identifiant du sort de la touche (0 si aucun)
  * @param cooldown          temps de recharge restant, en secondes (0 si prêt, plafonné à 60)
  * @param usable            sort utilisable (ressources, conditions)

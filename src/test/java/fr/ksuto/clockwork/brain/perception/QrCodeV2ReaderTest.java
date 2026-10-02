@@ -15,7 +15,17 @@ class QrCodeV2ReaderTest {
      */
     private static final class Grid {
 
-        final BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
+        final BufferedImage image;
+
+        Grid() {
+
+            this(16);
+        }
+
+        Grid(int size) {
+
+            image = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+        }
 
         Grid set(int x, int y, double r, double g, double b) {
 
@@ -110,6 +120,49 @@ class QrCodeV2ReaderTest {
         assertEquals(8004, key.spellId());
         assertEquals(KeyState.Range.NONE, key.range());
         assertTrue(key.ready());
+    }
+
+    @Test
+    void readsModifierBlocksOfVersion3() {
+
+        // v3 : 32x32, SHIFT-3 dans le bloc (16, 0), CTRL-Q dans le bloc (0, 16), compteur en (11, 2)
+        GameState state = QrCodeV2Reader.read(new Grid(32)
+                .set(8, 13, 3 / 255.0, 0, 0)
+                .set24(11, 2, 70000)
+                .set24(5, 3, 188196)                                   // touche 3 : Éclair
+                .set24(5 + 16, 3, 51505)                               // SHIFT-3 : Explosion de lave
+                .set(4 + 16, 6, 0, 1, 1)                               // SHIFT-3 prête, à portée
+                .set24(2, 10 + 16, 8004)                               // CTRL-Q (position 13 -> (2, 10)) : Afflux de soins
+                .set(2, 12 + 16, 0, 1, 0.5)                            // CTRL-Q prête, sans portée
+                .frame()).orElseThrow();
+
+        assertEquals(70000, state.frame());
+        assertEquals(72, state.keys().size());
+        assertEquals(188196, state.keys().get("3").spellId());
+        assertEquals(51505, state.keys().get("SHIFT-3").spellId());
+        assertTrue(state.keys().get("SHIFT-3").ready());
+        assertEquals(8004, state.keys().get("CTRL-Q").spellId());
+        assertTrue(state.keys().get("CTRL-Q").ready());
+        assertEquals("SHIFT-3", state.keyForSpell(51505).orElseThrow().key());
+        assertEquals(0, state.keys().get("ALT-3").spellId());
+    }
+
+    @Test
+    void version2GridHasNoModifiersNorCounter() {
+
+        GameState state = QrCodeV2Reader.read(v2().frame()).orElseThrow();
+
+        assertEquals(18, state.keys().size());
+        assertEquals(0, state.frame());
+    }
+
+    @Test
+    void parsesKeyCombos() {
+
+        assertEquals(new KeyCombo("3", true, false, false), KeyCombo.parse("SHIFT-3"));
+        assertEquals(new KeyCombo("Q", false, true, false), KeyCombo.parse("CTRL-Q"));
+        assertEquals(new KeyCombo("=", false, false, true), KeyCombo.parse("ALT-="));
+        assertEquals(new KeyCombo(")", false, false, false), KeyCombo.parse(")"));
     }
 
     @Test

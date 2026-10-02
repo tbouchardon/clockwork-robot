@@ -60,7 +60,7 @@ public final class Brain {
 
             Optional<KeyState> key = spells.key(rule.cast());
             if (key.isEmpty()) {
-                reportOnce("absent:" + rule.cast(), "Règle ignorée : « " + rule.cast() + " » n'est sur aucune touche sans modificateur");
+                reportOnce("absent:" + rule.cast(), "Règle ignorée : « " + rule.cast() + " » n'est sur aucune touche de la grille");
                 continue;
             }
             if (!key.get().ready() || !holds(rule, context)) {continue;}

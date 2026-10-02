@@ -35,7 +35,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, 1, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -162,6 +162,14 @@ class BrainTest {
         assertEquals("4", brain.decide(state(0, 80, ready("1", 188196), ready("4", 470411)), rotation, spellbook).orElseThrow().key());
     }
     
+    @Test
+    void usesSpellsBoundWithModifiers() {
+
+        String yaml = "rules:\n  - cast: Explosion de lave\n    priority: 100\n  - cast: Éclair\n";
+
+        assertEquals("SHIFT-2", decide(yaml, state(0, 80, ready("1", 188196), ready("SHIFT-2", 51505))).orElseThrow().key());
+    }
+
     @Test
     void respectsAggroModeLikeTheAddon() {
 

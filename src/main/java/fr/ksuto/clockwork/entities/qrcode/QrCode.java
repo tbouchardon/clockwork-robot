@@ -144,7 +144,8 @@ public class QrCode {
     
     public Frame captureQrCode(PeripheralRobotHelper peripherals) {
     
-        this.capturedQrCode = Capture.zone(xPosition, yPosition, 16, 16);
+        // 32x32 : carré v3 (quatre blocs) ; une grille v2 n'occupe que le bloc haut gauche
+        this.capturedQrCode = Capture.zone(xPosition, yPosition, 32, 32);
     
         return capturedQrCode;
     }
