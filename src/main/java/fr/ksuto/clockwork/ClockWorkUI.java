@@ -209,8 +209,9 @@ public class ClockWorkUI {
         button.setIcon(getImageIconFromResourse(iconPath));
         button.setMargin(new Insets(0, 0, 0, 0));
         button.setBorder(null);
-        button.setBackground(new Color(255, 255, 255, 0));
-        button.setOpaque(false);
+        // Bouton réduit à son icône, quel que soit le thème Swing
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
         button.setToolTipText(tooltip);
         button.addActionListener(listener);
     }

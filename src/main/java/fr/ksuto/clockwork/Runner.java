@@ -2,6 +2,7 @@ package fr.ksuto.clockwork;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
+import fr.ksuto.commons.awt.Theme;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -12,6 +13,8 @@ public class Runner {
     ClockWorkUI ui;
 
     public static void main(String[] args) {
+        
+        Theme.apply();
         
         Runner runner = Guice.createInjector().getInstance(Runner.class);
 
