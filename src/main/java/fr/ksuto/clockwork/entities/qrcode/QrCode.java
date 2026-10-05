@@ -26,8 +26,6 @@ public class QrCode {
     public  Dot              inCombat;
     public  Dot              casting;
     @Deprecated
-    public  Dot              stepBack;
-    public  Dot              turnAround;
     public  Dot              playerHealth;
     public  Dot              playerMana;
     public  Dot              numberOfTargets;
@@ -216,8 +214,6 @@ public class QrCode {
     
             inCombat = new Dot(2, 2);
             casting = new Dot(3, 2);
-            stepBack = new Dot(4, 2);
-            turnAround = new Dot(5, 2);
     
             playerHealth = new Dot(12, 2);
             playerMana = new Dot(13, 2);
@@ -298,8 +294,6 @@ public class QrCode {
         
         inCombat.updateActive(capturedQrCode);
         casting.updateActive(capturedQrCode);
-        stepBack.updateActive(capturedQrCode);
-        turnAround.updateActive(capturedQrCode);
         TOGGLE_ON_OFF.updateActive(capturedQrCode);
         TARGET_NEAREST_ENEMY.updateActive(capturedQrCode);
         ADD_WAYPOINT.updateActive(capturedQrCode);

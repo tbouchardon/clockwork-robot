@@ -379,7 +379,12 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   ligne (`H`), repère le bouchon dans une zone devant le personnage (`ShowZone`) et clique dès qu'il bouge. Bouger la
   souris arrête la pêche.
 - **Pilote automatique** (`TomTom`) : lit les coordonnées de carte codées en binaire dans la grille, suit une liste de
-  points de passage, se dégage quand il est bloqué (recul, saut, rotation).
+  points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
+  et pendant un repas.
+- **Frappé sans riposter** (`HitDetector`) : en pilote automatique, si la vie du joueur a baissé d'au moins 2 points ces
+  6 dernières secondes alors que le bot n'a appuyé sur aucune touche, c'est qu'un monstre non ciblé le frappe (souvent
+  dans le dos) : demi-tour, puis `Tab` le cible. La vie est secrète pour l'addon mais lue en clair par le Java ; le
+  journal de combat, qui servait autrefois, est interdit en 12.x.
 - **Soins de groupe** : quand l'addon signale un membre blessé, ciblage par `Maj+F2…F5` (groupe) ou `Alt+Maj+lettre`
   (raid), puis la rotation soigne.
 - **Ramassage du butin** après chaque combat en mode `drive`.
@@ -426,6 +431,7 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
   version et langue du jeu, liste pour l'éditeur.
 - `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
 - `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
+- `HitDetectorTest` : perte de vie sans action, seuil, régénération, fenêtre glissante.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 
 ---

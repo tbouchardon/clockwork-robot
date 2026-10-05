@@ -49,6 +49,7 @@ public class Automaton {
     private              long                  lastActionTime        = 0;
     private              long                  lockTurnAroundUntil   = System.currentTimeMillis();
     private              String                state                 = "";
+    private final        HitDetector           hitDetector           = new HitDetector();
     private              int                   lastGridFrame         = -1;
     private              long                  lastGridFrameChange   = 0;
     
@@ -251,8 +252,12 @@ public class Automaton {
         
         tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, qrCode.getPlayerHealth());
         
-        if (qrCode.turnAround.active && System.currentTimeMillis() > lockTurnAroundUntil && qrCode.DRIVE_MOD.active) {
-            lockTurnAroundUntil = System.currentTimeMillis() + TURN_AROUND_COOL_DOWN;
+        // Frappé sans riposter (vie en baisse, aucune touche depuis 6 s) : un monstre non ciblé, souvent dans le dos
+        long now = System.currentTimeMillis();
+        if (hitDetector.hitWithoutRetaliating(now, qrCode.getPlayerHealth(), lastActionTime) && now > lockTurnAroundUntil && qrCode.DRIVE_MOD.active) {
+            logger.info("Frappé sans riposter : demi-tour");
+            lockTurnAroundUntil = now + TURN_AROUND_COOL_DOWN;
+            hitDetector.reset();
             turnAround();
         }
         
