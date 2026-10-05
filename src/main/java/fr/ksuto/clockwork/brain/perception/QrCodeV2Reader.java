@@ -35,6 +35,11 @@ public final class QrCodeV2Reader {
 
     private static final double HORIZON = 60;
 
+    /**
+     * Secondes encodées pour le temps restant d'une incantation, identique à CAST_HORIZON côté addon.
+     */
+    private static final double CAST_HORIZON = 10;
+
     private QrCodeV2Reader() {}
 
     /**
@@ -79,6 +84,8 @@ public final class QrCodeV2Reader {
                 qr.red(10, 4),
                 qr.red(11, 4) << 8 | qr.green(11, 4),
                 version == VERSION ? read24(qr, 11, 2) : 0,
+                qr.rgb(3, 2) == Rgb.ARGB_WHITE ? new GameState.Cast(read24(qr, 9, 13), qr.green(10, 13) > 127, qr.red(10, 13) * CAST_HORIZON / 255)
+                                               : GameState.Cast.NONE,
                 keys));
     }
 

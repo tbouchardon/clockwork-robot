@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -32,6 +33,16 @@ public final class Brain {
     private final Set<String> reportedProblems = new HashSet<>();
 
     /**
+     * Fenêtre de fin d'incantation pendant laquelle WoW accepte déjà le sort suivant (file d'attente des sorts).
+     */
+    static final double QUEUE_WINDOW = 0.4;
+
+    /**
+     * Dernière décision : le sort en cours garde la priorité de la règle qui l'a lancé.
+     */
+    private Decision lastDecision;
+
+    /**
      * @param key      touche à appuyer
      * @param spellId  sort lancé
      * @param priority priorité de la règle retenue
@@ -46,18 +57,25 @@ public final class Brain {
 
     public Optional<Decision> decide(GameState state, Rotation rotation, SpellDatabase database) {
 
-        // Grille pas encore remplie (addon tout juste activé), cible hors combat sans mode aggro, incantation en cours,
-        // monture ou joueur mort : rien à faire
+        // Grille pas encore remplie (addon tout juste activé), cible hors combat sans mode aggro, monture ou joueur mort :
+        // rien à faire
         if (!state.keysReady() || !state.mayAct() || state.busy()) {return Optional.empty();}
+
+        // Sort en cours : seule une règle plus prioritaire que lui peut agir
+        OptionalInt floor = priorityFloor(state, database);
+        if (floor.isEmpty()) {return Optional.empty();}
+        int minimum = floor.getAsInt();
 
         MapContext context = context(state, database);
         SpellView  spells  = new SpellView(state, database);
 
         for (Rotation.Rule rule : rotation.rules()) {
 
-            if (rotation.followAssisted() && rotation.assistedPriority() > rule.priority()) {
+            if (rule.priority() <= minimum) {break;} // règles triées par priorité décroissante
+
+            if (rotation.followAssisted() && rotation.assistedPriority() > rule.priority() && rotation.assistedPriority() > minimum) {
                 Optional<Decision> assisted = assisted(state, rotation, database);
-                if (assisted.isPresent()) {return assisted;}
+                if (assisted.isPresent()) {return remember(assisted);}
             }
 
             Optional<KeyState> key = spells.key(rule.cast());
@@ -67,10 +85,40 @@ public final class Brain {
             }
             if (!key.get().ready() || !holds(rule, context)) {continue;}
 
-            return Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle « " + rule.cast() + " »"));
+            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle « " + rule.cast() + " »")));
         }
 
-        return rotation.followAssisted() ? assisted(state, rotation, database) : Optional.empty();
+        if (!rotation.followAssisted() || rotation.assistedPriority() <= minimum) {return Optional.empty();}
+        return remember(assisted(state, rotation, database));
+    }
+
+    /**
+     * Priorité qu'une règle doit dépasser pour agir maintenant :
+     * <ul>
+     *   <li>rien en cours : aucune limite ;</li>
+     *   <li>incantation (Éclair) : WoW refuse les autres sorts ; on attend ses dernières {@value #QUEUE_WINDOW} s, où le
+     *   sort suivant est mis en file d'attente ;</li>
+     *   <li>canalisation (Drain de vie) : la priorité de la règle qui l'a lancée ; une règle plus prioritaire la coupe,
+     *   sa propre règle ne la relance pas ;</li>
+     *   <li>sort inconnu ou lancé à la main : on ne le coupe pas.</li>
+     * </ul>
+     *
+     * @return la priorité à dépasser, ou vide s'il faut attendre
+     */
+    private OptionalInt priorityFloor(GameState state, SpellDatabase database) {
+
+        if (!state.casting()) {return OptionalInt.of(Integer.MIN_VALUE);}
+        GameState.Cast cast = state.cast();
+        if (cast.spellId() == 0) {return OptionalInt.empty();}
+        if (!cast.channeling()) {return cast.remaining() <= QUEUE_WINDOW ? OptionalInt.of(Integer.MIN_VALUE) : OptionalInt.empty();}
+        if (lastDecision != null && database.related(cast.spellId()).contains(lastDecision.spellId())) {return OptionalInt.of(lastDecision.priority());}
+        return OptionalInt.empty();
+    }
+
+    private Optional<Decision> remember(Optional<Decision> decision) {
+
+        decision.ifPresent(d -> lastDecision = d);
+        return decision;
     }
 
     private Optional<Decision> assisted(GameState state, Rotation rotation, SpellDatabase database) {
@@ -107,6 +155,8 @@ public final class Brain {
         MapContext context = new MapContext();
         context.set("player", Map.of("health", state.playerHealth(), "power", state.playerPower(),
                                      "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro(),
+                                     "castSpell", state.cast().spellId() == 0 ? "" : database.nameOf(state.cast().spellId()),
+                                     "channeling", state.cast().channeling(), "castRemaining", state.cast().remaining(),
                                      "form", state.form() == 0 ? "" : database.nameOf(state.form()), "combo", state.comboPoints()));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.attackableTarget(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower()));

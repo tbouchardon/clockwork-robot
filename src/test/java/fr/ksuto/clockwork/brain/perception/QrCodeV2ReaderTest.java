@@ -167,6 +167,22 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsTheSpellInProgress() {
+
+        GameState idle = QrCodeV2Reader.read(v2().set24(9, 13, 234153).frame()).orElseThrow();
+        assertEquals(GameState.Cast.NONE, idle.cast(), "pas d'incantation (case (3, 2) noire)");
+
+        GameState draining = QrCodeV2Reader.read(v2()
+                .set(3, 2, 1, 1, 1)                                    // incantation en cours
+                .set24(9, 13, 234153)                                  // Drain de vie
+                .set(10, 13, 0.25, 1, 0)                               // 2,5 s restantes, canalisation
+                .frame()).orElseThrow();
+        assertEquals(234153, draining.cast().spellId());
+        assertTrue(draining.cast().channeling());
+        assertEquals(2.5, draining.cast().remaining(), 0.05);
+    }
+
+    @Test
     void version2GridHasNoModifiersNorCounter() {
 
         GameState state = QrCodeV2Reader.read(v2().frame()).orElseThrow();

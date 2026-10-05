@@ -51,7 +51,7 @@ class BrainServiceTest {
         KeyState lightning = new KeyState("1", 188196, 0, true, KeyState.Range.IN, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, false);
         KeyState surge     = new KeyState("2", 8004, 0, true, KeyState.Range.IN, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, false);
         KeyState moonfire  = new KeyState("3", 8921, 0, true, KeyState.Range.IN, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, false);
-        return new GameState(100, 100, true, true, 80, 0, true, true, false, 1, 0, 0, true, false, false, false, 0, 0, classId, specId, 1,
+        return new GameState(100, 100, true, true, 80, 0, true, true, false, 1, 0, 0, true, false, false, false, 0, 0, classId, specId, 1, GameState.Cast.NONE,
                              Map.of("1", lightning, "2", surge, "3", moonfire));
     }
 

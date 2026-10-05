@@ -40,7 +40,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, false, false, false, 0, 0, 7, 262, 1, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, false, false, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -199,7 +199,7 @@ class BrainTest {
 
         String yaml = "assisted:\n  follow: true\nrules: []\n";
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, false, false, false, 0, 0, 7, 262, 1, keys);
+        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, false, false, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, keys);
 
         assertTrue(decide(yaml, noTarget).isEmpty());
     }
@@ -210,7 +210,7 @@ class BrainTest {
     private static GameState guarded(boolean casting, boolean mounted, boolean dead, boolean tapDenied) {
 
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        return new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 188196, true, dead, mounted, tapDenied, 0, 0, 7, 262, 1, keys);
+        return new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 188196, true, dead, mounted, tapDenied, 0, 0, 7, 262, 1, GameState.Cast.NONE, keys);
     }
 
     @Test
@@ -226,6 +226,75 @@ class BrainTest {
         assertTrue(decide(assisted, guarded(false, false, false, true)).isEmpty(), "cible marquée par un autre joueur");
         assertTrue(decide("rules:\n  - cast: Éclair\n    when: target.hostile\n", guarded(false, false, false, true)).isEmpty(),
                    "target.hostile est faux sur une cible marquée");
+    }
+
+    /**
+     * Touches : 1 Éclair, 3 Horion de flammes ; le joueur incante ou canalise le sort donné.
+     */
+    private static GameState casting(GameState.Cast cast, KeyState... keys) {
+
+        Map<String, KeyState> map = new LinkedHashMap<>();
+        for (KeyState key : keys) {map.put(key.key(), key);}
+        return new GameState(100, 100, true, true, 80, 0, true, true, true, 1, 0, 0, true, false, false, false, 0, 0, 7, 262, 1, cast, map);
+    }
+
+    private static KeyState onCooldown(String key, int spellId) {
+
+        return new KeyState(key, spellId, 5, true, KeyState.Range.IN, NEVER, NEVER, false);
+    }
+
+    @Test
+    void higherPriorityRuleInterruptsAFillerChannel() {
+
+        Rotation rotation = brain.parse("rules:\n  - cast: Horion de flammes\n    priority: 120\n  - cast: Éclair\n    priority: 10\n");
+
+        // Éclair (canalisé pour l'exemple) est lancé en remplissage, priorité 10
+        assertEquals("1", brain.decide(state(0, 80, ready("1", 188196), onCooldown("3", 188389)), rotation, spellbook).orElseThrow().key());
+
+        GameState.Cast channel = new GameState.Cast(188196, true, 3);
+        assertTrue(brain.decide(casting(channel, ready("1", 188196), onCooldown("3", 188389)), rotation, spellbook).isEmpty(),
+                   "sa propre règle ne relance pas la canalisation");
+        assertEquals("3", brain.decide(casting(channel, ready("1", 188196), ready("3", 188389)), rotation, spellbook).orElseThrow().key(),
+                     "règle plus prioritaire : on coupe le remplissage");
+    }
+
+    @Test
+    void highPriorityChannelGoesToTheEnd() {
+
+        Rotation rotation = brain.parse("rules:\n  - cast: Éclair\n    priority: 150\n  - cast: Horion de flammes\n    priority: 120\n");
+
+        assertEquals("1", brain.decide(state(0, 80, ready("1", 188196), ready("3", 188389)), rotation, spellbook).orElseThrow().key());
+        assertTrue(brain.decide(casting(new GameState.Cast(188196, true, 3), ready("1", 188196), ready("3", 188389)), rotation, spellbook).isEmpty(),
+                   "Horion (120) ne coupe pas le sort prioritaire (150)");
+    }
+
+    @Test
+    void hardCastWaitsForTheSpellQueueWindow() {
+
+        Rotation rotation = brain.parse("rules:\n  - cast: Éclair\n");
+
+        assertTrue(brain.decide(casting(new GameState.Cast(188196, false, 1.5), ready("1", 188196)), rotation, spellbook).isEmpty(),
+                   "WoW refuserait le sort pendant l'incantation");
+        assertEquals("1", brain.decide(casting(new GameState.Cast(188196, false, 0.3), ready("1", 188196)), rotation, spellbook).orElseThrow().key(),
+                     "dernières 400 ms : le sort suivant part en file d'attente");
+    }
+
+    @Test
+    void neverInterruptsAChannelItDidNotStart() {
+
+        Rotation rotation = brain.parse("rules:\n  - cast: Horion de flammes\n    priority: 120\n");
+
+        assertTrue(brain.decide(casting(new GameState.Cast(188196, true, 3), ready("3", 188389)), rotation, spellbook).isEmpty(),
+                   "canalisation lancée à la main");
+        assertTrue(brain.decide(casting(GameState.Cast.NONE, ready("3", 188389)), rotation, spellbook).isEmpty(), "sort en cours inconnu");
+    }
+
+    @Test
+    void conditionsSeeTheSpellInProgress() {
+
+        Rotation rotation = brain.parse("rules:\n  - cast: Éclair\n    when: \"player.castSpell == 'Éclair' && !player.channeling && player.castRemaining < 0.4\"\n");
+
+        assertEquals("1", brain.decide(casting(new GameState.Cast(188196, false, 0.2), ready("1", 188196)), rotation, spellbook).orElseThrow().key());
     }
 
     @Test

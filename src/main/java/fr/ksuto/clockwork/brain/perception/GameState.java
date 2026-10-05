@@ -27,11 +27,12 @@ import java.util.Optional;
  * @param classId          classe du personnage (identifiant du jeu : 7 = chaman), 0 si inconnue
  * @param specId           spécialisation active (identifiant du jeu : 262 = Élémentaire), 0 si inconnue
  * @param frame            compteur de mises à jour de l'addon (v3, 0 en v2) : inchangé, la grille est figée
+ * @param cast             sort en cours d'incantation ou de canalisation ({@link Cast#NONE} si aucun)
  * @param keys             état de chaque touche, par nom de touche
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        boolean playerDead, boolean mounted, boolean targetTapDenied, int form, int comboPoints, int classId, int specId, int frame, Map<String, KeyState> keys) {
+                        boolean playerDead, boolean mounted, boolean targetTapDenied, int form, int comboPoints, int classId, int specId, int frame, Cast cast, Map<String, KeyState> keys) {
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat
@@ -43,12 +44,24 @@ public record GameState(double playerHealth, double playerPower, boolean hasTarg
     }
     
     /**
-     * Garde-fous communs à toutes les rotations, comme l'addon (Clockwork:rotation) : rien pendant une incantation, sur
-     * une monture ou mort.
+     * Sort en cours.
+     *
+     * @param spellId    identifiant du sort (0 si inconnu)
+     * @param channeling canalisation (Drain de vie...) plutôt qu'incantation (Éclair...)
+     * @param remaining  secondes restantes (plafonnées à 10)
+     */
+    public record Cast(int spellId, boolean channeling, double remaining) {
+
+        public static final Cast NONE = new Cast(0, false, 0);
+    }
+
+    /**
+     * Garde-fous communs à toutes les rotations, comme l'addon (Clockwork:rotation) : rien sur une monture ou mort.
+     * L'incantation en cours est traitée par le cerveau selon la priorité du sort.
      */
     public boolean busy() {
 
-        return casting || mounted || playerDead;
+        return mounted || playerDead;
     }
 
     /**

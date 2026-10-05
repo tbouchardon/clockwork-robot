@@ -159,6 +159,7 @@ historique). Il produit un `GameState` immuable :
 | `facing` | Direction du personnage, en radians. |
 | `recommendedSpell` | Sort recommandé par Blizzard (`C_AssistedCombat`), forme de base. |
 | `form`, `comboPoints` | Sort de la forme active (0 si aucune), points de combo. |
+| `cast` | Sort en cours : identifiant, canalisation, secondes restantes (`Cast.NONE` si aucun). |
 | `playerDead`, `mounted`, `targetTapDenied` | Garde-fous : joueur mort, sur une monture, cible marquée par un autre joueur. |
 | `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
 | `frame` | Compteur de mises à jour (v3). |
@@ -196,14 +197,20 @@ grille contient au moins un sort ; elle est vide juste après l'activation), `ke
   Une erreur de syntaxe est signalée et la rotation précédente est conservée.
 - **`Brain.decide(état, rotation, sorts)`** :
   1. rien si la grille n'est pas prête ou si l'on n'a pas le droit d'agir (`mayAct`), et, comme l'addon pour ses
-     rotations Lua, **rien pendant une incantation, sur une monture ou mort** (`busy`) : inutile de l'écrire dans les
-     conditions ;
-  2. parcourt les règles par **priorité décroissante**. Une règle s'applique si son sort est sur une touche (n'importe
+     rotations Lua, **rien sur une monture ou mort** (`busy`) : inutile de l'écrire dans les conditions ;
+  2. **sort en cours** : le sort garde la priorité de la règle qui l'a lancé, et seule une règle **strictement plus
+     prioritaire** peut agir :
+     - **canalisation** (Drain de vie…) : une règle plus prioritaire la coupe (le jeu arrête la canalisation), sa propre
+       règle ne la relance pas. Un drain de remplissage cède donc à tout ce qui compte, un drain prioritaire va au bout ;
+     - **incantation** (Éclair…) : le jeu refuse les autres sorts ; le cerveau attend les dernières 0,4 s, où le sort
+       suivant part en file d'attente (enchaînement sans temps mort) ;
+     - sort lancé à la main ou inconnu : jamais coupé ;
+  3. parcourt les règles par **priorité décroissante**. Une règle s'applique si son sort est sur une touche (n'importe
      quelle combinaison), que la touche est prête (`ready`) et que la condition `when` est vraie ;
-  3. la **recommandation de Blizzard**, si `assisted.follow` est vrai, est intercalée à sa priorité : elle passe devant
+  4. la **recommandation de Blizzard**, si `assisted.follow` est vrai, est intercalée à sa priorité : elle passe devant
      les règles moins prioritaires. Elle n'est suivie que contre une **cible ennemie vivante, non marquée par un autre joueur** (`attackableTarget`), et seulement si son sort
      (ou une forme liée) est sur une touche prête ;
-  4. renvoie une `Decision` : touche, sort, priorité et raison (journalisée : *« Cerveau : touche SHIFT-R (règle
+  5. renvoie une `Decision` : touche, sort, priorité et raison (journalisée : *« Cerveau : touche SHIFT-R (règle
      « Horion de flamme », priorité 120) »*).
 
 Les conditions JEXL sont **bridées** : elles n'accèdent qu'aux classes du paquet `brain.decision` et aux types de base
@@ -306,6 +313,7 @@ Variables disponibles dans `when` :
 |---|---|
 | `player.health`, `player.power` | Pourcentages. |
 | `player.combat`, `player.casting`, `player.aggro` | Booléens. |
+| `player.castSpell`, `player.channeling`, `player.castRemaining` | Sort en cours (`''` si aucun), canalisation ou incantation, secondes restantes. Ex. : ne couper un drain qu'en fin de canalisation. |
 | `player.form` | Nom de la forme active (druide…), `''` sans forme. |
 | `player.combo` | Points de combo. |
 | `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = ennemi **vivant**, non marqué par un autre joueur. |

@@ -46,7 +46,7 @@ class DruidRotationTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        GameState state = new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 0, true, false, false, false, form, combo, 11, 102, 1, map);
+        GameState state = new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 0, true, false, false, false, form, combo, 11, 102, 1, GameState.Cast.NONE, map);
         return brain.decide(state, rotation, spellbook);
     }
 
