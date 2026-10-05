@@ -40,6 +40,9 @@ public final class SpellDatabaseFixture {
                     980,"Agonie"
                     172,"Corruption"
                     686,"Trait de l'ombre"
+                    6673,"Cri de guerre"
+                    1464,"Heurtoir"
+                    6552,"Volée de coups"
                     """),
             Map.entry("ChrClasses", """
                     Name_lang,Filename,Description_lang,ID

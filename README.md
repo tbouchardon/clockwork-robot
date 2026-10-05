@@ -376,6 +376,7 @@ Limites actuelles :
 | `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. |
 | `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. |
+| `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
 
 Les portages sont des **traductions littérales** des anciennes rotations Lua, avec les durées des debuffs tirées des

@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=../rotation.schema.json
+# Guerrier, toutes spécialisations : portage de la rotation Lua historique (rotation_warrior.lua de l'addon).
+# ATTENTION : traduction littérale de l'ancienne rotation Lua, gameplay non revu pour la 12.x (priorités et sorts
+# peuvent ne plus être pertinents). Elle est choisie automatiquement pour toutes les spécialisations du guerrier.
+#
+# Différences avec la version Lua :
+#   - « pas le buff Cri de guerre » : lu hors combat seulement (auras inaccessibles en combat en 12.x) ; en combat,
+#     c'est l'état lu juste avant d'y entrer, ce qui suffit pour un buff d'une heure ;
+#   - « cible hors de portée de mêlée » : hors de portée du Heurtoir, sort de mêlée ;
+#   - les priorités égales sont départagées par l'ordre du fichier (le Lua les départageait par l'ordre des touches).
+# Sanguinaire n'existe qu'en Fureur : dans les autres spécialisations, sa règle est simplement ignorée.
+
+name: Guerrier (toutes spécialisations)
+class: WARRIOR
+
+# La rotation Lua ne suivait pas la recommandation de Blizzard
+assisted:
+  follow: false
+
+rules:
+  # Lua : sans condition de cible, dès que le buff manque
+  - cast: Cri de guerre
+    when: "!spell.buffActive('Cri de guerre')"
+    priority: 200
+
+  - cast: Lancer héroïque
+    when: "target.hostile && !spell.inRange('Heurtoir')"
+    priority: 150
+
+  # Utilisable seulement sur une cible presque morte : WoW le signale, la règle n'a pas besoin de condition
+  - cast: Exécution
+    when: "target.hostile"
+    priority: 150
+
+  - cast: Sanguinaire
+    when: "target.hostile"
+    priority: 120
+
+  - cast: Ivresse de la victoire
+    when: "target.hostile"
+    priority: 100
+
+  - cast: Charge
+    when: "target.hostile"
+    priority: 10
+
+  - cast: Heurtoir
+    when: "target.hostile"
+    priority: 1
+
+  - cast: Heurt de bouclier
+    when: "target.hostile"
+    priority: 1
+
+  # Interruption : la cible incante
+  - cast: Volée de coups
+    when: "target.hostile && target.casting && target.interruptible"
+    priority: 1
+
+  - cast: Lancer héroïque
+    when: "target.hostile"
+    priority: 1
