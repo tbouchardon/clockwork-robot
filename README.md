@@ -393,11 +393,14 @@ noms sont entre apostrophes droites ; ClockWork confond les deux.
 Ces fonctions viennent des versions précédentes et sont toujours en place :
 
 - **Pêche** (`Fisherman`, `BobberDetector`) : pose le leurre (`W`) toutes les 10 min et l'appât (`Maj+W`) toutes les
-  5 min, puis lance la ligne (`H`).
-  - **Bouchon** : reconnu à sa signature, une plume rouge (3 pixels) avec une plume bleue 5 pixels au-dessus,
-    indépendante de la couleur de l'eau. La recherche se limite aux pixels apparus depuis l'image prise avant le lancer
-    (écart de plus de 40 sur un canal : le bruit de l'eau reste bien en dessous), ce qui écarte un décor rouge et bleu.
-    Le dernier essai, dans une zone élargie, se fait sans ce filtre.
+  5 min, puis lance la ligne (`H`). La pêche se fait **en vue à la première personne** (zoom avant au maximum avec
+  `Origine` au démarrage) : le bouchon est plus gros, toujours au même endroit de l'écran (tiers central, de 45 à 85 %
+  de la hauteur), et ni le personnage ni le décor lointain ne le gênent.
+  - **Bouchon** : reconnu à sa signature, une plume rouge (3 pixels) avec une plume bleue 2 à 7 pixels au-dessus. Les
+    couleurs sont jugées **par rapport à l'eau** (couleur médiane de la zone avant le lancer) : sous une lumière verte,
+    la plume bleue devient gris-vert, mais reste plus bleue que l'eau. La recherche se limite aux pixels apparus depuis
+    l'image prise avant le lancer, ce qui écarte un décor rouge et bleu ; le dernier essai se fait sans ce filtre.
+    Vérifié sur des captures en jeu : eau boueuse, eau verte lumineuse.
   - **Touche** : le bouchon est suivi toutes les ~15 ms par une capture de sa seule zone (DXGI). Il y a touche s'il
     s'écarte d'au moins 6 pixels de sa position moyenne, ou s'il disparaît, sur deux images consécutives : clic immédiat.
   - Bouger la souris arrête la pêche.
@@ -455,8 +458,9 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 - `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
 - `ProvidedRotationsTest` : toutes les rotations de `rotations/` valides ; le démoniste Affliction entretient ses debuffs.
 - `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
-- `BobberDetectorTest` : signature du bouchon sur eau bleue, verte ou boueuse, décor écarté malgré le bruit, suivi,
-  touche (écart, disparition, tangage ignoré).
+- `BobberDetectorTest` : signature du bouchon sur des captures en jeu (eau boueuse, eau verte lumineuse en première
+  personne) et sur des images synthétiques bruitées, décor écarté, plume bleue décalée, suivi, touche (écart,
+  disparition, tangage ignoré).
 - `HitDetectorTest` : perte de vie sans action, seuil, régénération, fenêtre glissante.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 

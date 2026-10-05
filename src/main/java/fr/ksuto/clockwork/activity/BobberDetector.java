@@ -5,13 +5,19 @@ import fr.ksuto.prh.capture.Rgb;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Repère le bouchon de pêche et détecte la touche, sur des captures d'écran (coordonnées écran).
  * <p>
- * Signature du bouchon : sa plume rouge (3 pixels rouges consécutifs) avec sa plume bleue 5 pixels au-dessus ; elle ne
- * dépend pas de la couleur de l'eau.
+ * Signature du bouchon : sa plume rouge (3 pixels consécutifs) avec sa plume bleue juste au-dessus (2 à 7 pixels plus
+ * haut, à un pixel près en largeur : l'écart change quand le bouchon tangue). Les couleurs sont jugées <b>par rapport à
+ * l'eau</b> ({@link Background}, couleur médiane de la zone) : sous une lumière verte, la plume bleue devient gris-vert
+ * (69, 107, 84) et ne serait plus « bleue » dans l'absolu, mais elle reste bien plus bleue que l'eau. Vérifiée sur des
+ * captures en jeu (12.1) : eau boueuse en vue lointaine, eau verte lumineuse en vue à la première personne.
  */
 final class BobberDetector {
 
@@ -35,21 +41,65 @@ final class BobberDetector {
      */
     static final int CHANGE_THRESHOLD = 40;
 
+    /**
+     * Plume rouge : rouge moins vert, et rouge moins bleu, dépassent ceux de l'eau d'au moins cette valeur.
+     */
+    static final int RED_MARGIN = 45;
+
+    /**
+     * Plume bleue : bleu moins rouge, et bleu moins vert, dépassent ceux de l'eau d'au moins cette valeur.
+     */
+    static final int BLUE_MARGIN = 20;
+
+    /**
+     * Couleur de l'eau, référence des couleurs des plumes.
+     */
+    record Background(int red, int green, int blue) {
+
+        /**
+         * Couleur médiane de la zone (un pixel sur 4 dans chaque sens) : l'eau, le bouchon étant petit.
+         */
+        static Background of(Frame frame, Rectangle zone) {
+
+            List<Integer> reds = new ArrayList<>(), greens = new ArrayList<>(), blues = new ArrayList<>();
+            for (int y = zone.y; y < zone.y + zone.height; y += 4) {
+                for (int x = zone.x; x < zone.x + zone.width; x += 4) {
+                    if (!inside(frame, x, y)) {continue;}
+                    int rgb = at(frame, x, y);
+                    reds.add(Rgb.red(rgb));
+                    greens.add(Rgb.green(rgb));
+                    blues.add(Rgb.blue(rgb));
+                }
+            }
+            if (reds.isEmpty()) {return new Background(0, 0, 0);}
+            return new Background(median(reds), median(greens), median(blues));
+        }
+
+        private static int median(List<Integer> values) {
+
+            Collections.sort(values);
+            return values.get(values.size() / 2);
+        }
+    }
+
     private BobberDetector() {}
 
     /**
      * Cherche le bouchon dans la zone.
      *
-     * @param after  capture après le lancer, couvrant la zone
-     * @param before capture avant le lancer, de la même étendue (null : pas de restriction)
+     * @param after      capture après le lancer, couvrant la zone
+     * @param before     capture avant le lancer, de la même étendue (null : pas de restriction)
+     * @param background couleur de l'eau
      * @return la position du bouchon : seuls comptent les pixels apparus depuis {@code before} (la ligne lancée), ce qui
      * écarte une plume rouge et bleue du décor ou un reflet
      */
-    static Optional<Point> locate(Frame after, Frame before, Rectangle zone) {
+    static Optional<Point> locate(Frame after, Frame before, Rectangle zone, Background background) {
 
         for (int y = zone.y; y < zone.y + zone.height; y++) {
             for (int x = zone.x; x < zone.x + zone.width; x++) {
-                if (isSignature(after, x, y) && (before == null || appeared(before, after, x + 1, y))) {return Optional.of(new Point(x + 1, y));}
+                if (isSignature(after, x, y, background) && (before == null || appeared(before, after, x + 1, y))) {
+                    return Optional.of(new Point(x + 1, y));
+                }
             }
         }
         return Optional.empty();
@@ -58,35 +108,45 @@ final class BobberDetector {
     /**
      * Cherche le bouchon à ± {@value #TRACK_RADIUS} pixels de sa dernière position.
      */
-    static Optional<Point> track(Frame frame, Point last) {
+    static Optional<Point> track(Frame frame, Point last, Background background) {
 
-        return locate(frame, null, new Rectangle(last.x - TRACK_RADIUS, last.y - TRACK_RADIUS, 2 * TRACK_RADIUS, 2 * TRACK_RADIUS));
+        return locate(frame, null, new Rectangle(last.x - TRACK_RADIUS, last.y - TRACK_RADIUS, 2 * TRACK_RADIUS, 2 * TRACK_RADIUS), background);
     }
 
     /**
-     * Plume rouge en (x..x+2, y) et plume bleue en (x, y-5).
+     * Plume rouge en (x..x+2, y) et plume bleue dans (x-1..x+3, y-7..y-2).
      */
-    static boolean isSignature(Frame frame, int x, int y) {
+    static boolean isSignature(Frame frame, int x, int y, Background background) {
 
         for (int n = 0; n <= 2; n++) {
-            if (!isRed(frame, x + n, y)) {return false;}
+            if (!isRed(frame, x + n, y, background)) {return false;}
         }
-        if (!inside(frame, x, y - 5)) {return false;}
-        int rgb = at(frame, x, y - 5);
-        int r   = Rgb.red(rgb);
-        int g   = Rgb.green(rgb);
-        int b   = Rgb.blue(rgb);
-        return b + 10 > r && b + 10 > g;
+        for (int dy = 2; dy <= 7; dy++) {
+            for (int dx = -1; dx <= 3; dx++) {
+                if (isBlue(frame, x + dx, y - dy, background)) {return true;}
+            }
+        }
+        return false;
     }
 
-    private static boolean isRed(Frame frame, int x, int y) {
+    private static boolean isRed(Frame frame, int x, int y, Background water) {
 
         if (!inside(frame, x, y)) {return false;}
         int rgb = at(frame, x, y);
         int r   = Rgb.red(rgb);
         int g   = Rgb.green(rgb);
         int b   = Rgb.blue(rgb);
-        return r > 100 && g < r - 50 && b < r - 50 && g < 100 && b < 100;
+        return (r - g) - (water.red() - water.green()) > RED_MARGIN && (r - b) - (water.red() - water.blue()) > RED_MARGIN;
+    }
+
+    private static boolean isBlue(Frame frame, int x, int y, Background water) {
+
+        if (!inside(frame, x, y)) {return false;}
+        int rgb = at(frame, x, y);
+        int r   = Rgb.red(rgb);
+        int g   = Rgb.green(rgb);
+        int b   = Rgb.blue(rgb);
+        return (b - r) - (water.blue() - water.red()) > BLUE_MARGIN && (b - g) - (water.blue() - water.green()) > BLUE_MARGIN;
     }
 
     private static boolean appeared(Frame before, Frame after, int x, int y) {

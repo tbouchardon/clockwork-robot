@@ -5,6 +5,10 @@ import fr.ksuto.prh.capture.Frame;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.imageio.ImageIO;
 import java.util.Optional;
 import java.util.Random;
 
@@ -56,11 +60,18 @@ class BobberDetectorTest {
 
     private static final Rectangle ZONE = new Rectangle(100, 200, 120, 60);
 
+    private static final BobberDetector.Background BLUE_WATER = background(0x204080);
+
+    private static BobberDetector.Background background(int color) {
+
+        return new BobberDetector.Background(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF);
+    }
+
     @Test
     void findsTheBobberByItsTwoFeathersWhateverTheWater() {
 
         for (int waterColor : new int[]{0x204080, 0x406030, 0x705030}) { // bleue, verte, boueuse
-            Optional<Point> found = BobberDetector.locate(frame(bobber(water(waterColor, 1), 50, 30)), null, ZONE);
+            Optional<Point> found = BobberDetector.locate(frame(bobber(water(waterColor, 1), 50, 30)), null, ZONE, background(waterColor));
             assertEquals(Optional.of(new Point(151, 230)), found, "eau " + Integer.toHexString(waterColor));
         }
     }
@@ -71,14 +82,66 @@ class BobberDetectorTest {
         Frame before = frame(bobber(water(0x204080, 1), 10, 20));                // décor rouge et bleu
         Frame after  = frame(bobber(bobber(water(0x204080, 2), 10, 20), 70, 40)); // même décor, bruit différent, et le bouchon
 
-        assertEquals(Optional.of(new Point(171, 240)), BobberDetector.locate(after, before, ZONE), "le décor, inchangé malgré le bruit, est écarté");
-        assertEquals(Optional.of(new Point(111, 220)), BobberDetector.locate(after, null, ZONE), "sans l'image d'avant : le premier trouvé");
+        assertEquals(Optional.of(new Point(171, 240)), BobberDetector.locate(after, before, ZONE, BLUE_WATER), "le décor, inchangé malgré le bruit, est écarté");
+        assertEquals(Optional.of(new Point(111, 220)), BobberDetector.locate(after, null, ZONE, BLUE_WATER), "sans l'image d'avant : le premier trouvé");
+    }
+
+    /**
+     * Recadrage d'une capture en jeu (12.1), placé à sa position d'origine dans l'écran.
+     */
+    private static Frame screenshot(String name, int x, int y) throws IOException {
+
+        try (InputStream stream = BobberDetectorTest.class.getResourceAsStream("/fishing/" + name)) {
+            BufferedImage image = ImageIO.read(stream);
+            return Frame.of(image, new Rectangle(x, y, image.getWidth(), image.getHeight()));
+        }
+    }
+
+    /**
+     * Captures avant et après le lancer : bouchon trouvé seulement après, à l'endroit attendu, et suivi.
+     */
+    private static void assertRealBobber(String water, int x, int y, Point expected) throws IOException {
+
+        Frame                     before     = screenshot(water + "-avant.png", x, y);
+        Frame                     after      = screenshot(water + "-apres.png", x, y);
+        Rectangle                 zone       = new Rectangle(x, y, before.width(), before.height());
+        BobberDetector.Background background = BobberDetector.Background.of(before, zone);
+
+        Optional<Point> bobber = BobberDetector.locate(after, before, zone, background);
+        assertTrue(bobber.isPresent(), water);
+        assertTrue(bobber.get().distance(expected) < 25, water + " : bouchon vers " + expected + ", trouvé en " + bobber.get());
+        assertTrue(BobberDetector.locate(before, null, zone, background).isEmpty(), water + " : pas de bouchon avant le lancer");
+        assertEquals(bobber, BobberDetector.track(after, bobber.get(), background), water + " : suivi");
+    }
+
+    @Test
+    void findsTheRealBobberOnMuddyWaterFromAfar() throws IOException {
+
+        assertRealBobber("boueuse", 860, 300, new Point(961, 372));
+    }
+
+    @Test
+    void findsTheRealBobberOnGreenGlowingWaterInFirstPerson() throws IOException {
+
+        // Lumière verte : la plume bleue y est gris-vert (69, 107, 84), plus « bleue » dans l'absolu, mais plus bleue que l'eau
+        assertRealBobber("verte", 640, 650, new Point(845, 793));
+    }
+
+    @Test
+    void toleratesTheBlueFeatherMovingWhenTheBobberTilts() {
+
+        for (int gap = 2; gap <= 7; gap++) {
+            BufferedImage image = water(0x204080, gap);
+            for (int n = 0; n <= 2; n++) {image.setRGB(50 + n, 30, RED);}
+            image.setRGB(51, 30 - gap, BLUE);
+            assertTrue(BobberDetector.locate(frame(image), null, ZONE, BLUE_WATER).isPresent(), "plume bleue " + gap + " px au-dessus");
+        }
     }
 
     @Test
     void noiseAloneIsNeverABobber() {
 
-        assertTrue(BobberDetector.locate(frame(water(0x204080, 3)), frame(water(0x204080, 4)), ZONE).isEmpty());
+        assertTrue(BobberDetector.locate(frame(water(0x204080, 3)), frame(water(0x204080, 4)), ZONE, BLUE_WATER).isEmpty());
     }
 
     @Test
@@ -86,8 +149,8 @@ class BobberDetectorTest {
 
         Frame frame = frame(bobber(water(0x204080, 5), 52, 31));
 
-        assertEquals(Optional.of(new Point(153, 231)), BobberDetector.track(frame, new Point(151, 230)));
-        assertTrue(BobberDetector.track(frame, new Point(120, 210)).isEmpty(), "hors du rayon de suivi");
+        assertEquals(Optional.of(new Point(153, 231)), BobberDetector.track(frame, new Point(151, 230), BLUE_WATER));
+        assertTrue(BobberDetector.track(frame, new Point(120, 210), BLUE_WATER).isEmpty(), "hors du rayon de suivi");
     }
 
     @Test
