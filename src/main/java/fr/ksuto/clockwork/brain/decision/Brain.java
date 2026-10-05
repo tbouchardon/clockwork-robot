@@ -46,8 +46,9 @@ public final class Brain {
 
     public Optional<Decision> decide(GameState state, Rotation rotation, SpellDatabase database) {
 
-        // Grille pas encore remplie (addon tout juste activé) ou cible hors combat sans mode aggro : rien à faire
-        if (!state.keysReady() || !state.mayAct()) {return Optional.empty();}
+        // Grille pas encore remplie (addon tout juste activé), cible hors combat sans mode aggro, incantation en cours,
+        // monture ou joueur mort : rien à faire
+        if (!state.keysReady() || !state.mayAct() || state.busy()) {return Optional.empty();}
 
         MapContext context = context(state, database);
         SpellView  spells  = new SpellView(state, database);
@@ -74,9 +75,10 @@ public final class Brain {
 
     private Optional<Decision> assisted(GameState state, Rotation rotation, SpellDatabase database) {
 
-        // Comme la rotation assistée de l'addon : seulement contre une cible ennemie vivante (Blizzard recommande
+        // Comme la rotation assistée de l'addon : seulement contre une cible ennemie vivante, non marquée par un autre
+        // joueur (Blizzard recommande
         // aussi des sorts offensifs sans cible, et un sort sans cible n'est pas « hors de portée »)
-        if (state.recommendedSpell() == 0 || !state.hasTarget() || !state.targetHostile() || state.targetHealth() <= 0) {
+        if (state.recommendedSpell() == 0 || !state.attackableTarget()) {
             return Optional.empty();
         }
         Set<Integer> recommended = database.related(state.recommendedSpell());
@@ -106,7 +108,7 @@ public final class Brain {
         context.set("player", Map.of("health", state.playerHealth(), "power", state.playerPower(),
                                      "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro(),
                                      "form", state.form() == 0 ? "" : database.nameOf(state.form()), "combo", state.comboPoints()));
-        context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.targetHostile(), "combat", state.targetInCombat(),
+        context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.attackableTarget(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower()));
         context.set("enemies", state.enemies());
         context.set("assisted", state.recommendedSpell() == 0 ? "" : database.nameOf(state.recommendedSpell()));

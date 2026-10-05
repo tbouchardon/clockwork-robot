@@ -19,6 +19,9 @@ import java.util.Optional;
  * @param facing           direction du personnage, en radians (0..2π)
  * @param recommendedSpell sort recommandé par Blizzard (0 si aucun)
  * @param aggro            mode aggro de l'addon : attaquer aussi une cible qui n'est pas en combat
+ * @param playerDead       le joueur est mort (ou fantôme)
+ * @param mounted          le joueur est sur une monture
+ * @param targetTapDenied  la cible est déjà marquée par un autre joueur
  * @param form             sort de la forme active (druide : félin, ours, sélénien...), 0 si aucune
  * @param comboPoints      points de combo du joueur
  * @param classId          classe du personnage (identifiant du jeu : 7 = chaman), 0 si inconnue
@@ -28,7 +31,7 @@ import java.util.Optional;
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        int form, int comboPoints, int classId, int specId, int frame, Map<String, KeyState> keys) {
+                        boolean playerDead, boolean mounted, boolean targetTapDenied, int form, int comboPoints, int classId, int specId, int frame, Map<String, KeyState> keys) {
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat
@@ -39,6 +42,23 @@ public record GameState(double playerHealth, double playerPower, boolean hasTarg
         return aggro || !inCombat || targetInCombat;
     }
     
+    /**
+     * Garde-fous communs à toutes les rotations, comme l'addon (Clockwork:rotation) : rien pendant une incantation, sur
+     * une monture ou mort.
+     */
+    public boolean busy() {
+
+        return casting || mounted || playerDead;
+    }
+
+    /**
+     * Cible à attaquer : hostile, vivante, et pas déjà marquée par un autre joueur (comme unitExistCanAndShouldDie).
+     */
+    public boolean attackableTarget() {
+
+        return hasTarget && targetHostile && !targetTapDenied && targetHealth > 0;
+    }
+
     /**
      * Les cases des touches sont remplies : l'addon a fait au moins une mise à jour depuis son activation.
      */

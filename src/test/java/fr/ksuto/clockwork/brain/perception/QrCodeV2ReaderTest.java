@@ -70,6 +70,7 @@ class QrCodeV2ReaderTest {
                 .set24(6, 2, 51505)                                    // Explosion de lave recommandée
                 .set24(8, 4, 768)                                      // forme de félin
                 .set(9, 4, 4 / 255.0, 0, 0)                            // 4 points de combo
+                .set(13, 4, 0, 1, 1)                                   // cible marquée, monture
                 .frame()).orElseThrow();
 
         assertEquals(50, state.playerHealth(), 0.3);
@@ -86,6 +87,11 @@ class QrCodeV2ReaderTest {
         assertEquals(51505, state.recommendedSpell());
         assertEquals(768, state.form());
         assertEquals(4, state.comboPoints());
+        assertFalse(state.playerDead());
+        assertTrue(state.targetTapDenied());
+        assertTrue(state.mounted());
+        assertTrue(state.busy());
+        assertFalse(state.attackableTarget());
         assertEquals(18, state.keys().size());
     }
 

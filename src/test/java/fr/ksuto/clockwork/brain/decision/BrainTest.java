@@ -40,7 +40,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, 0, 0, 7, 262, 1, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, false, false, false, 0, 0, 7, 262, 1, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -199,9 +199,33 @@ class BrainTest {
 
         String yaml = "assisted:\n  follow: true\nrules: []\n";
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, 0, 0, 7, 262, 1, keys);
+        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, false, false, false, 0, 0, 7, 262, 1, keys);
 
         assertTrue(decide(yaml, noTarget).isEmpty());
+    }
+
+    /**
+     * État avec les garde-fous : incantation, monture, mort, cible marquée par un autre joueur.
+     */
+    private static GameState guarded(boolean casting, boolean mounted, boolean dead, boolean tapDenied) {
+
+        Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
+        return new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 188196, true, dead, mounted, tapDenied, 0, 0, 7, 262, 1, keys);
+    }
+
+    @Test
+    void safetyGuardsApplyToEveryRotation() {
+
+        String rule     = "rules:\n  - cast: Éclair\n";
+        String assisted = "assisted:\n  follow: true\nrules: []\n";
+
+        assertTrue(decide(rule, guarded(false, false, false, false)).isPresent(), "témoin");
+        assertTrue(decide(rule, guarded(true, false, false, false)).isEmpty(), "incantation en cours");
+        assertTrue(decide(rule, guarded(false, true, false, false)).isEmpty(), "sur une monture");
+        assertTrue(decide(rule, guarded(false, false, true, false)).isEmpty(), "mort");
+        assertTrue(decide(assisted, guarded(false, false, false, true)).isEmpty(), "cible marquée par un autre joueur");
+        assertTrue(decide("rules:\n  - cast: Éclair\n    when: target.hostile\n", guarded(false, false, false, true)).isEmpty(),
+                   "target.hostile est faux sur une cible marquée");
     }
 
     @Test

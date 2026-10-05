@@ -159,6 +159,7 @@ historique). Il produit un `GameState` immuable :
 | `facing` | Direction du personnage, en radians. |
 | `recommendedSpell` | Sort recommandé par Blizzard (`C_AssistedCombat`), forme de base. |
 | `form`, `comboPoints` | Sort de la forme active (0 si aucune), points de combo. |
+| `playerDead`, `mounted`, `targetTapDenied` | Garde-fous : joueur mort, sur une monture, cible marquée par un autre joueur. |
 | `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
 | `frame` | Compteur de mises à jour (v3). |
 | `keys` | 18 touches en v2, **72** en v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
@@ -194,11 +195,13 @@ grille contient au moins un sort ; elle est vide juste après l'activation), `ke
 - **`Rotation`** est le contenu d'un fichier de rotation. Les conditions sont compilées en expressions JEXL au chargement.
   Une erreur de syntaxe est signalée et la rotation précédente est conservée.
 - **`Brain.decide(état, rotation, sorts)`** :
-  1. rien si la grille n'est pas prête ou si l'on n'a pas le droit d'agir (`mayAct`) ;
+  1. rien si la grille n'est pas prête ou si l'on n'a pas le droit d'agir (`mayAct`), et, comme l'addon pour ses
+     rotations Lua, **rien pendant une incantation, sur une monture ou mort** (`busy`) : inutile de l'écrire dans les
+     conditions ;
   2. parcourt les règles par **priorité décroissante**. Une règle s'applique si son sort est sur une touche (n'importe
      quelle combinaison), que la touche est prête (`ready`) et que la condition `when` est vraie ;
   3. la **recommandation de Blizzard**, si `assisted.follow` est vrai, est intercalée à sa priorité : elle passe devant
-     les règles moins prioritaires. Elle n'est suivie que contre une **cible ennemie vivante**, et seulement si son sort
+     les règles moins prioritaires. Elle n'est suivie que contre une **cible ennemie vivante, non marquée par un autre joueur** (`attackableTarget`), et seulement si son sort
      (ou une forme liée) est sur une touche prête ;
   4. renvoie une `Decision` : touche, sort, priorité et raison (journalisée : *« Cerveau : touche SHIFT-R (règle
      « Horion de flamme », priorité 120) »*).
@@ -305,7 +308,7 @@ Variables disponibles dans `when` :
 | `player.combat`, `player.casting`, `player.aggro` | Booléens. |
 | `player.form` | Nom de la forme active (druide…), `''` sans forme. |
 | `player.combo` | Points de combo. |
-| `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = ennemi **vivant**. |
+| `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = ennemi **vivant**, non marqué par un autre joueur. |
 | `target.health`, `target.power` | Pourcentages. |
 | `enemies` | Nombre d'ennemis en combat à proximité. |
 | `assisted` | Nom du sort recommandé par Blizzard. |

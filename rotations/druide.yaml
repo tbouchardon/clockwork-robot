@@ -10,6 +10,9 @@
 # moins de 2 s de la fin » devient « lancé sur cette cible il y a plus de 14 s » (durée de base 16 s ; à ajuster si un
 # talent l'allonge).
 #
+# Comme pour toutes les rotations, rien n'est lancé pendant une incantation, sur une monture, mort, ni contre une cible
+# marquée par un autre joueur : inutile de le répéter dans les conditions.
+#
 # Dans les conditions, les noms sont entre apostrophes droites : « Forme d’ours » s'écrit donc avec l'apostrophe
 # typographique (’), que ClockWork confond avec l'apostrophe droite.
 
@@ -25,27 +28,27 @@ rules:
   # --- Forme humaine ou de sélénien ---
   - cast: Éclat lunaire
     when: >-
-      target.hostile && !player.casting
+      target.hostile
       && (player.form == '' || spell.form('Forme de sélénien'))
       && spell.sinceCastOnTarget('Éclat lunaire') > 14
     priority: 100
 
   - cast: Colère
     when: >-
-      target.hostile && !player.casting
+      target.hostile
       && (player.form == '' || spell.form('Forme de sélénien'))
     priority: 80
 
   # --- Forme d'ours ---
   - cast: Mutilation
-    when: "target.hostile && !player.casting && spell.form('Forme d’ours')"
+    when: "target.hostile && spell.form('Forme d’ours')"
     priority: 80
 
   # --- Forme de félin ---
   - cast: Morsure féroce
-    when: "target.hostile && !player.casting && spell.form('Forme de félin') && player.combo > 2"
+    when: "target.hostile && spell.form('Forme de félin') && player.combo > 2"
     priority: 100
 
   - cast: Lambeau
-    when: "target.hostile && !player.casting && spell.form('Forme de félin')"
+    when: "target.hostile && spell.form('Forme de félin')"
     priority: 80
