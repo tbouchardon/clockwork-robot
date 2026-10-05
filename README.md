@@ -101,14 +101,11 @@ Propriétés système (`-D…`) :
 ## Utilisation
 
 1. Dans WoW, en **fenêtré maximisé**, interface visible, addon chargé : la grille verte apparaît en haut à gauche.
-2. Lancer ClockWork : une petite fenêtre toujours au premier plan apparaît en bas à droite de l'écran.
+2. Lancer ClockWork : une petite fenêtre toujours au premier plan apparaît en bas à droite de l'écran ; elle affiche
+   le journal des touches jouées.
 3. ClockWork **cherche le QR code tout seul**, toutes les 2 s jusqu'à le trouver, puis démarre l'automate (sans clic
-   ni frappe : rien n'est envoyé à une autre fenêtre). Le bouton **Auto Config** (engrenage) reste disponible pour
-   forcer une nouvelle recherche et activer l'addon. Il :
-   - cherche la grille à l'écran (`QrCode.init`) : quatre coins verts formant un carré de 16x16 ;
-   - clique sur la grille pour donner le focus à WoW, puis tape `/clk toggle` si l'addon est désactivé
-     (`ensureAddonActive`) ;
-   - démarre l'automate (un seul fil d'exécution, même si on relance Auto Config).
+   ni frappe : rien n'est envoyé à une autre fenêtre). Si le QR code reste invisible plus de 5 s (fenêtre de WoW
+   déplacée ou redimensionnée), la recherche reprend d'elle-même. L'addon s'active depuis son menu dans WoW.
 4. Le champ de texte affiche les touches jouées. Le journal détaillé (niveau DEBUG pour `fr.ksuto.clockwork`) sort sur
    la console.
 5. La **pêche** se lance depuis WoW : bouton « Pêche » du menu de l'addon ou `/clk fish` (voir *Autres activités*).

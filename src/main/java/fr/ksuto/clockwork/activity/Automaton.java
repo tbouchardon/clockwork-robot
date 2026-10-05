@@ -49,6 +49,7 @@ public class Automaton {
     private final        HitDetector           hitDetector           = new HitDetector();
     private              int                   lastGridFrame         = -1;
     private              boolean               fishRequested         = false;
+    private              long                  invisibleSince        = 0;
     private              long                  lastGridFrameChange   = 0;
     
     public Automaton(PeripheralRobotHelper peripherals, ClockWorkUI autoHitControl) {
@@ -157,8 +158,16 @@ public class Automaton {
         // On ne fait rien si l’addon n’est pas visible
         if (qrCode.getCapturedQrCode().rgb(0, 0) != Rgb.ARGB_GREEN) {
             reportState("En attente : QR code invisible (WoW masqué, interface cachée ou addon non chargé)");
+            // Invisible depuis 5 s : la fenêtre a peut-être bougé, on recherche le QR code sur tout l'écran
+            long now = System.currentTimeMillis();
+            if (invisibleSince == 0) {invisibleSince = now;}
+            else if (now - invisibleSince > 5000) {
+                ui.requestQrCodeSearch();
+                invisibleSince = now;
+            }
             return;
         }
+        invisibleSince = 0;
         
         qrCode.update();
         

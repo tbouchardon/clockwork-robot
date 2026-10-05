@@ -14,12 +14,10 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -36,9 +34,9 @@ public class ClockWorkUI {
     JTextField castLogTextfield;
     Automaton  automaton;
     private int     iGrey      = 0;
-    private JButton autoConfButton;
     private volatile QrCode  qrCode  = new QrCode();
     private volatile boolean qrFound = false;
+    private final AtomicBoolean searching = new AtomicBoolean(false);
     private Thread  automatonThread;
     private boolean shouldExit = false;
     
@@ -50,7 +48,7 @@ public class ClockWorkUI {
     public void appendLog(String sKey) {
         
         String sTemp = castLogTextfield.getText() + " " + sKey;
-        while (sTemp.length() > 17) {sTemp = sTemp.substring(1);}
+        while (sTemp.length() > 32) {sTemp = sTemp.substring(1);}
         castLogTextfield.setText(sTemp);
     }
     
@@ -66,6 +64,7 @@ public class ClockWorkUI {
      */
     private void startQrCodeSearch() {
 
+        if (!searching.compareAndSet(false, true)) {return;}
         ScheduledExecutorService search = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable, "qr-search");
             thread.setDaemon(true);
@@ -73,6 +72,7 @@ public class ClockWorkUI {
         });
         search.scheduleWithFixedDelay(() -> {
             if (qrFound || shouldExit) {
+                searching.set(false);
                 search.shutdown();
                 return;
             }
@@ -84,6 +84,7 @@ public class ClockWorkUI {
                     logger.info("QR code trouvé : démarrage de l'automate");
                     SwingUtilities.invokeLater(() -> appendLog("QR trouvé"));
                     startAutomaton();
+                    searching.set(false);
                     search.shutdown();
                 }
             }
@@ -96,25 +97,12 @@ public class ClockWorkUI {
     public void initUI() throws IOException {
         
         JDialog ui = new JDialog();
-        JPanel panel = new JPanel() {
-
-            private final transient BufferedImage bufferedImage = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Pictures/background.png")));
-            
-            @Override
-            protected void paintComponent(Graphics g) {
-                
-                super.paintComponent(g);
-                g.drawImage(bufferedImage, 0, 0, null);
-            }
-        };
-        
-        ui.setContentPane(panel);
-        ui.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
+        ui.setContentPane(new JPanel(new BorderLayout()));
         ui.setTitle("ClockWork");
         URL url = getClass().getResource("/Pictures/icons/Default.jpg");
         if (url != null) {ui.setIconImage(ImageIO.read(url));}
         ui.setAlwaysOnTop(true);
-        ui.setPreferredSize(new Dimension(210, 71));
+        ui.setPreferredSize(new Dimension(260, 71));
         ui.setResizable(false);
         ui.setLocation(Screen.SCREEN_WIDTH - 270, Screen.SCREEN_HEIGHT - 95);
         ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
@@ -129,14 +117,10 @@ public class ClockWorkUI {
             }
         });
         
-        autoConfButton = new JButton();
-        initAutoConfButton(autoConfButton);
-        ui.add(autoConfButton);
-        
-        
-        castLogTextfield = new JTextField("/Please Auto Config ");
+        // Le QR code est cherché automatiquement (au démarrage, puis s'il disparaît) : le journal occupe toute la fenêtre
+        castLogTextfield = new JTextField("Recherche du QR code...");
         initTextField(castLogTextfield);
-        ui.add(castLogTextfield);
+        ui.add(castLogTextfield, BorderLayout.CENTER);
         
         ui.pack();
         ui.setVisible(true);
@@ -152,54 +136,18 @@ public class ClockWorkUI {
         fadeOutActionTimer.start();
     }
     
-    private ActionListener autoConfButtonListener() {
-        
-        return actionEvent -> {
-            
-            autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.down.png"));
-            setEnabledButtonAutoconf(false); // Disable the button while working
+    /**
+     * Relance la recherche du QR code (fenêtre de WoW déplacée, redimensionnée...) : appelée par l'automate quand le QR
+     * code reste invisible.
+     */
+    public void requestQrCodeSearch() {
 
-            SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
-                @Override
-                protected Boolean doInBackground() throws AWTException, IOException {
-                    // Le QR code n'est remplacé qu'une fois initialisé : l'automate en cours lit toujours un QR code complet
-                    QrCode candidate = new QrCode();
-                    boolean initialized = candidate.init(peripherals);
-                    if (initialized) {
-                        candidate.ensureAddonActive(peripherals);
-                        qrCode = candidate;
-                        qrFound = true;
-                    }
-                    return initialized;
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        boolean initialized = get();
-                        if (initialized) {
-                            appendLog("      Done      ");
-                        }
-                        if (initialized && !qrCode.getKeys().isEmpty()) {
-                            startAutomaton();
-                        }
-                    } catch (InterruptedException | ExecutionException e) {
-                        // Handle exceptions from doInBackground() or get()
-                        Throwable cause = e.getCause();
-                        logger.debug(cause != null ? cause.getLocalizedMessage() : e.getLocalizedMessage());
-                        Thread.currentThread().interrupt();
-                    } finally {
-                        // This runs whether the background task succeeded or failed
-                        autoConfButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.config.up.png"));
-                        setEnabledButtonAutoconf(true);
-                    }
-                }
-            };
-
-            worker.execute();
-        };
+        if (searching.get()) {return;}
+        logger.info("QR code introuvable à sa position : nouvelle recherche toutes les 2 s");
+        qrFound = false;
+        startQrCodeSearch();
     }
-    
+
     /**
      * Démarre l'automate s'il ne tourne pas déjà : une nouvelle Auto Config ne doit pas en lancer un second.
      */
@@ -217,30 +165,6 @@ public class ClockWorkUI {
         automatonThread.start();
     }
     
-    private ImageIcon getImageIconFromResourse(String resource) {
-
-        try {
-            URL url = getClass().getResource(resource);
-            return new ImageIcon(ImageIO.read(Objects.requireNonNull(url)));
-        }
-        catch (IOException e) {
-            logger.debug("ERROR : Impossible de charger l'icone");
-        }
-        return null;
-    }
-
-    private void initButton(JButton button, String iconPath, String tooltip, ActionListener listener) {
-        button.setPreferredSize(new Dimension(25, 30));
-        button.setIcon(getImageIconFromResourse(iconPath));
-        button.setMargin(new Insets(0, 0, 0, 0));
-        button.setBorder(null);
-        // Bouton réduit à son icône, quel que soit le thème Swing
-        button.setContentAreaFilled(false);
-        button.setFocusPainted(false);
-        button.setToolTipText(tooltip);
-        button.addActionListener(listener);
-    }
-    
     private void initTextField(JTextField castLogTextfield) {
         
         castLogTextfield.setEditable(false);
@@ -251,10 +175,6 @@ public class ClockWorkUI {
         castLogTextfield.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
     }
 
-    private void initAutoConfButton(JButton autoConfButton) {
-        initButton(autoConfButton, "/Pictures/button.icon.config.up.png", "Auto-configure QR Code positions", autoConfButtonListener());
-    }
-    
     public QrCode getQrCode() {
         
         return qrCode;
@@ -263,11 +183,6 @@ public class ClockWorkUI {
     public boolean isShouldExit() {
         
         return shouldExit;
-    }
-    
-    private void setEnabledButtonAutoconf(boolean b) {
-        
-        autoConfButton.setEnabled(b);
     }
     
     public void setiGrey(int iGrey) {
