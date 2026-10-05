@@ -36,6 +36,10 @@ public final class SpellDatabaseFixture {
                     5487,"Forme d’ours"
                     24858,"Forme de sélénien"
                     783,"Forme de voyage"
+                    1259790,"Affliction instable"
+                    980,"Agonie"
+                    172,"Corruption"
+                    686,"Trait de l'ombre"
                     """),
             Map.entry("ChrClasses", """
                     Name_lang,Filename,Description_lang,ID

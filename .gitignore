@@ -14,6 +14,6 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 
 ### ClockWork ###
-# Configuration personnelle et liste des sorts générée
+# Configuration personnelle et schéma de rotation généré (le modèle est dans src/main/resources)
 rotation.yaml
-rotation.spells.json
+/rotation.schema.json

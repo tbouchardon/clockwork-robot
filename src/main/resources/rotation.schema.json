@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Modèle : ClockWork le complète avec les tables du jeu (definitions) et l'écrit en rotation.schema.json dans son dossier de lancement.",
   "title": "Rotation ClockWork",
-  "description": "Rotation du cerveau Java de ClockWork : règles « lancer tel sort quand telle condition est vraie ». ClockWork choisit la rotation du dossier rotations/ qui correspond à la classe et à la spécialisation du personnage. Les spécialisations et les sorts proposés viennent de rotation.spells.json, généré par ClockWork d'après les tables du jeu.",
+  "description": "Rotation du cerveau Java de ClockWork : règles « lancer tel sort quand telle condition est vraie ». ClockWork choisit la rotation du dossier rotations/ qui correspond à la classe et à la spécialisation du personnage. Les spécialisations et les sorts proposés viennent des tables du jeu.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -28,8 +29,12 @@
       ]
     },
     "spec": {
-      "description": "Spécialisation visée, nom affiché en jeu (Élémentaire, Farouche...) ; absente : toutes les spécialisations de la classe. À classe égale, une rotation de la spécialisation passe devant une rotation de toute la classe.",
-      "type": "string"
+      "description": "Spécialisation visée, nom affiché en jeu (Élémentaire, Farouche...) ; absente : toutes les spécialisations de la classe. À classe égale, une rotation de la spécialisation passe devant une rotation de toute la classe. L'éditeur propose toutes les spécialisations ; la condition sur la classe signale celles qui ne lui appartiennent pas.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/specs"
+        }
+      ]
     },
     "assisted": {
       "description": "Recommandation de Blizzard (combat assisté) en repli : elle passe devant les règles de priorité inférieure. Suivie seulement contre une cible ennemie vivante.",
@@ -68,10 +73,11 @@
         ],
         "properties": {
           "cast": {
-            "description": "Sort à lancer : nom tel qu'affiché en jeu (accents et casse indifférents pour ClockWork), ou identifiant.",
-            "type": [
-              "string",
-              "integer"
+            "description": "Sort à lancer : nom tel qu'affiché en jeu (accents et casse indifférents pour ClockWork), ou identifiant. L'éditeur propose les sorts de toutes les classes ; les conditions sur la classe et la spécialisation signalent ceux qui ne leur appartiennent pas.",
+            "allOf": [
+              {
+                "$ref": "#/definitions/spells"
+              }
             ]
           },
           "when": {
@@ -89,7 +95,8 @@
   },
   "allOf": [
     {
-      "$ref": "rotation.spells.json#/definitions/byClass"
+      "$ref": "#/definitions/byClass"
     }
-  ]
+  ],
+  "definitions": {}
 }

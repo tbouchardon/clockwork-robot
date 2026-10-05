@@ -116,6 +116,12 @@ class SpellDatabaseTest {
         String json = SpellSchema.json(SpellDatabaseFixture.create(folder));
 
         assertTrue(json.contains("\"byClass\""));
+        assertTrue(json.contains("\"title\": \"Rotation ClockWork\""), "structure reprise du modèle");
+        assertTrue(json.contains("\"$ref\": \"#/definitions/specs\""));
+        assertFalse(json.contains("\"definitions\": {}"), "définitions du modèle remplacées");
+        assertFalse(json.contains(".json#"), "aucune référence vers un autre fichier");
+        assertTrue(json.contains("\"specs\": { \"enum\": [\n          \"Amélioration\",\n          \"Farouche\","), "toutes les spécialisations, triées");
+        assertTrue(json.contains("\"spells\": {"), "tous les sorts de joueur");
         assertTrue(json.contains("\"spec\": { \"enum\": [\n          \"Élémentaire\",\n          \"Amélioration\",\n          \"Restauration\"\n        ] }"));
         assertTrue(json.contains("\"spec\": { \"const\": \"Élémentaire\" }"));
         assertTrue(json.contains("\"$ref\": \"#/definitions/SHAMAN-262\""));

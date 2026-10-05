@@ -9,7 +9,7 @@
 # pas hors de portée) et si sa condition « when » est vraie. La plus haute priorité l'emporte.
 # Les sorts se désignent par leur nom (n'importe quel sort du jeu, d'après les tables de wago.tools) ou par leur
 # identifiant. Avec « class », l'éditeur (IntelliJ, VS Code + extension YAML) propose
-# les sorts de la classe grâce au schéma de la première ligne ; ClockWork génère cette liste dans rotation.spells.json.
+# les sorts de la classe grâce au schéma de la première ligne ; ClockWork génère ce schéma (rotation.schema.json) à son démarrage.
 #
 # Dans les conditions (syntaxe JEXL : &&, ||, !, <, >, ==) :
 #   player.health  player.power   player.combat   player.casting      (% et booléens)

@@ -60,7 +60,8 @@ class DruidRotationTest {
 
         assertEquals(MOONFIRE, castIn(NO_FORM, 0, key("1", MOONFIRE, NEVER), key("2", WRATH, NEVER)));
         assertEquals(WRATH, castIn(NO_FORM, 0, key("1", MOONFIRE, 5), key("2", WRATH, NEVER)));
-        assertEquals(MOONFIRE, castIn(MOONKIN, 0, key("1", MOONFIRE, 15), key("2", WRATH, 1)), "à renouveler après 14 s");
+        assertEquals(MOONFIRE, castIn(MOONKIN, 0, key("1", MOONFIRE, 17), key("2", WRATH, 1)), "à renouveler après 16 s");
+        assertEquals(WRATH, castIn(MOONKIN, 0, key("1", MOONFIRE, 15), key("2", WRATH, 1)), "encore 3 s de debuff");
     }
 
     @Test

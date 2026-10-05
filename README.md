@@ -250,8 +250,9 @@ Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
    c'est-à-dire capacités de classe (`SkillLine`, `SkillLineAbility`), de spécialisation (`SpecializationSpells`) et
    talents, avec les variantes qu'ils accordent (`SkillLineXTraitTree` → `TraitNode` → `TraitNodeEntry` →
    `TraitDefinition`) : environ 300 noms par classe ;
-4. génère `rotation.spells.json` dans le dossier de lancement : spécialisations de chaque classe, et sorts de chaque
-   classe et de chaque spécialisation (voir *Autocomplétion dans l'éditeur*).
+4. génère `rotation.schema.json` dans le dossier de lancement : le modèle `src/main/resources/rotation.schema.json`
+   complété par les spécialisations et les sorts de chaque classe et de chaque spécialisation (voir *Autocomplétion dans
+   l'éditeur*).
 
 Le cerveau attend que la table soit chargée pour décider (*« Cerveau en attente de la table des sorts »*).
 
@@ -333,11 +334,15 @@ Variables disponibles dans `when` :
 
 ### Autocomplétion dans l'éditeur
 
-La première ligne associe le fichier au **schéma JSON** `rotation.schema.json` (versionné). IntelliJ la reconnaît
+La première ligne associe le fichier au **schéma JSON** `rotation.schema.json`, que ClockWork génère dans son dossier de
+lancement au démarrage (il n'existe donc qu'après un premier lancement ; le modèle versionné est dans
+`src/main/resources`). C'est un seul fichier, sans référence vers un autre : certains éditeurs ne suivent pas ces
+références. IntelliJ la reconnaît
 nativement, VS Code avec l'extension YAML de Red Hat. On obtient l'autocomplétion des clés, la validation à la frappe
 (clé inconnue, type faux, règle sans `cast`) et la documentation au survol, dont la liste des variables de `when`.
 
-Le schéma est **conditionnel** (`if` / `then`) et renvoie à `rotation.spells.json`, généré par ClockWork d'après les
+L'éditeur propose **toutes** les spécialisations pour `spec` et tous les sorts de joueur pour `cast` (certains éditeurs
+n'appliquent les conditions qu'à la validation). Le schéma est en plus **conditionnel** (`if` / `then`), d'après les
 tables du jeu (voir *Tables du jeu*) :
 
 - selon `class`, l'éditeur propose les spécialisations de la classe pour `spec` ;

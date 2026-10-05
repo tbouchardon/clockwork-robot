@@ -1,6 +1,7 @@
 package fr.ksuto.clockwork.brain.data;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,17 +12,27 @@ import java.util.List;
 import java.util.TreeSet;
 
 /**
- * Génère rotation.spells.json, la partie du schéma de rotation.yaml tirée des tables du jeu ; rotation.schema.json
- * (versionné) y renvoie par {@code #/definitions/byClass} :
+ * Génère rotation.schema.json, le schéma des fichiers de rotation, à partir du modèle versionné (ressource
+ * {@value #TEMPLATE}) complété par les tables du jeu. Un seul fichier, sans référence externe : certains éditeurs ne
+ * suivent pas un {@code $ref} vers un autre fichier.
  * <ul>
- *   <li>selon {@code class} : les spécialisations proposées pour {@code spec} ;</li>
- *   <li>selon {@code class} et {@code spec} : les sorts proposés pour {@code cast}, ceux de la spécialisation (sorts de
- *   toute la classe et sorts réservés à la spécialisation), ou de toute la classe sans {@code spec}.</li>
+ *   <li>{@code #/definitions/specs} et {@code #/definitions/spells} : toutes les spécialisations et tous les sorts de
+ *   joueur, pour l'autocomplétion (certains éditeurs n'appliquent les conditions qu'à la validation) ;</li>
+ *   <li>{@code #/definitions/byClass} : conditions qui restreignent, selon {@code class}, les spécialisations proposées
+ *   pour {@code spec}, et selon {@code class} et {@code spec}, les sorts proposés pour {@code cast} (sorts de toute la
+ *   classe et sorts réservés à la spécialisation), ou ceux de toute la classe sans {@code spec}.</li>
  * </ul>
  */
 public final class SpellSchema {
 
-    public static final String FILE_NAME = "rotation.spells.json";
+    public static final String FILE_NAME = "rotation.schema.json";
+
+    /**
+     * Modèle : structure, documentation et références internes ; ses {@code definitions} vides sont remplacées.
+     */
+    static final String TEMPLATE = "/rotation.schema.json";
+
+    private static final String PLACEHOLDER = "\"definitions\": {}";
 
     private SpellSchema() {}
 
@@ -32,10 +43,31 @@ public final class SpellSchema {
         Files.move(partial, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
     }
 
-    static String json(SpellDatabase database) {
+    static String json(SpellDatabase database) throws IOException {
+
+        String template;
+        try (InputStream stream = SpellSchema.class.getResourceAsStream(TEMPLATE)) {
+            if (stream == null) {throw new IOException("Modèle de schéma introuvable : " + TEMPLATE);}
+            template = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        if (!template.contains(PLACEHOLDER)) {throw new IOException("Modèle de schéma sans " + PLACEHOLDER);}
+        return template.replace(PLACEHOLDER, definitions(database));
+    }
+
+    private static String definitions(SpellDatabase database) {
 
         List<String> conditions  = new ArrayList<>();
         List<String> definitions = new ArrayList<>();
+
+        // Listes complètes pour l'autocomplétion : certains éditeurs n'appliquent les conditions qu'à la validation
+        TreeSet<String> allSpecs  = new TreeSet<>();
+        TreeSet<String> allSpells = new TreeSet<>();
+        for (String playerClass : database.classes()) {
+            database.specsOf(playerClass).forEach(spec -> allSpecs.add(spec.name()));
+            allSpells.addAll(database.classSpellNames(playerClass));
+        }
+        definitions.add("    \"specs\": { \"enum\": " + array(allSpecs) + " }");
+        definitions.add(definition("spells", allSpells));
 
         for (String playerClass : new TreeSet<>(database.classes())) {
             List<SpellDatabase.Spec> specs = database.specsOf(playerClass);
@@ -54,16 +86,12 @@ public final class SpellSchema {
             }
         }
 
-        return "{\n"
-               + "  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n"
-               + "  \"$comment\": \"Généré par ClockWork d'après les tables du jeu (wago.tools) : ne pas modifier.\",\n"
-               + "  \"definitions\": {\n"
+        return "\"definitions\": {\n"
                + "    \"byClass\": {\n"
                + "      \"allOf\": [\n" + String.join(",\n", conditions) + "\n      ]\n"
                + "    },\n"
                + String.join(",\n", definitions) + "\n"
-               + "  }\n"
-               + "}\n";
+               + "  }";
     }
 
     private static String condition(String ifSchema, String thenSchema) {

@@ -257,8 +257,8 @@ public final class BrainService {
     }
 
     /**
-     * Écrit la liste des spécialisations et des sorts pour l'éditeur, à côté de rotation.schema.json (dossier de
-     * lancement).
+     * Écrit le schéma des rotations, avec les spécialisations et les sorts du jeu, dans le dossier de lancement : les
+     * fichiers de rotations/ y renvoient par leur première ligne.
      */
     private void writeSpellSchema(SpellDatabase spells) {
 
@@ -266,10 +266,10 @@ public final class BrainService {
         Path file = forcedFile.toAbsolutePath().resolveSibling(SpellSchema.FILE_NAME);
         try {
             SpellSchema.write(file, spells);
-            logger.info("Liste des sorts pour l'éditeur écrite : {}", file);
+            logger.info("Schéma des rotations écrit : {}", file);
         }
         catch (IOException e) {
-            logger.warn("Liste des sorts pour l'éditeur non écrite ({}) : {}", file, e.getMessage());
+            logger.warn("Schéma des rotations non écrit ({}) : {}", file, e.getMessage());
         }
     }
 }

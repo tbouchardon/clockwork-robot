@@ -7,8 +7,8 @@
 #   - forme de félin : Morsure féroce à partir de 3 points de combo, Lambeau sinon.
 #
 # Différence avec la version Lua : les debuffs sont illisibles en combat depuis la 12.x. « Éclat lunaire absent ou à
-# moins de 2 s de la fin » devient « lancé sur cette cible il y a plus de 14 s » (durée de base 16 s ; à ajuster si un
-# talent l'allonge).
+# moins de 2 s de la fin » devient « lancé sur cette cible il y a plus de 16 s » (le debuff dure 18 s d'après les tables
+# du jeu, 12.1 ; à ajuster si un talent l'allonge).
 #
 # Comme pour toutes les rotations, rien n'est lancé pendant une incantation, sur une monture, mort, ni contre une cible
 # marquée par un autre joueur : inutile de le répéter dans les conditions.
@@ -30,7 +30,7 @@ rules:
     when: >-
       target.hostile
       && (player.form == '' || spell.form('Forme de sélénien'))
-      && spell.sinceCastOnTarget('Éclat lunaire') > 14
+      && spell.sinceCastOnTarget('Éclat lunaire') > 16
     priority: 100
 
   - cast: Colère
