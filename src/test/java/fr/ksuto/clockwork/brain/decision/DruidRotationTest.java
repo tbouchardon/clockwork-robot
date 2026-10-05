@@ -1,5 +1,7 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
+import fr.ksuto.clockwork.brain.data.SpellDatabaseFixture;
 import fr.ksuto.clockwork.brain.perception.GameState;
 import fr.ksuto.clockwork.brain.perception.KeyState;
 
@@ -25,25 +27,9 @@ class DruidRotationTest {
     private static final int NO_FORM = 0, CAT = 768, BEAR = 5487, MOONKIN = 24858, TRAVEL = 783;
     private static final int MOONFIRE = 8921, WRATH = 190984, MANGLE = 33917, SHRED = 5221, BITE = 22568;
 
-    private static final String SAVED_VARIABLES = """
-            CLOCKWORK_SPELLBOOK = {
-            	["DRUID-102"] = {
-            		["spells"] = {
-            			[8921] = { ["name"] = "Éclat lunaire", ["base"] = 8921 },
-            			[190984] = { ["name"] = "Colère", ["base"] = 190984 },
-            			[33917] = { ["name"] = "Mutilation", ["base"] = 33917 },
-            			[5221] = { ["name"] = "Lambeau", ["base"] = 5221 },
-            			[22568] = { ["name"] = "Morsure féroce", ["base"] = 22568 },
-            			[768] = { ["name"] = "Forme de félin", ["base"] = 768 },
-            			[5487] = { ["name"] = "Forme d'ours", ["base"] = 5487 },
-            			[24858] = { ["name"] = "Forme de sélénien", ["base"] = 24858 },
-            		},
-            	},
-            }
-            """;
 
-    private final Brain     brain     = new Brain();
-    private final Spellbook spellbook = Spellbook.parse(SAVED_VARIABLES);
+    private final Brain         brain     = new Brain();
+    private final SpellDatabase spellbook = SpellDatabaseFixture.create();
     private final Rotation  rotation  = brain.parse(Files.readString(Path.of("rotations", "druide.yaml"), StandardCharsets.UTF_8));
 
     DruidRotationTest() throws IOException {}

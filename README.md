@@ -34,7 +34,7 @@ application capture la grille, la décode, choisit une action et la joue au clav
   écran de WoW      │                                                                            │
  ┌────────────┐     │  capture 32x32    perception           décision              action        │
  │▣ QR code   │ ──► │  ───────────► QrCodeV2Reader ──► Brain (rotation.yaml) ──► Automaton ──────┼──► clavier
- │  (0, 23)   │     │                  GameState          + Spellbook            (KeyCombo)      │    souris
+ │  (0, 23)   │     │                  GameState          + SpellDatabase        (KeyCombo)      │    souris
  └────────────┘     │                  KeyState × 72      (noms → identifiants)                  │
                     └────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -92,7 +92,7 @@ Propriétés système (`-D…`) :
 | Propriété | Défaut | Rôle |
 |---|---|---|
 | `clockwork.rotation` | `rotation.yaml` | Fichier de rotation du cerveau. |
-| `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier du client (`_retail_`, `_classic_era_`…) : dictionnaire des sorts exporté par l'addon, produit, version et langue du jeu. |
+| `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier du client (`_retail_`, `_classic_era_`…) : produit, version et langue du jeu. |
 | `clockwork.cache` | `~/.clockwork/wago` | Cache des tables du jeu téléchargées depuis wago.tools. |
 
 ---
@@ -113,7 +113,6 @@ Propriétés système (`-D…`) :
 Le cerveau se pilote depuis les fichiers, à chaud :
 
 - modifier `rotation.yaml` : la rotation est rechargée à l'enregistrement suivant ;
-- `/reload` en jeu : l'addon réécrit le dictionnaire des sorts, que Java recharge automatiquement.
 
 ---
 
@@ -178,19 +177,20 @@ Chaque touche est un `KeyState` :
 Méthodes utiles de `GameState` : `mayAct()` (mode aggro, ou hors combat, ou cible en combat), `keysReady()` (la
 grille contient au moins un sort ; elle est vide juste après l'activation), `keyForSpell(id)`.
 
-### Décision : `Spellbook`, `Rotation`, `Brain`
+### Décision : `SpellDatabase`, `Rotation`, `Brain`
 
-- **`Spellbook`** traduit les **noms** des règles en **identifiants**. Il lit la SavedVariable `CLOCKWORK_SPELLBOOK`
-  écrite par l'addon (`<wow>/WTF/Account/*/SavedVariables/ClockWork.lua`, analysée par `LuaTableParser`).
-  - Les noms sont comparés sans accents ni casse : « eclair » désigne « Éclair ».
-  - Un nom désigne aussi la **forme de base** et la **variante** du sort. Un talent remplace souvent un sort par une
-    variante d'un autre identifiant (ex. Explosion de lave 51505 et sa base 73899), et Blizzard recommande la base.
+- **`SpellDatabase`** traduit les **noms** des règles en **identifiants**, d'après les tables du jeu (voir *Tables du
+  jeu* ci-dessous). N'importe quel sort du jeu peut être nommé, sans `/reload`.
+  - Les noms sont comparés sans accents, sans casse, apostrophe typographique comprise : « eclair » désigne « Éclair ».
+  - Un nom désigne souvent plusieurs identifiants (versions de joueur, de monstre, d'objet) : seuls comptent ceux
+    présents sur une touche.
+  - `related(id)` relie un sort à ses **variantes** et à ses homonymes. Un talent remplace souvent un sort par une
+    variante d'un autre identifiant (ex. Explosion de lave 51505 et sa base 73899, d'après `TraitDefinition`), et
+    Blizzard recommande la base.
   - Un identifiant numérique est accepté directement à la place d'un nom.
-  - Un nom absent de l'export (sort pas encore sur une barre au dernier `/reload`) est cherché dans la **table complète
-    des sorts du jeu** (voir *Tables du jeu* ci-dessous).
 - **`Rotation`** est le contenu de `rotation.yaml`. Les conditions sont compilées en expressions JEXL au chargement.
   Une erreur de syntaxe est signalée et la rotation précédente est conservée.
-- **`Brain.decide(état, rotation, dictionnaire)`** :
+- **`Brain.decide(état, rotation, sorts)`** :
   1. rien si la grille n'est pas prête ou si l'on n'a pas le droit d'agir (`mayAct`) ;
   2. parcourt les règles par **priorité décroissante**. Une règle s'applique si son sort est sur une touche (n'importe
      quelle combinaison), que la touche est prête (`ready`) et que la condition `when` est vraie ;
@@ -229,8 +229,9 @@ Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
    c'est-à-dire capacités de classe (`SkillLine`, `SkillLineAbility`), de spécialisation (`SpecializationSpells`) et
    talents, avec les variantes qu'ils accordent (`SkillLineXTraitTree` → `TraitNode` → `TraitNodeEntry` →
    `TraitDefinition`) : environ 300 noms par classe ;
-4. génère `rotation.spells.json` à côté de `rotation.yaml` : les noms de sorts de chaque classe, complétés par ceux
-   exportés par l'addon. Il est régénéré à chaque nouvel export de l'addon.
+4. génère `rotation.spells.json` à côté de `rotation.yaml` : les noms de sorts de chaque classe.
+
+Le cerveau attend que la table soit chargée pour décider (*« Cerveau en attente de la table des sorts »*).
 
 Le chargement (`SpellDatabaseLoader`) a des replis :
 
@@ -239,7 +240,7 @@ Le chargement (`SpellDatabaseLoader`) a des replis :
 | Version connue de wago.tools | Téléchargée (ou lue en cache). Les **autres versions du même produit** sont ensuite supprimées du cache ; retail et vanilla gardent chacun le leur. |
 | Version inconnue (client de serveur privé modifié, version sortie dans l'heure) | Version connue la plus proche du même produit (`/api/builds`) : la plus récente qui ne dépasse pas la nôtre, sinon la plus ancienne. Les noms de sorts changent très peu d'une version à l'autre. |
 | Pas de réseau | Version la plus récente entièrement en cache pour ce produit et cette langue. |
-| Rien de tout cela | Le cerveau fonctionne avec les seuls sorts exportés par l'addon. |
+| Rien de tout cela | Seuls les identifiants numériques sont utilisables dans les règles. |
 
 Une mise à jour du client par le launcher change la version : au démarrage suivant, les tables sont retéléchargées une
 fois. Pour un autre client (vanilla, Forever…), il suffit de pointer `clockwork.wow` vers son dossier
@@ -359,10 +360,10 @@ src/main/java/fr/ksuto/clockwork/
 │   ├── TomTom.java             pilote automatique
 │   └── Healer.java             (historique)
 ├── brain/
-│   ├── BrainService.java       rechargement à chaud de la rotation et du dictionnaire
+│   ├── BrainService.java       rechargement à chaud de la rotation, chargement de la table des sorts
 │   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
 │   ├── perception/             QrCodeV2Reader, GameState, KeyState, KeyCombo
-│   └── decision/               Brain, Rotation, Spellbook, SpellView, LuaTableParser
+│   └── decision/               Brain, Rotation, SpellView
 ├── entities/
 │   ├── qrcode/                 QrCode (recherche à l'écran, cases v1), Dot, Key, ComplexKey
 │   ├── Player.java, ClkPosition.java
@@ -383,9 +384,9 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 
 - `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 et v3 (blocs à modificateurs, compteur, cible morte).
 - `BrainTest` : priorités, conditions, recommandation de Blizzard (formes liées, cible requise), garde-fous.
-- `SpellbookTest` : lecture de la SavedVariable, noms sans accents, variantes, repli sur les tables du jeu.
-- `SpellDatabaseTest` : CSV de wago.tools, sorts par classe (talents compris), produit, version et langue du jeu, liste
-  pour l'éditeur.
+- `SpellDatabaseTest` : CSV de wago.tools, noms sans accents, variantes, sorts par classe (talents compris), produit,
+  version et langue du jeu, liste pour l'éditeur.
+- `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 
 ---
@@ -398,7 +399,7 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 | *« addon désactivé »* | `/clk toggle` en jeu (Auto Config le fait normalement). |
 | *« grille figée »* | Écran de chargement, WoW en pause ou en arrière-plan. |
 | *« Cerveau inactif : grille v1 »* | Addon trop ancien : redéployer l'addon et `/reload`. |
-| *« Règle ignorée : … n'est sur aucune touche »* | Sort absent des barres décrites, ou nom inconnu : vérifier le nom et faire un `/reload` pour réexporter le dictionnaire. |
+| *« Règle ignorée : … n'est sur aucune touche »* | Sort absent des touches décrites, ou nom inconnu : vérifier le nom (l'éditeur le signale avec `class`). |
 | Auto Config ne trouve rien | Grille déformée : WoW doit être en fenêtré maximisé ; l'addon recalcule l'échelle des pixels à chaque changement de taille. |
 | `installDist` échoue (fichier verrouillé) | ClockWork tourne encore et verrouille ses `.jar` : l'arrêter avant de construire. |
 | Gradle ne trouve pas Java sous WSL | `JAVA_HOME` pointe vers un JDK Windows : utiliser un JDK Linux (`export JAVA_HOME=…`). |

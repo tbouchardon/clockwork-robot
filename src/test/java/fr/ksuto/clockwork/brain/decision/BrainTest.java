@@ -1,8 +1,11 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
+import fr.ksuto.clockwork.brain.data.SpellDatabaseFixture;
 import fr.ksuto.clockwork.brain.perception.GameState;
 import fr.ksuto.clockwork.brain.perception.KeyState;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,8 +21,10 @@ class BrainTest {
 
     private static final double NEVER = Double.POSITIVE_INFINITY;
 
-    private final Brain     brain     = new Brain();
-    private final Spellbook spellbook = Spellbook.parse(SpellbookTest.SAVED_VARIABLES);
+    private final Brain         brain     = new Brain();
+    private final SpellDatabase spellbook = SpellDatabaseFixture.create();
+
+    BrainTest() throws IOException {}
 
     private static KeyState ready(String key, int spellId) {
 

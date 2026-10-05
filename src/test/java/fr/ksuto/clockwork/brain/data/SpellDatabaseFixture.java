@@ -8,7 +8,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Extraits des tables de wago.tools (12.1.0.69933, frFR) : quelques sorts de chaman, dont des talents.
+ * Extraits des tables de wago.tools (12.1.0.69933, frFR) : quelques sorts de chaman (dont des talents et leurs
+ * variantes), de druide et de mage.
  */
 public final class SpellDatabaseFixture {
 
@@ -23,12 +24,24 @@ public final class SpellDatabaseFixture {
                     133,"Boule de feu"
                     999001,"Éclair"
                     470057,"Horion de flamme (talent)"
+                    188389,"Horion de flammes"
+                    8042,"Horion de terre"
+                    8921,"Éclat lunaire"
+                    190984,"Colère"
+                    33917,"Mutilation"
+                    5221,"Lambeau"
+                    22568,"Morsure féroce"
+                    768,"Forme de félin"
+                    5487,"Forme d’ours"
+                    24858,"Forme de sélénien"
+                    783,"Forme de voyage"
                     """),
             Map.entry("ChrClasses", """
                     Name_lang,Filename,Description_lang,ID
                     Chaman,SHAMAN,"Les chamans sont des guides spirituels,
                     sur plusieurs lignes ""entre guillemets"".",7
                     Mage,MAGE,,8
+                    Druide,DRUID,,11
                     """),
             Map.entry("ChrSpecialization", """
                     Name_lang,ID,ClassID
@@ -39,6 +52,7 @@ public final class SpellDatabaseFixture {
                     DisplayName_lang,ID,CategoryID
                     Chaman,924,7
                     Mage,904,7
+                    Druide,798,7
                     Epées,43,6
                     """),
             Map.entry("SkillLineAbility", """
@@ -47,6 +61,8 @@ public final class SpellDatabaseFixture {
                     2,924,8004
                     3,904,133
                     4,43,999001
+                    5,798,8921
+                    6,798,768
                     """),
             Map.entry("SpecializationSpells", """
                     Description_lang,ID,SpecID,SpellID,OverridesSpellID
@@ -73,10 +89,20 @@ public final class SpellDatabaseFixture {
             Map.entry("TraitDefinition", """
                     OverrideName_lang,ID,SpellID,OverridesSpellID,VisibleSpellID
                     ,70,470057,470411,0
-                    ,71,51505,0,0
+                    ,71,51505,73899,0
                     """));
 
     private SpellDatabaseFixture() {}
+
+    /**
+     * Table construite dans un dossier temporaire.
+     */
+    public static SpellDatabase create() throws IOException {
+
+        Path folder = Files.createTempDirectory("clockwork-spells");
+        folder.toFile().deleteOnExit();
+        return create(folder);
+    }
 
     public static SpellDatabase create(Path folder) throws IOException {
 

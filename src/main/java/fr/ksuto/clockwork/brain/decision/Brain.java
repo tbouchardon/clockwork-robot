@@ -1,5 +1,6 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
 import fr.ksuto.clockwork.brain.perception.GameState;
 import fr.ksuto.clockwork.brain.perception.KeyState;
 import org.apache.commons.jexl3.JexlBuilder;
@@ -43,18 +44,18 @@ public final class Brain {
         return Rotation.parse(yaml, jexl);
     }
 
-    public Optional<Decision> decide(GameState state, Rotation rotation, Spellbook spellbook) {
+    public Optional<Decision> decide(GameState state, Rotation rotation, SpellDatabase database) {
 
         // Grille pas encore remplie (addon tout juste activé) ou cible hors combat sans mode aggro : rien à faire
         if (!state.keysReady() || !state.mayAct()) {return Optional.empty();}
 
-        MapContext context = context(state, spellbook);
-        SpellView  spells  = new SpellView(state, spellbook);
+        MapContext context = context(state, database);
+        SpellView  spells  = new SpellView(state, database);
 
         for (Rotation.Rule rule : rotation.rules()) {
 
             if (rotation.followAssisted() && rotation.assistedPriority() > rule.priority()) {
-                Optional<Decision> assisted = assisted(state, rotation, spellbook);
+                Optional<Decision> assisted = assisted(state, rotation, database);
                 if (assisted.isPresent()) {return assisted;}
             }
 
@@ -68,23 +69,23 @@ public final class Brain {
             return Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle « " + rule.cast() + " »"));
         }
 
-        return rotation.followAssisted() ? assisted(state, rotation, spellbook) : Optional.empty();
+        return rotation.followAssisted() ? assisted(state, rotation, database) : Optional.empty();
     }
 
-    private Optional<Decision> assisted(GameState state, Rotation rotation, Spellbook spellbook) {
+    private Optional<Decision> assisted(GameState state, Rotation rotation, SpellDatabase database) {
 
         // Comme la rotation assistée de l'addon : seulement contre une cible ennemie vivante (Blizzard recommande
         // aussi des sorts offensifs sans cible, et un sort sans cible n'est pas « hors de portée »)
         if (state.recommendedSpell() == 0 || !state.hasTarget() || !state.targetHostile() || state.targetHealth() <= 0) {
             return Optional.empty();
         }
-        Set<Integer> recommended = spellbook.related(state.recommendedSpell());
+        Set<Integer> recommended = database.related(state.recommendedSpell());
         return state.keys().values().stream()
                     .filter(key -> recommended.contains(key.spellId()))
                     .filter(KeyState::ready)
                     .findFirst()
                     .map(key -> new Decision(key.key(), key.spellId(), rotation.assistedPriority(),
-                                             "recommandation de Blizzard (" + spellbook.nameOf(key.spellId()) + ")"));
+                                             "recommandation de Blizzard (" + database.nameOf(key.spellId()) + ")"));
     }
 
     private boolean holds(Rotation.Rule rule, MapContext context) {
@@ -99,17 +100,17 @@ public final class Brain {
         }
     }
 
-    private static MapContext context(GameState state, Spellbook spellbook) {
+    private static MapContext context(GameState state, SpellDatabase database) {
 
         MapContext context = new MapContext();
         context.set("player", Map.of("health", state.playerHealth(), "power", state.playerPower(),
                                      "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro(),
-                                     "form", state.form() == 0 ? "" : spellbook.nameOf(state.form()), "combo", state.comboPoints()));
+                                     "form", state.form() == 0 ? "" : database.nameOf(state.form()), "combo", state.comboPoints()));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.targetHostile(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower()));
         context.set("enemies", state.enemies());
-        context.set("assisted", state.recommendedSpell() == 0 ? "" : spellbook.nameOf(state.recommendedSpell()));
-        context.set("spell", new SpellView(state, spellbook));
+        context.set("assisted", state.recommendedSpell() == 0 ? "" : database.nameOf(state.recommendedSpell()));
+        context.set("spell", new SpellView(state, database));
         return context;
     }
 

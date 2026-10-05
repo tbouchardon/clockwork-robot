@@ -44,7 +44,21 @@ class SpellDatabaseTest {
         assertEquals(Set.of(133), database.idsFor("Boule de feu"));
         assertEquals(SpellDatabase.normalize("Chaîne d\u2019éclairs"), SpellDatabase.normalize("chaine d'eclairs"));
         assertEquals("Explosion de lave", database.nameOf(51505));
-        assertNull(database.nameOf(1));
+        assertEquals("1", database.nameOf(1), "sort inconnu : son identifiant");
+        assertEquals(Set.of(8004), database.idsFor("8004"), "identifiant numérique");
+        assertEquals(Set.of(), database.idsFor("Sort inconnu"));
+    }
+
+    @Test
+    void relatesSpellsToTheirVariants() throws IOException {
+
+        SpellDatabase database = SpellDatabaseFixture.create(folder);
+
+        // Blizzard recommande la forme de base 73899 ; le bouton contient la variante Explosion de lave 51505
+        assertTrue(database.related(73899).contains(51505));
+        assertTrue(database.related(51505).contains(73899));
+        assertTrue(database.related(470057).contains(470411));
+        assertEquals(Set.of(188196, 999001), database.related(188196), "homonymes");
     }
 
     @Test
@@ -56,7 +70,8 @@ class SpellDatabaseTest {
                                            "Horion de flamme (talent)", "Éclair")),
                      database.classSpellNames("SHAMAN"));
         assertEquals(new TreeSet<>(List.of("Boule de feu")), database.classSpellNames("MAGE"));
-        assertEquals(Set.of("SHAMAN", "MAGE"), database.classes());
+        assertEquals(new TreeSet<>(List.of("Forme de félin", "Éclat lunaire")), database.classSpellNames("DRUID"));
+        assertEquals(Set.of("SHAMAN", "MAGE", "DRUID"), database.classes());
     }
 
     @Test

@@ -15,7 +15,9 @@ import java.util.TreeSet;
 /**
  * Tous les sorts du jeu (table SpellName), et ceux de chaque classe : capacités de la classe et de ses spécialisations
  * (SkillLineAbility, SpecializationSpells) et talents (arbres de talents de la classe, sorts et variantes qu'ils
- * accordent). Permet de nommer n'importe quel sort dans une rotation sans attendre l'export de l'addon.
+ * accordent). Relie aussi chaque sort à ses variantes (un talent remplace souvent un sort par une variante d'un autre
+ * identifiant, et Blizzard recommande la forme de base) : c'est le dictionnaire du cerveau pour traduire les noms des
+ * règles en identifiants.
  */
 public final class SpellDatabase {
 
@@ -32,6 +34,7 @@ public final class SpellDatabase {
     private final Map<Integer, String>       names       = new HashMap<>();
     private final Map<String, Set<Integer>>  ids         = new HashMap<>();
     private final Map<String, Set<Integer>>  classSpells = new HashMap<>();
+    private final Map<Integer, Set<Integer>> variants    = new HashMap<>();
 
     private SpellDatabase() {}
 
@@ -106,6 +109,7 @@ public final class SpellDatabase {
             String playerClass = classBySpec.get(row.get("SpecID"));
             database.addClassSpell(playerClass, row.get("SpellID"));
             database.addClassSpell(playerClass, row.get("OverridesSpellID"));
+            database.link(row.get("SpellID"), row.get("OverridesSpellID"));
         });
 
         // Talents : arbre de la classe -> nœuds -> entrées -> définitions (sort accordé, sort remplacé, sort affiché)
@@ -131,6 +135,7 @@ public final class SpellDatabase {
             database.addClassSpell(playerClass, row.get("SpellID"));
             database.addClassSpell(playerClass, row.get("OverridesSpellID"));
             database.addClassSpell(playerClass, row.get("VisibleSpellID"));
+            database.link(row.get("SpellID"), row.get("OverridesSpellID"));
         });
 
         return database;
@@ -143,17 +148,46 @@ public final class SpellDatabase {
     }
 
     /**
-     * Identifiants des sorts portant ce nom (accents et casse indifférents) : souvent plusieurs, versions de joueur, de
-     * monstre, d'objet...
+     * Un sort et la variante qui le remplace (talent, spécialisation), dans les deux sens.
      */
-    public Set<Integer> idsFor(String name) {
+    private void link(String spellId, String overridden) {
 
-        return ids.getOrDefault(normalize(name), Set.of());
+        if (spellId == null || overridden == null || spellId.isEmpty() || overridden.isEmpty() || spellId.equals("0") || overridden.equals("0")) {return;}
+        int variant = Integer.parseInt(spellId);
+        int base    = Integer.parseInt(overridden);
+        variants.computeIfAbsent(variant, v -> new HashSet<>()).add(base);
+        variants.computeIfAbsent(base, b -> new HashSet<>()).add(variant);
     }
 
+    /**
+     * Identifiants désignés par une référence de règle : un nom de sort (accents et casse indifférents, souvent plusieurs
+     * identifiants : versions de joueur, de monstre, d'objet...), ou directement un identifiant numérique.
+     */
+    public Set<Integer> idsFor(String reference) {
+
+        if (reference.matches("\\d+")) {return Set.of(Integer.parseInt(reference));}
+        return ids.getOrDefault(normalize(reference), Set.of());
+    }
+
+    /**
+     * Le sort, ses variantes et ses homonymes : la recommandation de Blizzard désigne la forme de base (ex. 73899) alors
+     * que le bouton contient la variante active (51505, Explosion de lave).
+     */
+    public Set<Integer> related(int id) {
+
+        Set<Integer> related = new HashSet<>(Set.of(id));
+        related.addAll(variants.getOrDefault(id, Set.of()));
+        String name = names.get(id);
+        if (name != null) {related.addAll(idsFor(name));}
+        return related;
+    }
+
+    /**
+     * @return le nom du sort, ou son identifiant s'il est inconnu
+     */
     public String nameOf(int id) {
 
-        return names.get(id);
+        return names.getOrDefault(id, String.valueOf(id));
     }
 
     /**

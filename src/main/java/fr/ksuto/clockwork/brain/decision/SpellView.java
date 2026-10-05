@@ -1,5 +1,6 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
 import fr.ksuto.clockwork.brain.perception.GameState;
 import fr.ksuto.clockwork.brain.perception.KeyState;
 
@@ -8,22 +9,22 @@ import java.util.Set;
 
 /**
  * Accès aux sorts par leur nom dans les conditions JEXL : {@code spell.cooldown('Horion de flammes') == 0}.
- * Un sort absent des barres d'action est considéré comme jamais prêt et jamais lancé.
+ * Un sort absent des touches décrites est considéré comme jamais prêt et jamais lancé.
  */
 public final class SpellView {
 
     private final GameState state;
-    private final Spellbook spellbook;
+    private final SpellDatabase database;
 
-    SpellView(GameState state, Spellbook spellbook) {
+    SpellView(GameState state, SpellDatabase database) {
 
         this.state = state;
-        this.spellbook = spellbook;
+        this.database = database;
     }
 
     Optional<KeyState> key(String reference) {
 
-        Set<Integer> ids = spellbook.idsFor(reference);
+        Set<Integer> ids = database.idsFor(reference);
         return state.keys().values().stream().filter(key -> ids.contains(key.spellId())).findFirst();
     }
 
@@ -73,6 +74,6 @@ public final class SpellView {
      */
     public boolean form(String reference) {
 
-        return state.form() != 0 && spellbook.idsFor(reference).contains(state.form());
+        return state.form() != 0 && database.idsFor(reference).contains(state.form());
     }
 }

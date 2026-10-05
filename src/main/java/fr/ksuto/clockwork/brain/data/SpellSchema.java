@@ -34,7 +34,7 @@ public final class SpellSchema {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
         json.append("  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n");
-        json.append("  \"$comment\": \"Généré par ClockWork (tables du jeu de wago.tools et sorts exportés par l'addon) : ne pas modifier.\",\n");
+        json.append("  \"$comment\": \"Généré par ClockWork d'après les tables du jeu (wago.tools) : ne pas modifier.\",\n");
         json.append("  \"definitions\": {");
 
         String classSeparator = "\n";
