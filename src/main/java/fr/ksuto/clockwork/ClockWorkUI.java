@@ -33,7 +33,11 @@ public class ClockWorkUI {
     PeripheralRobotHelper peripherals;
     JTextField castLogTextfield;
     Automaton  automaton;
-    private int     iGrey      = 0;
+    /**
+     * Fond du journal : sombre au repos, éclairé à chaque touche jouée puis s'assombrissant.
+     */
+    private static final int DARK = 30;
+    private int     iGrey      = DARK;
     private volatile QrCode  qrCode  = new QrCode();
     private volatile boolean qrFound = false;
     private final AtomicBoolean searching = new AtomicBoolean(false);
@@ -126,8 +130,8 @@ public class ClockWorkUI {
         ui.setVisible(true);
         
         ActionListener fadeOutAction = actionEvent -> {
-            if (iGrey < 240) {
-                iGrey += 10;
+            if (iGrey > DARK) {
+                iGrey = Math.max(DARK, iGrey - 4);
                 castLogTextfield.setBackground(new Color(iGrey, iGrey, iGrey));
             }
         };
@@ -168,7 +172,9 @@ public class ClockWorkUI {
     private void initTextField(JTextField castLogTextfield) {
         
         castLogTextfield.setEditable(false);
-        castLogTextfield.setOpaque(false);
+        castLogTextfield.setOpaque(true);
+        castLogTextfield.setBackground(new Color(DARK, DARK, DARK));
+        castLogTextfield.setForeground(new Color(230, 230, 230));
         castLogTextfield.setHorizontalAlignment(SwingConstants.CENTER);
         castLogTextfield.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
         castLogTextfield.setPreferredSize(new Dimension(140, 30));
