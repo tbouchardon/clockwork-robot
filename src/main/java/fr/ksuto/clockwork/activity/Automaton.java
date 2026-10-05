@@ -105,11 +105,9 @@ public class Automaton {
         Fisherman natPagle = new Fisherman(ui, peripherals);
         natPagle.setup();
         boolean keepFishing = true;
-        peripherals.getScreen().startCapture();
         while (keepFishing) {
-            keepFishing = natPagle.fish(peripherals.getScreen().getCaptureScheduler());
+            keepFishing = natPagle.fish();
         }
-        peripherals.getScreen().stopCapture();
         natPagle.leave();
         if (status == Status.FISHING) {
             ui.dojButtonFishClick();

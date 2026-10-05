@@ -8,20 +8,17 @@ import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
-import fr.ksuto.prh.capture.Rgb;
 import fr.ksuto.prh.entities.Position;
 import fr.ksuto.prh.helpers.PictureSearch;
 import fr.ksuto.prh.peripherals.Screen;
-import fr.ksuto.prh.research.paralelism.CaptureScheduler;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Optional;
 
 import javax.imageio.ImageIO;
 
@@ -49,113 +46,91 @@ public class Fisherman {
         this.peripherals = peripherals;
     }
     
-    boolean fish(CaptureScheduler captureScheduler) {
-    
-        int[] currentCoordinates;
-        int[] initialCoordinates;
-        int[] averagePosition;
-        int   loop = 1;
-    
+    /**
+     * Une pêche : leurre et appât si besoin, lancer, repérer le bouchon, cliquer dès la touche.
+     *
+     * @return faux si le joueur a bougé la souris (fin de la pêche)
+     */
+    boolean fish() {
+
         if (new Date().getTime() - lCurrentLureTime > LURE_TIME) {
             lCurrentLureTime = new Date().getTime();
             ui.appendLog("w");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_W);
             peripherals.robot.delay(3000);
         }
-    
+
         if (new Date().getTime() - lCurrentBaitTime > BAIT_TIME) {
             lCurrentBaitTime = new Date().getTime();
             ui.appendLog("W");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_W, false, false, true);
             peripherals.robot.delay(1000);
         }
-    
+
+        // Image de l'eau avant le lancer : le bouchon sera ce qui est apparu depuis
+        Rectangle searchArea = maxSearchArea();
+        Frame     before     = Capture.zone(searchArea);
+
         ui.appendLog("h");
         peripherals.getKeyboard().pressKey(KeyEvent.VK_H);
-    
-        long fishingTime = new Date().getTime();
-        long currentTime = new Date().getTime();
-    
         peripherals.robot.delay(2500);
-    
-        currentCoordinates = searchBobber(captureScheduler.getLastFrame(), true, null);
-        initialCoordinates = currentCoordinates;
-        averagePosition = currentCoordinates;
-    
-        if (initialCoordinates == null) {
+
+        Optional<Point> found = findBobber(searchArea, before);
+        if (found.isEmpty()) {
             logger.debug("Bobber not found =(");
-            
-            ShowZone.Zone zone             = show.zoneList.get(0);
-            BufferedImage biCapturedScreen = Capture.zone(zone.getX1(), zone.getY1(), zone.getWidth(), zone.getHeight()).image();
-        
             try {
-                File outputfile = new File(System.currentTimeMillis() + ".jpg");
-                ImageIO.write(biCapturedScreen, "png", outputfile);
+                ImageIO.write(Capture.zone(searchArea).image(), "png", new File(System.currentTimeMillis() + ".png"));
             }
             catch (IOException ignored) {
                 logger.debug("ERROR  : Écriture impossible !");
             }
-            
             return true;
         }
-        
-        peripherals.getMouse().move(initialCoordinates[0] + 5, initialCoordinates[1] + 5);
+
+        Point mouse = new Point(found.get().x + 5, found.get().y + 5);
+        peripherals.getMouse().move(mouse.x, mouse.y);
         peripherals.robot.delay(2000);
-        
-        int  maxDistance      = 0;
-        Long blobberFoundTime = null;
-        
-        while (currentTime - fishingTime < 21000) {
-            currentCoordinates = searchBobber(captureScheduler.getLastFrame(), false, averagePosition);
-            
-            if (currentCoordinates == null) {
-                
-                logger.debug("Blobber lost, trying to catch anyway.");
-                ui.appendLog("ϡ?");
-                peripherals.getMouse().clickLeft();
-                peripherals.robot.delay(2000);
-                return true;
-            }
-            
-            averagePosition[0] = (averagePosition[0] * (loop - 1) + currentCoordinates[0]) / loop;
-            averagePosition[1] = (averagePosition[1] * (loop - 1) + currentCoordinates[1]) / loop;
-            
-            int distance = (int) Point2D.distance(averagePosition[0], averagePosition[1], currentCoordinates[0], currentCoordinates[1]);
-            
-            peripherals.robot.delay(100);
-            // Check if mouse moved (and shall exit fishing modh)
-            if (Point2D.distance(MouseInfo.getPointerInfo().getLocation().x, MouseInfo.getPointerInfo().getLocation().y, initialCoordinates[0], initialCoordinates[1]) > 20) {
-                
-                logger.debug("Mouse moved, exiting. (" + MouseInfo.getPointerInfo().getLocation().x + " != " + initialCoordinates[0] + ")");
+
+        // Suivi du bouchon : capture de sa seule zone (DXGI : ~0,1 ms), une image toutes les ~15 ms
+        BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(found.get());
+        int                        margin  = BobberDetector.TRACK_RADIUS + 6;
+        long                       start   = System.currentTimeMillis();
+        int                        frames  = 0;
+
+        while (System.currentTimeMillis() - start < 21000) {
+            Point pointer = MouseInfo.getPointerInfo().getLocation();
+            if (pointer.distance(mouse) > 20) {
+                logger.debug("Mouse moved, exiting. ({} != {})", pointer, mouse);
                 return false;
             }
-            
-            if (maxDistance < distance) {
-                maxDistance = distance;
-            }
-            if (blobberFoundTime == null && distance >= 6) {blobberFoundTime = new Date().getTime();}
-            if (blobberFoundTime != null && new Date().getTime() - blobberFoundTime > 1000) {
-    
-                logger.debug("Got a catch ? Bobber Moving (distance = " + maxDistance + ")");
-                logger.debug("loops/s : " + (loop / ((currentTime - fishingTime) / 1000)));
-                
-                ui.appendLog("ϡ" + maxDistance);
+
+            Point average = watcher.average();
+            Frame frame   = Capture.zone(new Rectangle(average.x - margin, average.y - margin, 2 * margin, 2 * margin));
+            BobberDetector.BiteWatcher.Verdict verdict = watcher.feed(BobberDetector.track(frame, average));
+            frames++;
+
+            if (verdict != BobberDetector.BiteWatcher.Verdict.WAITING) {
+                logger.debug("Touche : bouchon {} après {} ms ({} images)", verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "disparu" : "écarté",
+                             System.currentTimeMillis() - start, frames);
+                ui.appendLog(verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "ϡ?" : "ϡ");
                 peripherals.getMouse().clickLeft();
                 peripherals.robot.delay(2000);
                 return true;
             }
-            
-            currentTime = new Date().getTime();
-            if ((currentCoordinates[0] == 0) && (currentTime - fishingTime > 4000)) {
-                
-                logger.debug("Bobber not found after 4 seconds");
-                return true;
-            }
-            
-            loop++;
+            peripherals.robot.delay(15);
         }
-        
+
         return true;
+    }
+
+    /**
+     * Plus grande zone de recherche : celle que {@link #findBobber} atteint en s'élargissant.
+     */
+    private static Rectangle maxSearchArea() {
+
+        int width  = Screen.SCREEN_WIDTH / 3;
+        int height = STARTING_HEIGHT + (width - STARTING_WIDTH) / 3;
+        return new Rectangle(Screen.SCREEN_WIDTH / 2 - width / 2, Screen.SCREEN_HEIGHT / 2 - height / 2 + Y_OFFSET, width, height);
     }
     
     void leave() {
@@ -203,68 +178,34 @@ public class Fisherman {
         peripherals.robot.delay(300);
     }
     
-    private int[] searchBobber(Frame biCapturedScreen, boolean autoIncreaseSearchArea, int[] knownCoordinates) {
-    
-        int iCapturedRGB;
-        int r;
-        int g;
-        int b;
-    
-        if (show.zoneList.isEmpty()) {return new int[0];}
+    /**
+     * Cherche le bouchon dans la zone affichée, en l'élargissant à chaque essai ; le dernier essai ne se limite plus aux
+     * pixels apparus depuis le lancer.
+     */
+    private Optional<Point> findBobber(Rectangle searchArea, Frame before) {
+
+        if (show.zoneList.isEmpty()) {return Optional.empty();}
         ShowZone.Zone searchZone = show.zoneList.get(0);
-    
-        int x1 = searchZone.getX1();
-        int x2 = searchZone.getX2();
-        int y1 = searchZone.getY1();
-        int y2 = searchZone.getY2();
-    
-        if (knownCoordinates != null) {
-            x1 = knownCoordinates[0] - 10;
-            x2 = knownCoordinates[0] + 10;
-            y1 = knownCoordinates[1] - 10;
-            y2 = knownCoordinates[1] + 10;
-        }
-    
+
         for (int count = 0; count < 4; count++) {
-            for (int y = y1; y < y2; y++) {
-                for (int x = x1; x < x2; x++) {
-                    for (int n = 0; n <= 2; ) {
-                        iCapturedRGB = biCapturedScreen.rgb(x + n, y);
-                        b = Rgb.blue(iCapturedRGB);
-                        g = Rgb.green(iCapturedRGB);
-                        r = Rgb.red(iCapturedRGB);
-                        if ((r > 100) && (g < r - 50) && (b < r - 50) && (g < 100) && (b < 100)) {
-                            if (n == 2) {
-                                iCapturedRGB = biCapturedScreen.rgb(x, y - 5);
-                                b = Rgb.blue(iCapturedRGB);
-                                g = Rgb.green(iCapturedRGB);
-                                r = Rgb.red(iCapturedRGB);
-                                if ((b + 10 > r) && (b + 10 > g)) {return new int[]{x + 1, y};}
-                            }
-                            n++;
-                        }
-                        else {break;}
-                    }
-                }
-            }
-            
-            if (autoIncreaseSearchArea) {
-                widthOffset += 9;
-                heightOffset += 3;
-            }
-            
-            peripherals.robot.delay(250);
-            
+            Rectangle zone  = new Rectangle(searchZone.getX1(), searchZone.getY1(), searchZone.getX2() - searchZone.getX1(),
+                                            searchZone.getY2() - searchZone.getY1());
+            Frame     after = Capture.zone(searchArea);
+            Optional<Point> bobber = BobberDetector.locate(after, count < 3 ? before : null, zone);
+            if (bobber.isPresent()) {return bobber;}
+
+            widthOffset += 9;
+            heightOffset += 3;
             if (STARTING_WIDTH + widthOffset > Screen.SCREEN_WIDTH / 3) {
                 widthOffset = Screen.SCREEN_WIDTH / 3 - STARTING_WIDTH;
                 heightOffset = widthOffset / 3;
             }
-            
             show.changeZoneSize(STARTING_WIDTH + widthOffset,
                                 STARTING_HEIGHT + heightOffset,
                                 Screen.SCREEN_WIDTH / 2 - (STARTING_WIDTH + widthOffset) / 2,
                                 Screen.SCREEN_HEIGHT / 2 - (STARTING_HEIGHT + heightOffset) / 2 + Y_OFFSET);
+            peripherals.robot.delay(250);
         }
-        return new int[0];
+        return Optional.empty();
     }
 }

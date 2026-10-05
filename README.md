@@ -392,9 +392,15 @@ noms sont entre apostrophes droites ; ClockWork confond les deux.
 
 Ces fonctions viennent des versions précédentes et sont toujours en place :
 
-- **Pêche** (`Fisherman`) : pose le leurre (`W`) toutes les 10 min et l'appât (`Maj+W`) toutes les 5 min, lance la
-  ligne (`H`), repère le bouchon dans une zone devant le personnage (`ShowZone`) et clique dès qu'il bouge. Bouger la
-  souris arrête la pêche.
+- **Pêche** (`Fisherman`, `BobberDetector`) : pose le leurre (`W`) toutes les 10 min et l'appât (`Maj+W`) toutes les
+  5 min, puis lance la ligne (`H`).
+  - **Bouchon** : reconnu à sa signature, une plume rouge (3 pixels) avec une plume bleue 5 pixels au-dessus,
+    indépendante de la couleur de l'eau. La recherche se limite aux pixels apparus depuis l'image prise avant le lancer
+    (écart de plus de 40 sur un canal : le bruit de l'eau reste bien en dessous), ce qui écarte un décor rouge et bleu.
+    Le dernier essai, dans une zone élargie, se fait sans ce filtre.
+  - **Touche** : le bouchon est suivi toutes les ~15 ms par une capture de sa seule zone (DXGI). Il y a touche s'il
+    s'écarte d'au moins 6 pixels de sa position moyenne, ou s'il disparaît, sur deux images consécutives : clic immédiat.
+  - Bouger la souris arrête la pêche.
 - **Pilote automatique** (`TomTom`) : lit les coordonnées de carte codées en binaire dans la grille, suit une liste de
   points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
   et pendant un repas.
@@ -449,6 +455,8 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 - `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
 - `ProvidedRotationsTest` : toutes les rotations de `rotations/` valides ; le démoniste Affliction entretient ses debuffs.
 - `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
+- `BobberDetectorTest` : signature du bouchon sur eau bleue, verte ou boueuse, décor écarté malgré le bruit, suivi,
+  touche (écart, disparition, tangage ignoré).
 - `HitDetectorTest` : perte de vie sans action, seuil, régénération, fenêtre glissante.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 
