@@ -103,7 +103,8 @@ public final class Brain {
 
         MapContext context = new MapContext();
         context.set("player", Map.of("health", state.playerHealth(), "power", state.playerPower(),
-                                     "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro()));
+                                     "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro(),
+                                     "form", state.form() == 0 ? "" : spellbook.nameOf(state.form()), "combo", state.comboPoints()));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.targetHostile(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower()));
         context.set("enemies", state.enemies());

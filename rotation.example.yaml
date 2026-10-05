@@ -11,6 +11,8 @@
 #
 # Dans les conditions (syntaxe JEXL : &&, ||, !, <, >, ==) :
 #   player.health  player.power   player.combat   player.casting      (% et booléens)
+#   player.form                   nom de la forme active (druide...), '' sans forme ; spell.form('Nom') : sous cette forme
+#   player.combo                  points de combo
 #   target.exists  target.hostile target.health   target.power   (hostile : ennemi vivant, faux sur un cadavre)
 #   enemies                       ennemis en combat à proximité
 #   assisted                      nom du sort recommandé par Blizzard

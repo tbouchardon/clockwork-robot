@@ -35,7 +35,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, 1, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, 0, 0, 1, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -183,7 +183,7 @@ class BrainTest {
 
         String yaml = "assisted:\n  follow: true\nrules: []\n";
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, 1, keys);
+        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, 0, 0, 1, keys);
 
         assertTrue(decide(yaml, noTarget).isEmpty());
     }

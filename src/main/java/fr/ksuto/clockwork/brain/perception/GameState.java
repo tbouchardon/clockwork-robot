@@ -19,12 +19,14 @@ import java.util.Optional;
  * @param facing           direction du personnage, en radians (0..2π)
  * @param recommendedSpell sort recommandé par Blizzard (0 si aucun)
  * @param aggro            mode aggro de l'addon : attaquer aussi une cible qui n'est pas en combat
+ * @param form             sort de la forme active (druide : félin, ours, sélénien...), 0 si aucune
+ * @param comboPoints      points de combo du joueur
  * @param frame            compteur de mises à jour de l'addon (v3, 0 en v2) : inchangé, la grille est figée
  * @param keys             état de chaque touche, par nom de touche
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        int frame, Map<String, KeyState> keys) {
+                        int form, int comboPoints, int frame, Map<String, KeyState> keys) {
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat

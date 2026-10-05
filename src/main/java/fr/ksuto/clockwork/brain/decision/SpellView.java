@@ -66,4 +66,13 @@ public final class SpellView {
 
         return key(reference).map(KeyState::proc).orElse(false);
     }
+
+    /**
+     * Le personnage est sous cette forme : {@code spell.form('Forme de félin')}. Contrairement aux autres méthodes, le
+     * sort de la forme n'a pas besoin d'être sur une barre.
+     */
+    public boolean form(String reference) {
+
+        return state.form() != 0 && spellbook.idsFor(reference).contains(state.form());
+    }
 }

@@ -157,6 +157,7 @@ historique). Il produit un `GameState` immuable :
 | `enemies` | Ennemis en combat d'après les barres de vie. |
 | `facing` | Direction du personnage, en radians. |
 | `recommendedSpell` | Sort recommandé par Blizzard (`C_AssistedCombat`), forme de base. |
+| `form`, `comboPoints` | Sort de la forme active (0 si aucune), points de combo. |
 | `frame` | Compteur de mises à jour (v3). |
 | `keys` | 18 touches en v2, **72** en v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
 
@@ -287,12 +288,15 @@ Variables disponibles dans `when` :
 |---|---|
 | `player.health`, `player.power` | Pourcentages. |
 | `player.combat`, `player.casting`, `player.aggro` | Booléens. |
+| `player.form` | Nom de la forme active (druide…), `''` sans forme. |
+| `player.combo` | Points de combo. |
 | `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = ennemi **vivant**. |
 | `target.health`, `target.power` | Pourcentages. |
 | `enemies` | Nombre d'ennemis en combat à proximité. |
 | `assisted` | Nom du sort recommandé par Blizzard. |
 | `spell.ready('Nom')`, `spell.usable('Nom')`, `spell.inRange('Nom')`, `spell.proc('Nom')`, `spell.onBar('Nom')` | Booléens. |
 | `spell.cooldown('Nom')` | Secondes de recharge restantes. |
+| `spell.form('Nom')` | Le personnage est sous cette forme (accents, casse et apostrophe indifférents). |
 | `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. |
 
 ### Autocomplétion dans l'éditeur
@@ -313,6 +317,18 @@ Limites actuelles :
 
 - touches décrites : `1`-`0`, `)`, `=`, `Q D R T F G`, seules ou avec un modificateur ;
 - pas d'état entre deux décisions (séquences, variables).
+
+### Rotations fournies
+
+Le dossier `rotations/` contient des rotations prêtes à copier en `rotation.yaml` :
+
+| Fichier | Contenu |
+|---|---|
+| `rotation.example.yaml` | Chaman élémentaire (exemple de départ). |
+| `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. |
+
+Dans `when`, un nom contenant une apostrophe s'écrit avec l'apostrophe typographique (`'Forme d’ours'`), puisque les
+noms sont entre apostrophes droites ; ClockWork confond les deux.
 
 ---
 
