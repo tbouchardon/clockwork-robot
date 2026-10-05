@@ -169,12 +169,13 @@ public class Fisherman {
     }
 
     /**
-     * Zone de pêche en vue à la première personne : le tiers central de la largeur, de 45 à 85 % de la hauteur (le
-     * bouchon tombe devant, bas à l'écran ; vérifié en jeu vers 75 %).
+     * Zone de pêche en vue à la première personne : le tiers central de la largeur, de 35 à 78 % de la hauteur. Le
+     * bouchon tombe devant, vers 50 à 75 % selon l'inclinaison de la caméra (vérifié en jeu) ; la zone s'arrête au-dessus
+     * de la barre d'incantation et des barres d'action.
      */
     static Rectangle maxSearchArea() {
 
-        return new Rectangle(Screen.SCREEN_WIDTH / 3, Screen.SCREEN_HEIGHT * 45 / 100, Screen.SCREEN_WIDTH / 3, Screen.SCREEN_HEIGHT * 40 / 100);
+        return new Rectangle(Screen.SCREEN_WIDTH / 3, Screen.SCREEN_HEIGHT * 35 / 100, Screen.SCREEN_WIDTH / 3, Screen.SCREEN_HEIGHT * 43 / 100);
     }
     
     void leave() {

@@ -68,14 +68,16 @@ final class BobberDetector {
     static final int MAX_WINDOW = 60;
 
     /**
-     * Images de calibrage : les plumes au repos (surface et centre moyens), référence de la touche.
+     * Images de calibrage (~0,4 s) : les plumes au repos (surface et centre médians, insensibles à l'éclaboussure de
+     * l'arrivée du bouchon), référence de la touche.
      */
-    static final int CALIBRATION = 8;
+    static final int CALIBRATION = 20;
 
     /**
      * Touche : la surface visible des plumes tombe sous cette fraction de leur surface au repos (le bouchon plonge).
+     * Mesuré en jeu (15 lancers, vue à la première personne) : 0,38 à 0,44 à la touche, rarement sous 0,58 au repos.
      */
-    static final double DIP_RATIO = 0.5;
+    static final double DIP_RATIO = 0.55;
 
     /**
      * Touche : le centre des plumes s'écarte de sa position au repos de plus que leur hauteur (au moins ce minimum).
@@ -149,8 +151,8 @@ final class BobberDetector {
     /**
      * Plumes du bouchon dans la fenêtre : leurs pixels, leur centre et leur hauteur. Les deux plumes comptent : selon
      * l'eau, c'est l'une ou l'autre qui ressort le mieux. Seuls les pixels reliés au bouchon comptent, de proche en
-     * proche à {@value #LINK} pixels près (pour franchir l'écart entre les deux plumes), en partant du pixel le plus
-     * proche de sa position attendue. Le centre de tous ces pixels est stable d'une image à l'autre.
+     * proche à {@value #LINK} pixels près, en partant de tous les pixels de plume à moins de {@value #SEED_RADIUS} pixels
+     * de sa position attendue. Le centre de tous ces pixels est stable d'une image à l'autre.
      *
      * @param reference capture avant le lancer, couvrant la fenêtre
      * @param seed      position attendue du bouchon
@@ -158,29 +160,26 @@ final class BobberDetector {
      */
     static Optional<Blob> measure(Frame frame, Frame reference, Rectangle window, Point seed) {
 
-        boolean[][] feather = new boolean[window.height][window.width];
-        int         nearest = -1;
-        double      best    = SEED_RADIUS;
+        // Départs : tous les pixels de plume proches de la position attendue (les deux plumes, même si l'écart entre
+        // elles dépasse LINK sur certaines images : sinon une seule serait comptée, et sa surface prise pour une plongée)
+        boolean[][]         feather = new boolean[window.height][window.width];
+        boolean[][]         seen    = new boolean[window.height][window.width];
+        ArrayDeque<Integer> queue   = new ArrayDeque<>();
         for (int y = 0; y < window.height; y++) {
             for (int x = 0; x < window.width; x++) {
                 int screenX = window.x + x, screenY = window.y + y;
                 if (!isFeather(frame, reference, screenX, screenY)) {continue;}
                 feather[y][x] = true;
-                double distance = seed.distance(screenX, screenY);
-                if (distance <= best) {
-                    best = distance;
-                    nearest = y * window.width + x;
+                if (seed.distance(screenX, screenY) <= SEED_RADIUS) {
+                    seen[y][x] = true;
+                    queue.add(y * window.width + x);
                 }
             }
         }
-        if (nearest < 0) {return Optional.empty();}
+        if (queue.isEmpty()) {return Optional.empty();}
 
-        long                sumX  = 0, sumY = 0;
-        int                 count = 0, top = Integer.MAX_VALUE, bottom = Integer.MIN_VALUE;
-        boolean[][]         seen  = new boolean[window.height][window.width];
-        ArrayDeque<Integer> queue = new ArrayDeque<>();
-        queue.add(nearest);
-        seen[nearest / window.width][nearest % window.width] = true;
+        long sumX  = 0, sumY = 0;
+        int  count = 0, top = Integer.MAX_VALUE, bottom = Integer.MIN_VALUE;
         while (!queue.isEmpty()) {
             int current = queue.poll(), cx = current % window.width, cy = current / window.width;
             sumX += window.x + cx;
@@ -269,12 +268,11 @@ final class BobberDetector {
 
         enum Verdict {WAITING, BITE, LOST}
 
-        private final Point         start;
-        private final List<Integer> heights = new ArrayList<>();
-
-        private double sumX, sumY, sumCount;
-        private int    calibrated, suspicious;
-        private double lastX, lastY;
+        private final Point        start;
+        private final List<Blob>   calibration = new ArrayList<>();
+        private       Blob         rest;
+        private       int          suspicious;
+        private       double       lastX, lastY;
 
         /**
          * @param start position du bouchon trouvée par {@link #locate}
@@ -287,14 +285,12 @@ final class BobberDetector {
         }
 
         /**
-         * Hauteur des plumes au repos : médiane du calibrage (une image aberrante ne la fausse pas).
+         * Hauteur des plumes au repos (médiane du calibrage), ou la plus récente pendant le calibrage.
          */
         int restHeight() {
 
-            if (heights.isEmpty()) {return 0;}
-            List<Integer> sorted = new ArrayList<>(heights);
-            Collections.sort(sorted);
-            return sorted.get(sorted.size() / 2);
+            if (rest != null) {return rest.height();}
+            return calibration.isEmpty() ? 0 : median(calibration.stream().map(Blob::height).toList()).intValue();
         }
 
         /**
@@ -302,7 +298,7 @@ final class BobberDetector {
          */
         Point seed() {
 
-            if (calibrated >= CALIBRATION) {return new Point((int) Math.round(sumX / calibrated), (int) Math.round(sumY / calibrated));}
+            if (rest != null) {return new Point((int) Math.round(rest.x()), (int) Math.round(rest.y()));}
             return new Point((int) Math.round(lastX), (int) Math.round(lastY));
         }
 
@@ -323,21 +319,19 @@ final class BobberDetector {
                 lastX = blob.x();
                 lastY = blob.y();
             });
-            if (calibrated < CALIBRATION) {
-                measured.ifPresent(blob -> {
-                    sumX += blob.x();
-                    sumY += blob.y();
-                    sumCount += blob.count();
-                    heights.add(blob.height());
-                    calibrated++;
-                });
+            if (rest == null) {
+                measured.ifPresent(calibration::add);
+                if (calibration.size() >= CALIBRATION) {
+                    rest = new Blob(median(calibration.stream().map(Blob::x).toList()), median(calibration.stream().map(Blob::y).toList()),
+                                    median(calibration.stream().map(Blob::count).toList()).intValue(),
+                                    median(calibration.stream().map(Blob::height).toList()).intValue());
+                }
                 return Verdict.WAITING;
             }
 
-            double restCount = sumCount / calibrated;
             Verdict verdict;
-            if (measured.isEmpty() || measured.get().count() < DIP_RATIO * restCount) {verdict = Verdict.LOST;}
-            else if (measured.get().distance(sumX / calibrated, sumY / calibrated) > Math.max(MIN_MOVE, restHeight())) {verdict = Verdict.BITE;}
+            if (measured.isEmpty() || measured.get().count() < DIP_RATIO * rest.count()) {verdict = Verdict.LOST;}
+            else if (measured.get().distance(rest.x(), rest.y()) > Math.max(MIN_MOVE, rest.height())) {verdict = Verdict.BITE;}
             else {verdict = Verdict.WAITING;}
 
             if (verdict == Verdict.WAITING) {
@@ -345,6 +339,13 @@ final class BobberDetector {
                 return verdict;
             }
             return ++suspicious >= CONFIRMATIONS ? verdict : Verdict.WAITING;
+        }
+
+        private static <T extends Number & Comparable<T>> Double median(List<T> values) {
+
+            List<T> sorted = new ArrayList<>(values);
+            Collections.sort(sorted);
+            return sorted.get(sorted.size() / 2).doubleValue();
         }
     }
 }

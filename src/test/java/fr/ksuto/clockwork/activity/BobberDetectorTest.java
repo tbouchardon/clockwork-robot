@@ -250,6 +250,36 @@ class BobberDetectorTest {
     }
 
     @Test
+    void bothFeathersCountEvenWhenTheyAreNotTouching() {
+
+        // Mesure réelle d'un faux clic : sur certaines images, l'écart entre les plumes dépassait LINK, et une seule
+        // plume comptait (surface divisée par deux, prise pour une plongée)
+        BufferedImage after = water(0x204080, 11);
+        for (int y = 30; y < 34; y++) {
+            for (int x = 40; x < 50; x++) {after.setRGB(x, y, RED);}
+        }
+        for (int y = 20; y < 24; y++) {
+            for (int x = 40; x < 50; x++) {after.setRGB(x, y, BLUE);} // 6 px au-dessus de la rouge
+        }
+
+        BobberDetector.Blob feathers = BobberDetector.measure(frame(after), frame(water(0x204080, 12)), ZONE, new Point(145, 227)).orElseThrow();
+        assertEquals(80, feathers.count(), "les deux plumes");
+    }
+
+    @Test
+    void landingSplashDoesNotSkewTheRestReference() {
+
+        // Mesure réelle d'un faux clic : l'éclaboussure de l'arrivée doublait la surface des premières images
+        BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(new Point(150, 230));
+        for (int i = 0; i < BobberDetector.CALIBRATION; i++) {watcher.feed(blob(150, 230, i < 6 ? 1200 : 600));}
+        for (int i = 0; i < 50; i++) {
+            assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, watcher.feed(blob(150, 230, 380 + (i % 5) * 20)), "surface normale, image " + i);
+        }
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, watcher.feed(blob(150, 240, 250)));
+        assertEquals(BobberDetector.BiteWatcher.Verdict.LOST, watcher.feed(blob(150, 242, 240)), "vraie touche : 0,4 de la surface au repos");
+    }
+
+    @Test
     void trackingWindowFollowsTheFeatherSizeWithinBounds() {
 
         BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(new Point(150, 230));

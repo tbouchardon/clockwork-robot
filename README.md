@@ -405,10 +405,12 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   - **Bouchon** : les pixels de plume apparus sont regroupés en amas reliés de proche en proche ; on retient de
     préférence l'amas portant les deux plumes, à défaut le plus gros (sur la lave, seule la bleue ressort).
   - **Touche** : les plumes sont suivies toutes les ~15 ms par une capture de leur seule zone (DXGI), dans une fenêtre
-    bornée (± 20 à 60 px) ; seuls les pixels reliés au bouchon comptent. On mesure le centre de tous leurs pixels,
-    stable d'une image à l'autre, et leur surface. Les 8 premières images donnent la position et la surface au repos ;
-    il y a touche si la surface visible tombe sous la moitié (le bouchon plonge) ou si le centre s'écarte de plus que
-    la hauteur des plumes, sur deux images consécutives : clic immédiat.
+    bornée (± 20 à 60 px) ; seuls les pixels reliés au bouchon comptent (en partant de tous ceux proches de sa
+    position, pour garder les deux plumes). On mesure le centre de tous leurs pixels, stable d'une image à l'autre, et
+    leur surface. Les 20 premières images (~0,4 s) donnent la position et la surface au repos, en médiane (insensible à
+    l'éclaboussure de l'arrivée) ; il y a touche si la surface visible tombe sous 0,55 fois celle au repos (le bouchon
+    plonge : 0,38 à 0,44 mesuré en jeu, contre 0,58 au plus bas au repos) ou si le centre s'écarte de plus que la
+    hauteur des plumes, sur deux images consécutives : clic immédiat.
   - **Trace** : chaque lancer écrit `traces-peche/<horodatage>.csv` (centre, surface, hauteur et verdict à chaque
     image), pour régler les seuils sur des données réelles.
   - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le
