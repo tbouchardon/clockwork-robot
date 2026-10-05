@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../rotation.schema.json
+# Démoniste Affliction : portage de la rotation Lua historique (rotation_warlock.lua de l'addon).
+# ATTENTION : traduction littérale de l'ancienne rotation Lua, gameplay non revu pour la 12.x (priorités et sorts
+# peuvent ne plus être pertinents). Elle est choisie automatiquement pour cette classe et cette spécialisation.
+#
+# Les debuffs sont illisibles en combat depuis la 12.x : « absent ou presque fini » devient « lancé sur cette cible il y
+# a plus de X s », d'après les durées des tables du jeu (12.1, SpellMisc) : Affliction instable 8 s, Agonie 18 s,
+# Corruption 14 s. À ajuster si un talent les allonge.
+
+name: Démoniste Affliction
+class: WARLOCK
+spec: Affliction
+
+# La rotation Lua ne suivait pas la recommandation de Blizzard
+assisted:
+  follow: false
+
+rules:
+  # Lua : absente de la cible
+  - cast: Affliction instable
+    when: "target.hostile && spell.sinceCastOnTarget('Affliction instable') > 8"
+    priority: 100
+
+  # Lua : absente ou à moins de 4 s de la fin
+  - cast: Agonie
+    when: "target.hostile && spell.sinceCastOnTarget('Agonie') > 14"
+    priority: 90
+
+  # Lua : absente ou à moins de 2 s de la fin
+  - cast: Corruption
+    when: "target.hostile && spell.sinceCastOnTarget('Corruption') > 12"
+    priority: 85
+
+  # Remplissage
+  - cast: Trait de l'ombre
+    when: "target.hostile"
+    priority: 1

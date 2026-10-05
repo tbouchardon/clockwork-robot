@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=../rotation.schema.json
 # Druide, toutes spécialisations : portage de la rotation Lua historique (rotation_druid.lua de l'addon).
+# ATTENTION : traduction littérale de l'ancienne rotation Lua, gameplay non revu pour la 12.x (priorités et sorts
+# peuvent ne plus être pertinents). Elle est choisie automatiquement pour toutes les spécialisations du druide.
 #
 # La rotation dépend de la forme du personnage :
 #   - forme humaine ou de sélénien : Éclat lunaire entretenu sur la cible, Colère sinon ;

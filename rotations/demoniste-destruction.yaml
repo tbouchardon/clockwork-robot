@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../rotation.schema.json
+# Démoniste Destruction : portage de la rotation Lua historique (rotation_warlock.lua de l'addon).
+# ATTENTION : traduction littérale de l'ancienne rotation Lua, gameplay non revu pour la 12.x (priorités et sorts
+# peuvent ne plus être pertinents). Elle est choisie automatiquement pour cette classe et cette spécialisation.
+#
+# Immolation dure 18 s (tables du jeu, 12.1) : « absente ou à moins de 2 s de la fin » devient « lancée sur cette cible
+# il y a plus de 16 s », les debuffs étant illisibles en combat depuis la 12.x.
+
+name: Démoniste Destruction
+class: WARLOCK
+spec: Destruction
+
+# La rotation Lua ne suivait pas la recommandation de Blizzard
+assisted:
+  follow: false
+
+rules:
+  - cast: Immolation
+    when: "target.hostile && spell.sinceCastOnTarget('Immolation') > 16"
+    priority: 100
+
+  - cast: Conflagration
+    when: "target.hostile"
+    priority: 90
+
+  - cast: Trait du chaos
+    when: "target.hostile"
+    priority: 80
+
+  # Remplissage
+  - cast: Incinérer
+    when: "target.hostile"
+    priority: 70

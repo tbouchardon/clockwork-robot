@@ -370,6 +370,12 @@ Limites actuelles :
 |---|---|
 | `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. |
+| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. |
+| `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
+
+Les portages sont des **traductions littérales** des anciennes rotations Lua, avec les durées des debuffs tirées des
+tables du jeu : leur gameplay n'a pas été revu pour la 12.x. Ils sont choisis automatiquement pour leur classe et leur
+spécialisation ; supprimer le fichier rend la main à l'addon et à la recommandation de Blizzard.
 
 Dans `when`, un nom contenant une apostrophe s'écrit avec l'apostrophe typographique (`'Forme d’ours'`), puisque les
 noms sont entre apostrophes droites ; ClockWork confond les deux.
@@ -435,6 +441,7 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 - `SpellDatabaseTest` : CSV de wago.tools, noms sans accents, variantes, sorts par classe (talents compris), produit,
   version et langue du jeu, liste pour l'éditeur.
 - `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
+- `ProvidedRotationsTest` : toutes les rotations de `rotations/` valides ; le démoniste Affliction entretient ses debuffs.
 - `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
 - `HitDetectorTest` : perte de vie sans action, seuil, régénération, fenêtre glissante.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
