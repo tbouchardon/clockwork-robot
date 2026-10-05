@@ -19,7 +19,7 @@ application capture la grille, la décode, choisit une action et la joue au clav
 3. [Utilisation](#utilisation)
 4. [La boucle de l'automate](#la-boucle-de-lautomate)
 5. [Le cerveau : perception, décision, action](#le-cerveau--perception-décision-action)
-6. [Écrire une rotation (`rotation.yaml`)](#écrire-une-rotation-rotationyaml)
+6. [Écrire une rotation](#écrire-une-rotation)
 7. [Autres activités](#autres-activités)
 8. [Organisation du code](#organisation-du-code)
 9. [Tests](#tests)
@@ -33,7 +33,7 @@ application capture la grille, la décode, choisit une action et la joue au clav
                     ┌──────────────────────────── ClockWork (Java) ──────────────────────────────┐
   écran de WoW      │                                                                            │
  ┌────────────┐     │  capture 32x32    perception           décision              action        │
- │▣ QR code   │ ──► │  ───────────► QrCodeV2Reader ──► Brain (rotation.yaml) ──► Automaton ──────┼──► clavier
+ │▣ QR code   │ ──► │  ───────────► QrCodeV2Reader ─► Brain (rotations/*.yaml) ► Automaton ──────┼──► clavier
  │  (0, 23)   │     │                  GameState          + SpellDatabase        (KeyCombo)      │    souris
  └────────────┘     │                  KeyState × 72      (noms → identifiants)                  │
                     └────────────────────────────────────────────────────────────────────────────┘
@@ -48,8 +48,8 @@ Deux modes de décision coexistent :
 
 | Mode | Activé quand | Qui décide |
 |---|---|---|
-| **Historique (v1)** | pas de `rotation.yaml`, ou grille v1 | L'addon allume la touche à appuyer avec une priorité ; Java appuie sur la plus prioritaire. |
-| **Cerveau** | `rotation.yaml` présent et grille v2/v3 | Java : l'addon décrit l'état de chaque touche, Java applique les règles YAML. |
+| **Historique (v1)** | pas de rotation pour la classe et la spécialisation du personnage, ou grille v1 | L'addon allume la touche à appuyer avec une priorité ; Java appuie sur la plus prioritaire. |
+| **Cerveau** | une rotation de `rotations/` correspond au personnage, et grille v2/v3 | Java : l'addon décrit l'état de chaque touche, Java applique les règles YAML. |
 
 ---
 
@@ -85,13 +85,14 @@ Lancement manuel sous Windows (c'est Windows qui doit capturer l'écran du jeu) 
 java --enable-native-access=ALL-UNNAMED -cp "build\install\clockwork\lib\*" fr.ksuto.clockwork.Runner
 ```
 
-Le dossier de lancement compte : c'est là que `rotation.yaml` est cherché.
+Le dossier de lancement compte : c'est là que le dossier `rotations/` est cherché.
 
 Propriétés système (`-D…`) :
 
 | Propriété | Défaut | Rôle |
 |---|---|---|
-| `clockwork.rotation` | `rotation.yaml` | Fichier de rotation du cerveau. |
+| `clockwork.rotations` | `rotations` | Dossier des rotations, choisies selon la classe et la spécialisation du personnage. |
+| `clockwork.rotation` | `rotation.yaml` | Rotation imposée quel que soit le personnage, si le fichier existe (tests). |
 | `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier du client (`_retail_`, `_classic_era_`…) : produit, version et langue du jeu. |
 | `clockwork.cache` | `~/.clockwork/wago` | Cache des tables du jeu téléchargées depuis wago.tools. |
 
@@ -112,7 +113,8 @@ Propriétés système (`-D…`) :
 
 Le cerveau se pilote depuis les fichiers, à chaud :
 
-- modifier `rotation.yaml` : la rotation est rechargée à l'enregistrement suivant ;
+- modifier ou ajouter un fichier dans `rotations/` : il est relu dans la seconde ;
+- changer de spécialisation en jeu : la rotation correspondante prend le relais, et le journal l'indique.
 
 ---
 
@@ -157,6 +159,7 @@ historique). Il produit un `GameState` immuable :
 | `facing` | Direction du personnage, en radians. |
 | `recommendedSpell` | Sort recommandé par Blizzard (`C_AssistedCombat`), forme de base. |
 | `form`, `comboPoints` | Sort de la forme active (0 si aucune), points de combo. |
+| `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
 | `frame` | Compteur de mises à jour (v3). |
 | `keys` | 18 touches en v2, **72** en v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
 
@@ -188,7 +191,7 @@ grille contient au moins un sort ; elle est vide juste après l'activation), `ke
     variante d'un autre identifiant (ex. Explosion de lave 51505 et sa base 73899, d'après `TraitDefinition`), et
     Blizzard recommande la base.
   - Un identifiant numérique est accepté directement à la place d'un nom.
-- **`Rotation`** est le contenu de `rotation.yaml`. Les conditions sont compilées en expressions JEXL au chargement.
+- **`Rotation`** est le contenu d'un fichier de rotation. Les conditions sont compilées en expressions JEXL au chargement.
   Une erreur de syntaxe est signalée et la rotation précédente est conservée.
 - **`Brain.decide(état, rotation, sorts)`** :
   1. rien si la grille n'est pas prête ou si l'on n'a pas le droit d'agir (`mayAct`) ;
@@ -211,9 +214,15 @@ Maj, Ctrl ou Alt.
 
 ### `BrainService`
 
-`BrainService` assemble le tout pour l'automate. À chaque décision, il vérifie la date de modification de
-`rotation.yaml` et du fichier de SavedVariables, et recharge ce qui a changé. Sans `rotation.yaml`, le cerveau est
-inactif et l'addon décide seul.
+`BrainService` assemble le tout pour l'automate :
+
+- il relit chaque seconde les fichiers de `rotations/` (`*.yaml`, `*.yml`) qui ont changé ; une rotation invalide est
+  signalée et sa version précédente conservée ;
+- il **choisit la rotation du personnage** d'après la classe et la spécialisation lues dans la grille : celle de sa
+  spécialisation (`class` + `spec`), sinon celle de toute sa classe (`class` sans `spec`). À égalité, le premier fichier
+  par ordre alphabétique. Le choix est journalisé à chaque changement (*« Rotation pour SHAMAN Élémentaire : … »*) ;
+- sans rotation pour le personnage, il laisse l'addon décider (mode historique) ;
+- un `rotation.yaml` dans le dossier de lancement impose sa rotation à tout personnage.
 
 ### Tables du jeu (wago.tools)
 
@@ -229,7 +238,8 @@ Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
    c'est-à-dire capacités de classe (`SkillLine`, `SkillLineAbility`), de spécialisation (`SpecializationSpells`) et
    talents, avec les variantes qu'ils accordent (`SkillLineXTraitTree` → `TraitNode` → `TraitNodeEntry` →
    `TraitDefinition`) : environ 300 noms par classe ;
-4. génère `rotation.spells.json` à côté de `rotation.yaml` : les noms de sorts de chaque classe.
+4. génère `rotation.spells.json` dans le dossier de lancement : spécialisations de chaque classe, et sorts de chaque
+   classe et de chaque spécialisation (voir *Autocomplétion dans l'éditeur*).
 
 Le cerveau attend que la table soit chargée pour décider (*« Cerveau en attente de la table des sorts »*).
 
@@ -248,14 +258,15 @@ fois. Pour un autre client (vanilla, Forever…), il suffit de pointer `clockwor
 
 ---
 
-## Écrire une rotation (`rotation.yaml`)
+## Écrire une rotation
 
-Copier `rotation.example.yaml` en `rotation.yaml` dans le dossier de lancement (`rotation.yaml` n'est pas versionné).
+Une rotation est un fichier YAML du dossier `rotations/`, par exemple `rotations/chaman-elementaire.yaml` :
 
 ```yaml
-# yaml-language-server: $schema=./rotation.schema.json
+# yaml-language-server: $schema=../rotation.schema.json
+name: Chaman Élémentaire
 class: SHAMAN
-spec: Chaman Élémentaire
+spec: Élémentaire
 
 # Recommandation de Blizzard en repli : elle passe devant les règles de priorité inférieure
 assisted:
@@ -277,7 +288,10 @@ rules:
     priority: 10
 ```
 
-- `class` : classe visée (`SHAMAN`, `MAGE`…), pour l'autocomplétion des sorts dans l'éditeur.
+- `name` : nom libre, affiché dans le journal.
+- `class` : classe visée (`SHAMAN`, `MAGE`…).
+- `spec` : spécialisation visée, nom affiché en jeu (`Élémentaire`, `Farouche`…) ou identifiant (`262`). Sans `spec`, la
+  rotation vaut pour toutes les spécialisations de la classe ; une rotation de la spécialisation passe devant.
 - `cast` : nom du sort (tel qu'affiché en jeu, accents et casse indifférents) ou identifiant.
 - `when` : condition JEXL (`&&`, `||`, `!`, `<`, `>`, `==`, arithmétique). Si elle est absente, la règle est toujours
   vraie.
@@ -306,9 +320,18 @@ La première ligne associe le fichier au **schéma JSON** `rotation.schema.json`
 nativement, VS Code avec l'extension YAML de Red Hat. On obtient l'autocomplétion des clés, la validation à la frappe
 (clé inconnue, type faux, règle sans `cast`) et la documentation au survol, dont la liste des variables de `when`.
 
-Le schéma est **conditionnel** : selon `class` (`if` / `then`), `cast` renvoie vers la liste de la classe dans
-`rotation.spells.json`, générée par ClockWork (voir *Tables du jeu*). L'éditeur ne propose alors que les sorts de la
-classe, et signale un nom inconnu. Le contenu de `when` reste du texte libre pour le schéma : une erreur JEXL est
+Le schéma est **conditionnel** (`if` / `then`) et renvoie à `rotation.spells.json`, généré par ClockWork d'après les
+tables du jeu (voir *Tables du jeu*) :
+
+- selon `class`, l'éditeur propose les spécialisations de la classe pour `spec` ;
+- selon `class` et `spec`, il propose pour `cast` les sorts **de la spécialisation** : sorts de toute la classe, plus
+  ceux qui lui sont réservés. Par exemple, pour un chaman, Horion de terre n'est proposé qu'en Élémentaire, et
+  Frappe-tempête qu'en Amélioration. Sans `spec`, ce sont les sorts de toute la classe ;
+- un nom inconnu, ou réservé à une autre spécialisation, est signalé.
+
+Les sorts réservés à une spécialisation viennent de `SpecializationSpells` et des nœuds de talents soumis à une condition
+de spécialisation (`TraitCond`, `SpecSetMember`). Les composantes d'autres sorts (dégâts de Frappe-tempête, attaque de la
+main gauche…) sont écartées. Le contenu de `when` reste du texte libre pour le schéma : une erreur JEXL est
 signalée par ClockWork au chargement.
 
 Le temps depuis le dernier lancement **sur la cible** est le substitut aux debuffs : les auras sont illisibles en combat
@@ -321,11 +344,9 @@ Limites actuelles :
 
 ### Rotations fournies
 
-Le dossier `rotations/` contient des rotations prêtes à copier en `rotation.yaml` :
-
 | Fichier | Contenu |
 |---|---|
-| `rotation.example.yaml` | Chaman élémentaire (exemple de départ). |
+| `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. |
 
 Dans `when`, un nom contenant une apostrophe s'écrit avec l'apostrophe typographique (`'Forme d’ours'`), puisque les
@@ -387,6 +408,7 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 - `SpellDatabaseTest` : CSV de wago.tools, noms sans accents, variantes, sorts par classe (talents compris), produit,
   version et langue du jeu, liste pour l'éditeur.
 - `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
+- `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 
 ---
@@ -399,7 +421,8 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 | *« addon désactivé »* | `/clk toggle` en jeu (Auto Config le fait normalement). |
 | *« grille figée »* | Écran de chargement, WoW en pause ou en arrière-plan. |
 | *« Cerveau inactif : grille v1 »* | Addon trop ancien : redéployer l'addon et `/reload`. |
-| *« Règle ignorée : … n'est sur aucune touche »* | Sort absent des touches décrites, ou nom inconnu : vérifier le nom (l'éditeur le signale avec `class`). |
+| *« Règle ignorée : … n'est sur aucune touche »* | Sort absent des touches décrites, ou nom inconnu : vérifier le nom (l'éditeur le signale avec `class` et `spec`). |
+| *« Aucune rotation pour … : l'addon décide seul »* | Pas de fichier dans `rotations/` pour cette classe et cette spécialisation. |
 | Auto Config ne trouve rien | Grille déformée : WoW doit être en fenêtré maximisé ; l'addon recalcule l'échelle des pixels à chaque changement de taille. |
 | `installDist` échoue (fichier verrouillé) | ClockWork tourne encore et verrouille ses `.jar` : l'arrêter avant de construire. |
 | Gradle ne trouve pas Java sous WSL | `JAVA_HOME` pointe vers un JDK Windows : utiliser un JDK Linux (`export JAVA_HOME=…`). |

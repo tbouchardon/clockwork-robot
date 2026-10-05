@@ -21,12 +21,14 @@ import java.util.Optional;
  * @param aggro            mode aggro de l'addon : attaquer aussi une cible qui n'est pas en combat
  * @param form             sort de la forme active (druide : félin, ours, sélénien...), 0 si aucune
  * @param comboPoints      points de combo du joueur
+ * @param classId          classe du personnage (identifiant du jeu : 7 = chaman), 0 si inconnue
+ * @param specId           spécialisation active (identifiant du jeu : 262 = Élémentaire), 0 si inconnue
  * @param frame            compteur de mises à jour de l'addon (v3, 0 en v2) : inchangé, la grille est figée
  * @param keys             état de chaque touche, par nom de touche
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        int form, int comboPoints, int frame, Map<String, KeyState> keys) {
+                        int form, int comboPoints, int classId, int specId, int frame, Map<String, KeyState> keys) {
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat

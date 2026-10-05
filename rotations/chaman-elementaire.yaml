@@ -1,7 +1,9 @@
-# yaml-language-server: $schema=./rotation.schema.json
-# Rotation du cerveau Java de ClockWork.
-# Pour l'activer : copier ce fichier en rotation.yaml dans le dossier de lancement de ClockWork.
-# Il est rechargé à chaud à chaque enregistrement ; sans rotation.yaml, c'est l'addon qui décide seul.
+# yaml-language-server: $schema=../rotation.schema.json
+# Rotation du cerveau Java de ClockWork : chaman Élémentaire (exemple de départ).
+# ClockWork choisit dans ce dossier la rotation de la classe et de la spécialisation du personnage (« class » et « spec »),
+# sinon celle de toute sa classe (sans « spec ») ; sans rotation pour lui, c'est l'addon qui décide seul.
+# Les fichiers sont rechargés à chaud à chaque enregistrement. Un rotation.yaml dans le dossier de lancement impose sa
+# rotation quel que soit le personnage.
 #
 # Une règle s'applique si son sort est sur une touche (seule ou avec Maj, Ctrl, Alt), prêt (utilisable, sans temps de recharge,
 # pas hors de portée) et si sa condition « when » est vraie. La plus haute priorité l'emporte.
@@ -21,8 +23,9 @@
 #       secondes depuis le dernier lancement (toutes cibles / sur la cible actuelle), plafonnées à 60 s :
 #       au-delà, ou jamais lancé, la valeur est infinie
 
+name: Chaman Élémentaire (exemple)
 class: SHAMAN
-spec: Chaman Élémentaire (exemple)
+spec: Élémentaire
 
 # Recommandation de Blizzard en repli : elle passe devant les règles de priorité inférieure
 assisted:

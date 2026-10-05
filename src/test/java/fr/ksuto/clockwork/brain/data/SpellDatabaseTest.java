@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.junit.jupiter.api.Test;
@@ -71,6 +70,22 @@ class SpellDatabaseTest {
                      database.classSpellNames("SHAMAN"));
         assertEquals(new TreeSet<>(List.of("Boule de feu")), database.classSpellNames("MAGE"));
         assertEquals(new TreeSet<>(List.of("Forme de félin", "Éclat lunaire")), database.classSpellNames("DRUID"));
+    }
+
+    @Test
+    void specsHaveTheWholeClassSpellsAndTheirOwn() throws IOException {
+
+        SpellDatabase database = SpellDatabaseFixture.create(folder);
+
+        assertEquals("SHAMAN", database.classOf(7));
+        assertEquals(new SpellDatabase.Spec(262, "SHAMAN", "Élémentaire", 0), database.spec(262));
+        assertEquals(List.of("Élémentaire", "Amélioration", "Restauration"), database.specsOf("SHAMAN").stream().map(SpellDatabase.Spec::name).toList());
+        assertEquals(new TreeSet<>(List.of("Afflux de soins", "Explosion de lave", "Frappe primordiale", "Horion de flamme",
+                                           "Horion de flamme (talent)", "Éclair")),
+                     database.specSpellNames(262), "talents réservés à Élémentaire, directement ou par leur groupe");
+        assertEquals(new TreeSet<>(List.of("Afflux de soins", "Explosion de lave", "Frappe primordiale", "Éclair")),
+                     database.specSpellNames(264), "Explosion de lave et sa forme de base : groupe Élémentaire et Restauration");
+        assertEquals(new TreeSet<>(List.of("Afflux de soins", "Éclair")), database.specSpellNames(263));
         assertEquals(Set.of("SHAMAN", "MAGE", "DRUID"), database.classes());
     }
 
@@ -96,23 +111,25 @@ class SpellDatabaseTest {
     }
 
     @Test
-    void spellListForTheEditorIsValidJsonPerClass() {
+    void editorSchemaProposesSpecsAndSpellsByClassAndSpec() throws IOException {
 
-        SortedSet<String> shaman = new TreeSet<>(List.of("Éclair", "Nom \"cité\""));
-        String            json   = SpellSchema.json(Map.of("SHAMAN", shaman, "MAGE", new TreeSet<>(List.of("Boule de feu"))));
+        String json = SpellSchema.json(SpellDatabaseFixture.create(folder));
 
-        assertTrue(json.contains("\"definitions\""));
-        assertTrue(json.indexOf("\"MAGE\"") < json.indexOf("\"SHAMAN\""), "classes triées");
-        assertTrue(json.contains("\"Nom \\\"cité\\\"\""));
-        assertTrue(json.contains("\"Éclair\""));
-        assertEquals("\"a\\\\b\\u0001\"", SpellSchema.quote("a\\b\u0001"));
+        assertTrue(json.contains("\"byClass\""));
+        assertTrue(json.contains("\"spec\": { \"enum\": [\n          \"Élémentaire\",\n          \"Amélioration\",\n          \"Restauration\"\n        ] }"));
+        assertTrue(json.contains("\"spec\": { \"const\": \"Élémentaire\" }"));
+        assertTrue(json.contains("\"$ref\": \"#/definitions/SHAMAN-262\""));
+        assertTrue(json.contains("\"SHAMAN-262\": {"));
+        assertTrue(json.contains("\"not\": { \"required\": [\"spec\"] }"), "sans spec : sorts de toute la classe");
+        assertTrue(json.indexOf("\"DRUID\"") < json.indexOf("\"SHAMAN\""), "classes triées");
+        assertEquals("\"a\\\\b\\u0001\\\"c\\\"\"", SpellSchema.quote("a\\b\u0001\"c\""));
     }
 
     @Test
-    void writesTheSpellListNextToTheRotation() throws IOException {
+    void writesTheEditorSchema() throws IOException {
 
         Path file = folder.resolve(SpellSchema.FILE_NAME);
-        SpellSchema.write(file, Map.of("SHAMAN", new TreeSet<>(List.of("Éclair"))));
+        SpellSchema.write(file, SpellDatabaseFixture.create(Files.createDirectories(folder.resolve("tables"))));
 
         assertTrue(Files.readString(file, StandardCharsets.UTF_8).contains("\"Éclair\""));
         assertFalse(Files.exists(folder.resolve(SpellSchema.FILE_NAME + ".part")));

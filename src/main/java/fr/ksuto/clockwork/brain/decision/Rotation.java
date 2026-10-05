@@ -1,5 +1,6 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlScript;
 import org.yaml.snakeyaml.Yaml;
@@ -13,8 +14,9 @@ import java.util.Map;
  * Rotation décrite en YAML : une liste de règles « lancer tel sort quand telle condition est vraie », avec une priorité,
  * et éventuellement la recommandation de Blizzard en repli.
  * <pre>
+ * name: Chaman Élémentaire
  * class: SHAMAN
- * spec: Élémentaire
+ * spec: Élémentaire     # absente : toutes les spécialisations de la classe
  * assisted:
  *   follow: true        # suivre la recommandation de Blizzard quand aucune règle plus prioritaire ne s'applique
  *   priority: 50
@@ -24,13 +26,14 @@ import java.util.Map;
  *     priority: 120
  * </pre>
  *
- * @param playerClass      classe visée (SHAMAN, MAGE...), vide si non précisée : sert au schéma de l'éditeur
- * @param spec             description libre de la spécialisation visée
+ * @param name             nom libre, affiché dans le journal
+ * @param playerClass      classe visée (SHAMAN, MAGE...), vide si non précisée
+ * @param spec             spécialisation visée, nom affiché en jeu (Élémentaire) ou identifiant (262), vide pour toutes
  * @param followAssisted   suivre la recommandation de Blizzard en repli
  * @param assistedPriority priorité de la recommandation de Blizzard
  * @param rules            règles, de la plus prioritaire à la moins prioritaire
  */
-public record Rotation(String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules) {
+public record Rotation(String name, String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules) {
 
     /**
      * @param cast     nom du sort (ou identifiant numérique)
@@ -44,8 +47,9 @@ public record Rotation(String playerClass, String spec, boolean followAssisted, 
     static Rotation parse(String yaml, JexlEngine jexl) {
 
         Object root = new Yaml().load(yaml);
-        if (!(root instanceof Map<?, ?> map)) {throw new IllegalArgumentException("La rotation doit être un objet YAML (class, spec, assisted, rules)");}
+        if (!(root instanceof Map<?, ?> map)) {throw new IllegalArgumentException("La rotation doit être un objet YAML (name, class, spec, assisted, rules)");}
 
+        String name        = map.get("name") == null ? "" : String.valueOf(map.get("name"));
         String playerClass = map.get("class") == null ? "" : String.valueOf(map.get("class"));
         String spec        = map.get("spec") == null ? "" : String.valueOf(map.get("spec"));
 
@@ -72,6 +76,35 @@ public record Rotation(String playerClass, String spec, boolean followAssisted, 
         // Tri stable : à priorité égale, l'ordre du fichier est conservé
         rules.sort(Comparator.comparingInt(Rule::priority).reversed());
 
-        return new Rotation(playerClass, spec, follow, priority, List.copyOf(rules));
+        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules));
+    }
+
+    /**
+     * @param playerClass classe du personnage (SHAMAN...)
+     * @param spec        spécialisation du personnage, ou null si inconnue
+     * @return la rotation convient : même classe, et même spécialisation ou rotation de toute la classe
+     */
+    public boolean appliesTo(String playerClass, SpellDatabase.Spec spec) {
+
+        if (!this.playerClass.equals(playerClass)) {return false;}
+        return forWholeClass() || (spec != null && (this.spec.equals(String.valueOf(spec.id()))
+                                                    || SpellDatabase.normalize(this.spec).equals(SpellDatabase.normalize(spec.name()))));
+    }
+
+    /**
+     * La rotation vaut pour toutes les spécialisations de sa classe.
+     */
+    public boolean forWholeClass() {
+
+        return spec.isBlank();
+    }
+
+    /**
+     * Nom affiché dans le journal : le nom libre, sinon classe et spécialisation.
+     */
+    public String label() {
+
+        if (!name.isBlank()) {return name;}
+        return (playerClass + " " + spec).trim();
     }
 }

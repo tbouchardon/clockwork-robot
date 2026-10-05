@@ -26,6 +26,7 @@ public final class SpellDatabaseFixture {
                     470057,"Horion de flamme (talent)"
                     188389,"Horion de flammes"
                     8042,"Horion de terre"
+                    17364,"Frappe-tempête"
                     8921,"Éclat lunaire"
                     190984,"Colère"
                     33917,"Mutilation"
@@ -46,7 +47,11 @@ public final class SpellDatabaseFixture {
             Map.entry("ChrSpecialization", """
                     Name_lang,ID,ClassID
                     Élémentaire,262,7
+                    Amélioration,263,7
+                    Restauration,264,7
                     Feu,63,8
+                    Équilibre,102,11
+                    Farouche,103,11
                     """),
             Map.entry("SkillLine", """
                     DisplayName_lang,ID,CategoryID
@@ -56,9 +61,10 @@ public final class SpellDatabaseFixture {
                     Epées,43,6
                     """),
             Map.entry("SkillLineAbility", """
-                    ID,SkillLine,Spell
-                    1,924,188196
-                    2,924,8004
+                    ID,SkillLine,Spell,AcquireMethod
+                    1,924,188196,2
+                    2,924,8004,2
+                    7,924,17364,3
                     3,904,133
                     4,43,999001
                     5,798,8921
@@ -75,11 +81,12 @@ public final class SpellDatabaseFixture {
             Map.entry("TraitNode", """
                     ID,TraitTreeID
                     50,1000
+                    51,1000
                     """),
             Map.entry("TraitNodeXTraitNodeEntry", """
                     ID,TraitNodeID,TraitNodeEntryID,_Index
                     1,50,60,0
-                    2,50,61,1
+                    2,51,61,0
                     """),
             Map.entry("TraitNodeEntry", """
                     ID,TraitDefinitionID,MaxRanks
@@ -90,6 +97,32 @@ public final class SpellDatabaseFixture {
                     OverrideName_lang,ID,SpellID,OverridesSpellID,VisibleSpellID
                     ,70,470057,470411,0
                     ,71,51505,73899,0
+                    """),
+            // Le nœud 50 est réservé à Élémentaire, le nœud 51 (par son groupe) à Élémentaire et Restauration
+            Map.entry("SpecSetMember", """
+                    ID,ChrSpecializationID,SpecSet
+                    1,262,5
+                    2,262,6
+                    3,264,6
+                    """),
+            Map.entry("TraitCond", """
+                    ID,CondType,SpecSetID
+                    900,1,5
+                    901,2,6
+                    902,0,0
+                    """),
+            Map.entry("TraitNodeXTraitCond", """
+                    ID,TraitCondID,TraitNodeID
+                    1,900,50
+                    2,902,51
+                    """),
+            Map.entry("TraitNodeGroupXTraitCond", """
+                    ID,TraitCondID,TraitNodeGroupID
+                    1,901,77
+                    """),
+            Map.entry("TraitNodeGroupXTraitNode", """
+                    ID,TraitNodeGroupID,TraitNodeID,_Index
+                    1,77,51,0
                     """));
 
     private SpellDatabaseFixture() {}

@@ -73,6 +73,8 @@ public final class QrCodeV2Reader {
                 qr.red(10, 2) > 127,
                 read24(qr, 8, 4),
                 qr.red(9, 4),
+                qr.red(10, 4),
+                qr.red(11, 4) << 8 | qr.green(11, 4),
                 version == VERSION ? read24(qr, 11, 2) : 0,
                 keys));
     }

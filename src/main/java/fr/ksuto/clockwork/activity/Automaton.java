@@ -215,10 +215,11 @@ public class Automaton {
         }
         logger.debug(keyStatus);
         
-        // Cerveau Java : avec une rotation YAML et une grille v2 ou v3, il choisit la touche à la place de l'addon
-        if (brain.isActive()) {
+        // Cerveau Java : avec une rotation YAML pour ce personnage et une grille v2 ou v3, il choisit la touche à la place
+        // de l'addon
+        if (brain.hasRotations()) {
             Optional<GameState> state = QrCodeV2Reader.read(qrCode.getCapturedQrCode());
-            if (state.isPresent()) {
+            if (state.isPresent() && brain.handles(state.get())) {
                 Optional<Brain.Decision> decision = gridFrozen(state.get()) ? Optional.empty() : brain.decide(state.get());
                 KeyCombo combo = decision.map(d -> KeyCombo.parse(d.key())).orElse(null);
                 key2hit = combo == null ? null : keyNamed(qrCode, combo.key()).orElse(null);
@@ -228,7 +229,7 @@ public class Automaton {
                 bestPriorityDuration = 0;
                 decision.ifPresent(d -> logger.debug("Cerveau : touche {} ({}, priorité {})", d.key(), d.reason(), d.priority()));
             }
-            else {
+            else if (state.isEmpty()) {
                 reportState("Cerveau inactif : grille v1, l'addon décide seul (addon à mettre à jour)");
             }
         }

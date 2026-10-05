@@ -1,6 +1,5 @@
 # yaml-language-server: $schema=../rotation.schema.json
 # Druide, toutes spécialisations : portage de la rotation Lua historique (rotation_druid.lua de l'addon).
-# Pour l'utiliser : copier ce fichier en rotation.yaml dans le dossier de lancement de ClockWork.
 #
 # La rotation dépend de la forme du personnage :
 #   - forme humaine ou de sélénien : Éclat lunaire entretenu sur la cible, Colère sinon ;
@@ -14,8 +13,9 @@
 # Dans les conditions, les noms sont entre apostrophes droites : « Forme d’ours » s'écrit donc avec l'apostrophe
 # typographique (’), que ClockWork confond avec l'apostrophe droite.
 
+# Sans « spec » : la rotation vaut pour toutes les spécialisations du druide
+name: Druide (toutes formes)
 class: DRUID
-spec: Druide (toutes formes)
 
 # La rotation Lua ne suivait pas la recommandation de Blizzard
 assisted:

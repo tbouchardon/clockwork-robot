@@ -40,7 +40,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, 0, 0, 1, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, 0, 0, 7, 262, 1, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -51,8 +51,19 @@ class BrainTest {
     @Test
     void rotationNamesItsClass() {
 
-        assertEquals("SHAMAN", brain.parse("class: SHAMAN\nrules: []\n").playerClass());
-        assertEquals("", brain.parse("rules: []\n").playerClass());
+        Rotation elemental = brain.parse("name: Élém\nclass: SHAMAN\nspec: Élémentaire\nrules: []\n");
+        Rotation shaman    = brain.parse("class: SHAMAN\nrules: []\n");
+        SpellDatabase.Spec spec = new SpellDatabase.Spec(262, "SHAMAN", "Élémentaire", 0);
+        SpellDatabase.Spec enhancement = new SpellDatabase.Spec(263, "SHAMAN", "Amélioration", 1);
+
+        assertEquals("Élém", elemental.label());
+        assertEquals("SHAMAN", shaman.label());
+        assertTrue(elemental.appliesTo("SHAMAN", spec));
+        assertFalse(elemental.appliesTo("SHAMAN", enhancement));
+        assertFalse(elemental.appliesTo("MAGE", spec));
+        assertTrue(shaman.appliesTo("SHAMAN", enhancement), "sans spec : toute la classe");
+        assertTrue(brain.parse("class: SHAMAN\nspec: 262\nrules: []\n").appliesTo("SHAMAN", spec), "spec par identifiant");
+        assertTrue(brain.parse("class: SHAMAN\nspec: elementaire\nrules: []\n").appliesTo("SHAMAN", spec), "accents indifférents");
     }
 
     @Test
@@ -162,7 +173,7 @@ class BrainTest {
     @Test
     void exampleRotationIsValid() throws Exception {
         
-        Rotation rotation = brain.parse(Files.readString(Path.of("rotation.example.yaml"), StandardCharsets.UTF_8));
+        Rotation rotation = brain.parse(Files.readString(Path.of("rotations", "chaman-elementaire.yaml"), StandardCharsets.UTF_8));
         
         assertEquals(4, rotation.rules().size());
         assertTrue(rotation.followAssisted());
@@ -188,7 +199,7 @@ class BrainTest {
 
         String yaml = "assisted:\n  follow: true\nrules: []\n";
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, 0, 0, 1, keys);
+        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, 0, 0, 7, 262, 1, keys);
 
         assertTrue(decide(yaml, noTarget).isEmpty());
     }
