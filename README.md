@@ -177,6 +177,7 @@ Chaque touche est un `KeyState` :
 | `sinceCastOnTarget` | Secondes depuis le dernier lancement **sur la cible actuelle** (infini si jamais ou plus de 60 s). |
 | `sinceCast` | Idem, toutes cibles. |
 | `proc` | Bouton en surbrillance. |
+| `buffActive` | L'aura du sort est active sur le joueur (lue hors combat, dernier état connu en combat). |
 
 `KeyState.ready()` = un sort, utilisable, sans temps de recharge (moins de 0,05 s), pas hors de portée.
 
@@ -331,6 +332,7 @@ Variables disponibles dans `when` :
 | `assisted` | Nom du sort recommandé par Blizzard. |
 | `spell.ready('Nom')`, `spell.usable('Nom')`, `spell.inRange('Nom')`, `spell.proc('Nom')`, `spell.onBar('Nom')` | Booléens. |
 | `spell.cooldown('Nom')` | Secondes de recharge restantes. |
+| `spell.buffActive('Nom')` | L'aura du sort est active sur le joueur (Cri de guerre, Bouclier de foudre…). Lue **hors combat** seulement, les auras étant inaccessibles en combat en 12.x : en combat, c'est l'état lu juste avant d'y entrer. |
 | `spell.form('Nom')` | Le personnage est sous cette forme (accents, casse et apostrophe indifférents). |
 | `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. |
 
@@ -359,7 +361,8 @@ main gauche…) sont écartées. Le contenu de `when` reste du texte libre pour 
 signalée par ClockWork au chargement.
 
 Le temps depuis le dernier lancement **sur la cible** est le substitut aux debuffs : les auras sont illisibles en combat
-depuis la 12.x.
+depuis la 12.x. Vérifié en jeu (`/clk testsecret`, section G) : en combat, ni la liste des auras, ni la recherche par
+sort, ni leurs objets durée ne sont accessibles ; hors combat, tout l'est. D'où `spell.buffActive`, lu hors combat.
 
 Limites actuelles :
 

@@ -338,6 +338,16 @@ class BrainTest {
     }
 
     @Test
+    void conditionsSeePlayerBuffs() {
+
+        String   yaml   = "rules:\n  - cast: Éclair\n    when: \"!spell.buffActive('Éclair')\"\n";
+        KeyState buffed = new KeyState("1", 188196, 0, true, KeyState.Range.IN, NEVER, NEVER, false, true);
+
+        assertTrue(decide(yaml, state(0, 80, buffed)).isEmpty(), "buff déjà actif");
+        assertEquals("1", decide(yaml, state(0, 80, ready("1", 188196))).orElseThrow().key());
+    }
+
+    @Test
     void usesSpellsBoundWithModifiers() {
 
         String yaml = "rules:\n  - cast: Explosion de lave\n    priority: 100\n  - cast: Éclair\n";

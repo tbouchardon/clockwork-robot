@@ -69,6 +69,15 @@ public final class SpellView {
     }
 
     /**
+     * L'aura du sort est active sur le joueur : {@code !spell.buffActive('Cri de guerre')}. Lue hors combat seulement
+     * (auras inaccessibles en combat) : en combat, c'est l'état lu juste avant d'y entrer.
+     */
+    public boolean buffActive(String reference) {
+
+        return key(reference).map(KeyState::buffActive).orElse(false);
+    }
+
+    /**
      * Le personnage est sous cette forme : {@code spell.form('Forme de félin')}. Contrairement aux autres méthodes, le
      * sort de la forme n'a pas besoin d'être sur une barre.
      */

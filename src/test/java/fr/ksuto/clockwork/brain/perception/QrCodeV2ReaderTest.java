@@ -119,7 +119,7 @@ class QrCodeV2ReaderTest {
         // Touche "3" : position 3 -> état (4, 6), historique (4, 9), sort (5, 3)
         GameState state = QrCodeV2Reader.read(v2()
                 .set(4, 6, 3 / 60.0, 1, 1)                             // 3 s de recharge, utilisable, à portée
-                .set(4, 9, 12 / 60.0, 1, 1)                            // 12 s sur cette cible, proc, jamais ailleurs
+                .set(4, 9, 12 / 60.0, 1 / 3.0, 1)                      // 12 s sur cette cible, proc, jamais ailleurs
                 .set24(5, 3, 188389)
                 .frame()).orElseThrow();
 
@@ -130,6 +130,7 @@ class QrCodeV2ReaderTest {
         assertEquals(KeyState.Range.IN, key.range());
         assertEquals(12, key.sinceCastOnTarget(), 0.2);
         assertTrue(key.proc());
+        assertFalse(key.buffActive());
         assertEquals(Double.POSITIVE_INFINITY, key.sinceCast());
         assertFalse(key.ready(), "en recharge");
         assertEquals(key, state.keyForSpell(188389).orElseThrow());
@@ -156,6 +157,18 @@ class QrCodeV2ReaderTest {
 
         GameState state = QrCodeV2Reader.read(v2().set(11, 13, 0, 1, 1).set24(12, 13, 8004).frame()).orElseThrow();
         assertEquals(new GameState.TargetCast(true, 8004, true), state.targetCast());
+    }
+
+    @Test
+    void readsBuffAndProcFlags() {
+
+        GameState buffOnly = QrCodeV2Reader.read(v2().set(4, 9, 1, 2 / 3.0, 1).set24(5, 3, 6673).frame()).orElseThrow();
+        assertTrue(buffOnly.keys().get("3").buffActive());
+        assertFalse(buffOnly.keys().get("3").proc());
+
+        GameState both = QrCodeV2Reader.read(v2().set(4, 9, 1, 1, 1).set24(5, 3, 6673).frame()).orElseThrow();
+        assertTrue(both.keys().get("3").buffActive());
+        assertTrue(both.keys().get("3").proc());
     }
 
     @Test

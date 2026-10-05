@@ -104,6 +104,8 @@ public final class QrCodeV2Reader {
         int[] spell   = offset(spellCell(position), block);
 
         int rangeValue = qr.blue(state[0], state[1]);
+        // Historique, vert : proc + 2 x buff actif, sur 3
+        int flags      = (int) Math.round(qr.green(history[0], history[1]) / 85.0);
         KeyState.Range range = rangeValue > 191 ? KeyState.Range.IN : rangeValue < 64 ? KeyState.Range.OUT : KeyState.Range.NONE;
 
         return new KeyState(key,
@@ -114,7 +116,8 @@ public final class QrCodeV2Reader {
                             range,
                             seconds(qr.red(history[0], history[1]), true),
                             seconds(qr.blue(history[0], history[1]), true),
-                            qr.green(history[0], history[1]) > 127);
+                            (flags & 1) != 0,
+                            (flags & 2) != 0);
     }
 
     private static int[] offset(int[] cell, Block block) {
