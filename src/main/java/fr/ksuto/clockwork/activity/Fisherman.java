@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import fr.ksuto.bot.generated.enums.InterfaceEnum;
 import fr.ksuto.clockwork.ClockWorkUI;
-import fr.ksuto.clockwork.tools.ShowZone;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
@@ -51,7 +50,6 @@ public class Fisherman {
     private final Supplier<Optional<CastKey>> fishingKey;
     private long     lCurrentBaitTime = 0;
     private long     lCurrentLureTime = 0;
-    private ShowZone show;
     
     Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals, Supplier<Optional<CastKey>> fishingKey) {
         
@@ -180,7 +178,6 @@ public class Fisherman {
     
     void leave() {
         
-        show.dispose();
         
         for (int n = 1; n <= 3; n++) {
             peripherals.getKeyboard().pressKey(KeyEvent.VK_END);
@@ -197,10 +194,6 @@ public class Fisherman {
             logger.debug("WoW Width = " + iWoWSize);
         }
     
-        show = new ShowZone(peripherals);
-        Rectangle     area = maxSearchArea();
-        ShowZone.Zone zone = new ShowZone.Zone("Fishing Zone", area.width, area.height, area.x, area.y, 150, 150, 200, 0);
-        show.addZone(zone);
         
         peripherals.robot.delay(100);
         peripherals.robot.mouseMove(Screen.SCREEN_WIDTH / 2, Screen.SCREEN_HEIGHT / 2 + 10);
