@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Rotation ClockWork",
+  "description": "Rotation du cerveau Java de ClockWork : règles « lancer tel sort quand telle condition est vraie ». Les noms de sorts proposés pour « cast » viennent de rotation.spells.json, généré par ClockWork selon la classe.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "class": {
+      "description": "Classe visée : l'éditeur ne propose alors que les sorts de cette classe dans « cast ».",
+      "enum": ["DEATHKNIGHT", "DEMONHUNTER", "DRUID", "EVOKER", "HUNTER", "MAGE", "MONK", "PALADIN", "PRIEST", "ROGUE", "SHAMAN", "WARLOCK", "WARRIOR"]
+    },
+    "spec": {
+      "description": "Description libre de la spécialisation visée (affichée dans le journal).",
+      "type": "string"
+    },
+    "assisted": {
+      "description": "Recommandation de Blizzard (combat assisté) en repli : elle passe devant les règles de priorité inférieure. Suivie seulement contre une cible ennemie vivante.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "follow": {
+          "description": "Suivre la recommandation de Blizzard.",
+          "type": "boolean",
+          "default": false
+        },
+        "priority": {
+          "description": "Priorité de la recommandation face aux règles.",
+          "type": "integer",
+          "default": 50
+        }
+      }
+    },
+    "rules": {
+      "description": "Règles : la règle applicable de plus haute priorité l'emporte. Une règle s'applique si son sort est sur une touche (seule ou avec Maj, Ctrl, Alt), prêt (utilisable, sans temps de recharge, pas hors de portée) et si sa condition est vraie.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cast"],
+        "properties": {
+          "cast": {
+            "description": "Sort à lancer : nom tel qu'affiché en jeu (accents et casse indifférents pour ClockWork), ou identifiant.",
+            "type": ["string", "integer"]
+          },
+          "when": {
+            "description": "Condition JEXL (&&, ||, !, <, >, ==, calculs) ; toujours vraie si absente.\nplayer.health, player.power (%), player.combat, player.casting, player.aggro\ntarget.exists, target.hostile (ennemi vivant), target.combat, target.health, target.power (%)\nenemies : ennemis en combat à proximité ; assisted : nom du sort recommandé par Blizzard\nspell.ready('Nom'), spell.usable('Nom'), spell.inRange('Nom'), spell.proc('Nom'), spell.onBar('Nom')\nspell.cooldown('Nom') : secondes de recharge restantes\nspell.sinceCast('Nom'), spell.sinceCastOnTarget('Nom') : secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Priorité : la plus haute l'emporte.",
+            "type": "integer",
+            "default": 1
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    { "if": { "required": ["class"], "properties": { "class": { "const": "DEATHKNIGHT" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/DEATHKNIGHT" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "DEMONHUNTER" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/DEMONHUNTER" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "DRUID" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/DRUID" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "EVOKER" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/EVOKER" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "HUNTER" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/HUNTER" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "MAGE" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/MAGE" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "MONK" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/MONK" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "PALADIN" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/PALADIN" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "PRIEST" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/PRIEST" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "ROGUE" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/ROGUE" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "SHAMAN" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/SHAMAN" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "WARLOCK" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/WARLOCK" } } } } } } },
+    { "if": { "required": ["class"], "properties": { "class": { "const": "WARRIOR" } } },
+      "then": { "properties": { "rules": { "items": { "properties": { "cast": { "$ref": "rotation.spells.json#/definitions/WARRIOR" } } } } } } }
+  ]
+}

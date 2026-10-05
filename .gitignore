@@ -12,3 +12,8 @@ qrCode.jpg
 build/
 .kotlin/
 !gradle/wrapper/gradle-wrapper.jar
+
+### ClockWork ###
+# Configuration personnelle et liste des sorts générée
+rotation.yaml
+rotation.spells.json

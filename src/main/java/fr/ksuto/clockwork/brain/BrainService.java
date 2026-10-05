@@ -1,5 +1,9 @@
 package fr.ksuto.clockwork.brain;
 
+import fr.ksuto.clockwork.brain.data.GameInstall;
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
+import fr.ksuto.clockwork.brain.data.SpellSchema;
+import fr.ksuto.clockwork.brain.data.WagoTables;
 import fr.ksuto.clockwork.brain.decision.Brain;
 import fr.ksuto.clockwork.brain.decision.Rotation;
 import fr.ksuto.clockwork.brain.decision.Spellbook;
@@ -13,7 +17,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Cerveau du bot : rotation YAML et dictionnaire des sorts, rechargés à chaud dès que leur fichier change.
@@ -23,8 +31,13 @@ import java.util.Optional;
  *   <li>{@code clockwork.rotation} : la rotation, {@code rotation.yaml} dans le dossier de lancement par défaut ;
  *   sans ce fichier, le cerveau est inactif et l'addon décide seul ;</li>
  *   <li>{@code clockwork.wow} : dossier {@code _retail_} de WoW, pour trouver la SavedVariable CLOCKWORK_SPELLBOOK
- *   (WTF/Account/COMPTE/SavedVariables/ClockWork.lua).</li>
+ *   (WTF/Account/COMPTE/SavedVariables/ClockWork.lua) ;</li>
+ *   <li>{@code clockwork.cache} : cache des tables du jeu téléchargées depuis wago.tools, {@code ~/.clockwork/wago} par
+ *   défaut.</li>
  * </ul>
+ * La table complète des sorts est chargée en arrière-plan au démarrage (téléchargée une fois par version du jeu) : elle
+ * permet de nommer dans les règles des sorts absents de l'export de l'addon, et sert à générer
+ * {@value SpellSchema#FILE_NAME}, la liste des sorts par classe pour l'autocomplétion de l'éditeur.
  */
 public final class BrainService {
 
@@ -33,6 +46,7 @@ public final class BrainService {
     private final Brain brain = new Brain();
     private final Path  rotationFile;
     private final Path  wowFolder;
+    private final Path  cacheFolder;
 
     private Rotation  rotation;
     private long      rotationModified = -1;
@@ -40,16 +54,22 @@ public final class BrainService {
     private Path      spellbookFile;
     private long      spellbookModified = -1;
 
+    private volatile SpellDatabase database        = SpellDatabase.EMPTY;
+    private          SpellDatabase appliedDatabase = null;
+    private          boolean       databaseLoading = false;
+
     public BrainService() {
 
         this(Paths.get(System.getProperty("clockwork.rotation", "rotation.yaml")),
-             Paths.get(System.getProperty("clockwork.wow", "E:/Perso/World of Warcraft/_retail_")));
+             Paths.get(System.getProperty("clockwork.wow", "E:/Perso/World of Warcraft/_retail_")),
+             Paths.get(System.getProperty("clockwork.cache", System.getProperty("user.home") + "/.clockwork/wago")));
     }
 
-    public BrainService(Path rotationFile, Path wowFolder) {
+    public BrainService(Path rotationFile, Path wowFolder, Path cacheFolder) {
 
         this.rotationFile = rotationFile;
         this.wowFolder = wowFolder;
+        this.cacheFolder = cacheFolder;
     }
 
     /**
@@ -72,6 +92,67 @@ public final class BrainService {
 
         reloadRotation();
         reloadSpellbook();
+        if (rotation != null) {startDatabaseLoading();}
+        applyDatabase();
+    }
+
+    /**
+     * Charge la table complète des sorts dans un fil à part : le premier téléchargement prend quelques secondes.
+     */
+    private synchronized void startDatabaseLoading() {
+
+        if (databaseLoading) {return;}
+        databaseLoading = true;
+        Thread loader = new Thread(() -> {
+            try {
+                Optional<GameInstall> install = GameInstall.detect(wowFolder);
+                if (install.isEmpty()) {
+                    logger.warn("Version du jeu introuvable dans {} : table complète des sorts non chargée", wowFolder);
+                    return;
+                }
+                SpellDatabase loaded = SpellDatabase.load(new WagoTables(cacheFolder, install.get()));
+                logger.info("Table complète des sorts chargée : {} sort(s), {} {}, {} classe(s)", loaded.size(), install.get().build(),
+                            install.get().locale(), loaded.classes().size());
+                database = loaded;
+            }
+            catch (IOException | RuntimeException e) {
+                logger.warn("Table complète des sorts indisponible, seuls les sorts exportés par l'addon sont connus : {}", e.getMessage());
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "spell-database");
+        loader.setDaemon(true);
+        loader.start();
+    }
+
+    /**
+     * Donne la table complète au dictionnaire et régénère la liste des sorts de l'éditeur quand l'un ou l'autre change.
+     */
+    private void applyDatabase() {
+
+        SpellDatabase current = database;
+        if (current == appliedDatabase) {return;}
+        appliedDatabase = current;
+        spellbook.useDatabase(current);
+        writeSpellSchema(current);
+    }
+
+    private void writeSpellSchema(SpellDatabase current) {
+
+        Map<String, SortedSet<String>> spellsByClass = new HashMap<>();
+        for (String playerClass : current.classes()) {spellsByClass.put(playerClass, current.classSpellNames(playerClass));}
+        spellbook.namesByClass().forEach((playerClass, names) -> spellsByClass.computeIfAbsent(playerClass, c -> new TreeSet<>()).addAll(names));
+        if (spellsByClass.isEmpty()) {return;}
+
+        Path file = rotationFile.toAbsolutePath().resolveSibling(SpellSchema.FILE_NAME);
+        try {
+            SpellSchema.write(file, spellsByClass);
+            logger.info("Liste des sorts pour l'éditeur écrite : {}", file);
+        }
+        catch (IOException e) {
+            logger.warn("Liste des sorts pour l'éditeur non écrite ({}) : {}", file, e.getMessage());
+        }
     }
 
     private void reloadRotation() {
@@ -105,6 +186,7 @@ public final class BrainService {
             if (modified == spellbookModified) {return;}
             spellbookModified = modified;
             spellbook = Spellbook.load(spellbookFile);
+            appliedDatabase = null; // nouveau dictionnaire : lui redonner la table complète et régénérer la liste
             logger.info("Dictionnaire des sorts chargé : {} sort(s) depuis {}", spellbook.size(), spellbookFile);
         }
         catch (IOException | RuntimeException e) {

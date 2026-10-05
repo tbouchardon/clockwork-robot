@@ -1,25 +1,32 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Dictionnaire des sorts exporté par l'addon (SavedVariable CLOCKWORK_SPELLBOOK) : relie les noms utilisés dans les
  * règles aux identifiants que l'addon transmet pour chaque touche. Un nom désigne aussi la forme de base et la
  * variante du sort (ex. Horion de flammes 188389 et sa variante 470411).
+ * <p>
+ * Un nom absent de l'export (sort pas encore sur une barre au dernier /reload) est cherché dans la table complète des
+ * sorts du jeu ({@link SpellDatabase}), si elle est chargée.
  */
 public final class Spellbook {
 
     private final Map<Integer, String>      names = new HashMap<>();
     private final Map<String, Set<Integer>> ids   = new HashMap<>();
+    private final Map<String, SortedSet<String>> classNames = new HashMap<>();
+    private       SpellDatabase             database = SpellDatabase.EMPTY;
 
     /**
      * Charge le fichier SavedVariables de l'addon (WTF/Account/COMPTE/SavedVariables/ClockWork.lua).
@@ -36,12 +43,15 @@ public final class Spellbook {
         Object    root      = LuaTableParser.parse(savedVariables).get("CLOCKWORK_SPELLBOOK");
         if (!(root instanceof Map<?, ?> specs)) {return spellbook;}
 
-        for (Object spec : specs.values()) {
-            if (!(spec instanceof Map<?, ?> specTable) || !(specTable.get("spells") instanceof Map<?, ?> spells)) {continue;}
+        for (Map.Entry<?, ?> specEntry : specs.entrySet()) {
+            if (!(specEntry.getValue() instanceof Map<?, ?> specTable) || !(specTable.get("spells") instanceof Map<?, ?> spells)) {continue;}
+            // Clé « CLASSE-spécialisation », ex. SHAMAN-262
+            String playerClass = String.valueOf(specEntry.getKey()).split("-")[0];
             for (Map.Entry<?, ?> entry : spells.entrySet()) {
                 if (!(entry.getKey() instanceof Long id) || !(entry.getValue() instanceof Map<?, ?> spell)) {continue;}
                 Map<Object, Object> fields = (Map<Object, Object>) spell;
                 spellbook.add(id.intValue(), (String) fields.get("name"), asInt(fields.get("base")), asInt(fields.get("override")));
+                if (fields.get("name") instanceof String name) {spellbook.classNames.computeIfAbsent(playerClass, c -> new TreeSet<>()).add(name);}
             }
         }
         return spellbook;
@@ -57,7 +67,15 @@ public final class Spellbook {
      */
     static String normalize(String name) {
 
-        return Normalizer.normalize(name.trim(), Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+        return SpellDatabase.normalize(name);
+    }
+
+    /**
+     * Table complète des sorts du jeu, consultée pour les noms absents de l'export.
+     */
+    public void useDatabase(SpellDatabase database) {
+
+        this.database = database;
     }
 
     void add(int id, String name, int base, int override) {
@@ -76,7 +94,8 @@ public final class Spellbook {
     public Set<Integer> idsFor(String reference) {
 
         if (reference.matches("\\d+")) {return Set.of(Integer.parseInt(reference));}
-        return ids.getOrDefault(normalize(reference), Set.of());
+        Set<Integer> exported = ids.get(normalize(reference));
+        return exported != null ? exported : database.idsFor(reference);
     }
 
     /**
@@ -94,7 +113,17 @@ public final class Spellbook {
 
     public String nameOf(int id) {
 
-        return names.getOrDefault(id, String.valueOf(id));
+        String name = names.get(id);
+        if (name == null) {name = database.nameOf(id);}
+        return name != null ? name : String.valueOf(id);
+    }
+
+    /**
+     * Noms des sorts exportés par l'addon, par classe (SHAMAN, MAGE...).
+     */
+    public Map<String, SortedSet<String>> namesByClass() {
+
+        return classNames;
     }
 
     public int size() {

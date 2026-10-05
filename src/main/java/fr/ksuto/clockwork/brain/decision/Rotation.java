@@ -13,7 +13,8 @@ import java.util.Map;
  * Rotation décrite en YAML : une liste de règles « lancer tel sort quand telle condition est vraie », avec une priorité,
  * et éventuellement la recommandation de Blizzard en repli.
  * <pre>
- * spec: Chaman Élémentaire
+ * class: SHAMAN
+ * spec: Élémentaire
  * assisted:
  *   follow: true        # suivre la recommandation de Blizzard quand aucune règle plus prioritaire ne s'applique
  *   priority: 50
@@ -23,12 +24,13 @@ import java.util.Map;
  *     priority: 120
  * </pre>
  *
+ * @param playerClass      classe visée (SHAMAN, MAGE...), vide si non précisée : sert au schéma de l'éditeur
  * @param spec             description libre de la spécialisation visée
  * @param followAssisted   suivre la recommandation de Blizzard en repli
  * @param assistedPriority priorité de la recommandation de Blizzard
  * @param rules            règles, de la plus prioritaire à la moins prioritaire
  */
-public record Rotation(String spec, boolean followAssisted, int assistedPriority, List<Rule> rules) {
+public record Rotation(String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules) {
 
     /**
      * @param cast     nom du sort (ou identifiant numérique)
@@ -42,9 +44,10 @@ public record Rotation(String spec, boolean followAssisted, int assistedPriority
     static Rotation parse(String yaml, JexlEngine jexl) {
 
         Object root = new Yaml().load(yaml);
-        if (!(root instanceof Map<?, ?> map)) {throw new IllegalArgumentException("La rotation doit être un objet YAML (spec, assisted, rules)");}
+        if (!(root instanceof Map<?, ?> map)) {throw new IllegalArgumentException("La rotation doit être un objet YAML (class, spec, assisted, rules)");}
 
-        String spec = map.get("spec") == null ? "" : String.valueOf(map.get("spec"));
+        String playerClass = map.get("class") == null ? "" : String.valueOf(map.get("class"));
+        String spec        = map.get("spec") == null ? "" : String.valueOf(map.get("spec"));
 
         boolean follow   = false;
         int     priority = 50;
@@ -69,6 +72,6 @@ public record Rotation(String spec, boolean followAssisted, int assistedPriority
         // Tri stable : à priorité égale, l'ordre du fichier est conservé
         rules.sort(Comparator.comparingInt(Rule::priority).reversed());
 
-        return new Rotation(spec, follow, priority, List.copyOf(rules));
+        return new Rotation(playerClass, spec, follow, priority, List.copyOf(rules));
     }
 }

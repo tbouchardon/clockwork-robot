@@ -44,6 +44,13 @@ class BrainTest {
     }
 
     @Test
+    void rotationNamesItsClass() {
+
+        assertEquals("SHAMAN", brain.parse("class: SHAMAN\nrules: []\n").playerClass());
+        assertEquals("", brain.parse("rules: []\n").playerClass());
+    }
+
+    @Test
     void highestPriorityApplicableRuleWins() {
 
         String yaml = """

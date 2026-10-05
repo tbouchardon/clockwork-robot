@@ -1,8 +1,15 @@
 package fr.ksuto.clockwork.brain.decision;
 
+import fr.ksuto.clockwork.brain.data.SpellDatabaseFixture;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -73,6 +80,26 @@ class SpellbookTest {
     void numericReferencesAreIds() {
 
         assertEquals(Set.of(8004), new Spellbook().idsFor("8004"));
+    }
+
+    @Test
+    void unexportedNamesComeFromTheGameTables(@TempDir Path folder) throws IOException {
+
+        Spellbook spellbook = Spellbook.parse(SAVED_VARIABLES);
+        assertEquals(Set.of(), spellbook.idsFor("Afflux de soins"));
+
+        spellbook.useDatabase(SpellDatabaseFixture.create(folder));
+
+        assertEquals(Set.of(8004), spellbook.idsFor("afflux de soins"));
+        assertEquals(Set.of(188196), spellbook.idsFor("Éclair"), "l'export de l'addon prime sur les homonymes des tables");
+        assertEquals("Frappe primordiale", spellbook.nameOf(73899));
+    }
+
+    @Test
+    void exportedNamesAreGroupedByClass() {
+
+        assertEquals(new TreeSet<>(List.of("Explosion de lave", "Horion de flamme", "Horion de flammes", "Éclair")),
+                     Spellbook.parse(SAVED_VARIABLES).namesByClass().get("SHAMAN"));
     }
 
     @Test

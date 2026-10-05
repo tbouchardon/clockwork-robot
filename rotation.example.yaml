@@ -1,10 +1,13 @@
+# yaml-language-server: $schema=./rotation.schema.json
 # Rotation du cerveau Java de ClockWork.
 # Pour l'activer : copier ce fichier en rotation.yaml dans le dossier de lancement de ClockWork.
 # Il est rechargé à chaud à chaque enregistrement ; sans rotation.yaml, c'est l'addon qui décide seul.
 #
 # Une règle s'applique si son sort est sur une touche (seule ou avec Maj, Ctrl, Alt), prêt (utilisable, sans temps de recharge,
 # pas hors de portée) et si sa condition « when » est vraie. La plus haute priorité l'emporte.
-# Les sorts se désignent par leur nom (dictionnaire exporté par l'addon à chaque /reload) ou par leur identifiant.
+# Les sorts se désignent par leur nom (n'importe quel sort du jeu, d'après les tables de wago.tools et le dictionnaire
+# exporté par l'addon) ou par leur identifiant. Avec « class », l'éditeur (IntelliJ, VS Code + extension YAML) propose
+# les sorts de la classe grâce au schéma de la première ligne ; ClockWork génère cette liste dans rotation.spells.json.
 #
 # Dans les conditions (syntaxe JEXL : &&, ||, !, <, >, ==) :
 #   player.health  player.power   player.combat   player.casting      (% et booléens)
@@ -16,6 +19,7 @@
 #       secondes depuis le dernier lancement (toutes cibles / sur la cible actuelle), plafonnées à 60 s :
 #       au-delà, ou jamais lancé, la valeur est infinie
 
+class: SHAMAN
 spec: Chaman Élémentaire (exemple)
 
 # Recommandation de Blizzard en repli : elle passe devant les règles de priorité inférieure

@@ -92,7 +92,8 @@ Propriétés système (`-D…`) :
 | Propriété | Défaut | Rôle |
 |---|---|---|
 | `clockwork.rotation` | `rotation.yaml` | Fichier de rotation du cerveau. |
-| `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier de WoW, pour trouver le dictionnaire des sorts exporté par l'addon. |
+| `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier de WoW : dictionnaire des sorts exporté par l'addon, version du jeu (`../.build.info`) et langue (`WTF/Config.wtf`). |
+| `clockwork.cache` | `~/.clockwork/wago` | Cache des tables du jeu téléchargées depuis wago.tools. |
 
 ---
 
@@ -184,6 +185,8 @@ grille contient au moins un sort ; elle est vide juste après l'activation), `ke
   - Un nom désigne aussi la **forme de base** et la **variante** du sort. Un talent remplace souvent un sort par une
     variante d'un autre identifiant (ex. Explosion de lave 51505 et sa base 73899), et Blizzard recommande la base.
   - Un identifiant numérique est accepté directement à la place d'un nom.
+  - Un nom absent de l'export (sort pas encore sur une barre au dernier `/reload`) est cherché dans la **table complète
+    des sorts du jeu** (voir *Tables du jeu* ci-dessous).
 - **`Rotation`** est le contenu de `rotation.yaml`. Les conditions sont compilées en expressions JEXL au chargement.
   Une erreur de syntaxe est signalée et la rotation précédente est conservée.
 - **`Brain.decide(état, rotation, dictionnaire)`** :
@@ -211,6 +214,23 @@ Maj, Ctrl ou Alt.
 `rotation.yaml` et du fichier de SavedVariables, et recharge ce qui a changé. Sans `rotation.yaml`, le cerveau est
 inactif et l'addon décide seul.
 
+### Tables du jeu (wago.tools)
+
+Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
+
+1. lit la version du jeu dans `.build.info` (ligne du produit `wow`) et la langue dans `WTF/Config.wtf` (`textLocale`)
+   (`GameInstall`) ;
+2. télécharge les tables DB2 nécessaires au format CSV depuis wago.tools, une seule fois par version et par langue
+   (`WagoTables`, cache `<clockwork.cache>/<build>/<langue>/`) : environ 15 Mo, une dizaine de secondes ;
+3. construit `SpellDatabase` : tous les sorts du jeu (`SpellName`, plus de 400 000), et les sorts **de chaque classe**,
+   c'est-à-dire capacités de classe (`SkillLine`, `SkillLineAbility`), de spécialisation (`SpecializationSpells`) et
+   talents, avec les variantes qu'ils accordent (`SkillLineXTraitTree` → `TraitNode` → `TraitNodeEntry` →
+   `TraitDefinition`) : environ 300 noms par classe ;
+4. génère `rotation.spells.json` à côté de `rotation.yaml` : les noms de sorts de chaque classe, complétés par ceux
+   exportés par l'addon. Il est régénéré à chaque nouvel export de l'addon.
+
+Sans réseau ni cache, le cerveau fonctionne avec les seuls sorts exportés par l'addon.
+
 ---
 
 ## Écrire une rotation (`rotation.yaml`)
@@ -218,6 +238,8 @@ inactif et l'addon décide seul.
 Copier `rotation.example.yaml` en `rotation.yaml` dans le dossier de lancement (`rotation.yaml` n'est pas versionné).
 
 ```yaml
+# yaml-language-server: $schema=./rotation.schema.json
+class: SHAMAN
 spec: Chaman Élémentaire
 
 # Recommandation de Blizzard en repli : elle passe devant les règles de priorité inférieure
@@ -240,6 +262,7 @@ rules:
     priority: 10
 ```
 
+- `class` : classe visée (`SHAMAN`, `MAGE`…), pour l'autocomplétion des sorts dans l'éditeur.
 - `cast` : nom du sort (tel qu'affiché en jeu, accents et casse indifférents) ou identifiant.
 - `when` : condition JEXL (`&&`, `||`, `!`, `<`, `>`, `==`, arithmétique). Si elle est absente, la règle est toujours
   vraie.
@@ -259,12 +282,22 @@ Variables disponibles dans `when` :
 | `spell.cooldown('Nom')` | Secondes de recharge restantes. |
 | `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. |
 
+### Autocomplétion dans l'éditeur
+
+La première ligne associe le fichier au **schéma JSON** `rotation.schema.json` (versionné). IntelliJ la reconnaît
+nativement, VS Code avec l'extension YAML de Red Hat. On obtient l'autocomplétion des clés, la validation à la frappe
+(clé inconnue, type faux, règle sans `cast`) et la documentation au survol, dont la liste des variables de `when`.
+
+Le schéma est **conditionnel** : selon `class` (`if` / `then`), `cast` renvoie vers la liste de la classe dans
+`rotation.spells.json`, générée par ClockWork (voir *Tables du jeu*). L'éditeur ne propose alors que les sorts de la
+classe, et signale un nom inconnu. Le contenu de `when` reste du texte libre pour le schéma : une erreur JEXL est
+signalée par ClockWork au chargement.
+
 Le temps depuis le dernier lancement **sur la cible** est le substitut aux debuffs : les auras sont illisibles en combat
 depuis la 12.x.
 
 Limites actuelles :
 
-- seuls les sorts présents sur les **barres d'action** au dernier `/reload` sont connus par leur nom ;
 - touches décrites : `1`-`0`, `)`, `=`, `Q D R T F G`, seules ou avec un modificateur ;
 - pas d'état entre deux décisions (séquences, variables).
 
@@ -298,6 +331,7 @@ src/main/java/fr/ksuto/clockwork/
 │   └── Healer.java             (historique)
 ├── brain/
 │   ├── BrainService.java       rechargement à chaud de la rotation et du dictionnaire
+│   ├── data/                   GameInstall, WagoTables, Csv, SpellDatabase, SpellSchema (tables du jeu)
 │   ├── perception/             QrCodeV2Reader, GameState, KeyState, KeyCombo
 │   └── decision/               Brain, Rotation, Spellbook, SpellView, LuaTableParser
 ├── entities/
@@ -320,7 +354,9 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 
 - `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 et v3 (blocs à modificateurs, compteur, cible morte).
 - `BrainTest` : priorités, conditions, recommandation de Blizzard (formes liées, cible requise), garde-fous.
-- `SpellbookTest` : lecture de la SavedVariable, noms sans accents, variantes.
+- `SpellbookTest` : lecture de la SavedVariable, noms sans accents, variantes, repli sur les tables du jeu.
+- `SpellDatabaseTest` : CSV de wago.tools, sorts par classe (talents compris), version et langue du jeu, liste pour
+  l'éditeur.
 
 ---
 
