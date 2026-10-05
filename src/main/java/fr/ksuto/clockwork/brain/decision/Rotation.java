@@ -32,8 +32,29 @@ import java.util.Map;
  * @param followAssisted   suivre la recommandation de Blizzard en repli
  * @param assistedPriority priorité de la recommandation de Blizzard
  * @param rules            règles, de la plus prioritaire à la moins prioritaire
+ * @param stopCasting      façon d'interrompre sa propre incantation quand une règle plus prioritaire s'applique
  */
-public record Rotation(String name, String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules) {
+public record Rotation(String name, String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules,
+                       StopCasting stopCasting) {
+
+    /**
+     * Interrompre sa propre incantation : WoW refuse un autre sort pendant une incantation (pas pendant une
+     * canalisation, qu'il coupe de lui-même). Se déplacer l'interrompt.
+     */
+    public enum StopCasting {
+        /**
+         * Sauter (par défaut) : le personnage reste en place ; pendant le saut, seuls les sorts instantanés partent.
+         */
+        JUMP,
+        /**
+         * Petit pas en arrière : immédiat, mais le personnage bouge un peu.
+         */
+        BACK,
+        /**
+         * Rien : appuyer directement (sorts utilisables pendant une incantation, macros /stopcasting sur la barre).
+         */
+        NONE
+    }
 
     /**
      * @param cast     nom du sort (ou identifiant numérique)
@@ -76,7 +97,14 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
         // Tri stable : à priorité égale, l'ordre du fichier est conservé
         rules.sort(Comparator.comparingInt(Rule::priority).reversed());
 
-        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules));
+        StopCasting stopCasting = map.get("stopCasting") == null ? StopCasting.JUMP : switch (String.valueOf(map.get("stopCasting")).toLowerCase()) {
+            case "jump" -> StopCasting.JUMP;
+            case "back" -> StopCasting.BACK;
+            case "none" -> StopCasting.NONE;
+            default -> throw new IllegalArgumentException("stopCasting inconnu : " + map.get("stopCasting") + " (jump, back ou none)");
+        };
+
+        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting);
     }
 
     /**

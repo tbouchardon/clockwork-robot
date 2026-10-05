@@ -48,6 +48,15 @@
         }
       }
     },
+    "stopCasting": {
+      "description": "Interrompre sa propre incantation quand une règle plus prioritaire s'applique (WoW refuse un autre sort pendant une incantation ; une canalisation est coupée par le jeu) : jump (saut, par défaut : le personnage reste en place, seuls les sorts instantanés partent pendant le saut), back (petit recul, immédiat), none (rien : macros /stopcasting sur la barre).",
+      "enum": [
+        "jump",
+        "back",
+        "none"
+      ],
+      "default": "jump"
+    },
     "rules": {
       "description": "Règles : la règle applicable de plus haute priorité l'emporte. Une règle s'applique si son sort est sur une touche (seule ou avec Maj, Ctrl, Alt), prêt (utilisable, sans temps de recharge, pas hors de portée) et si sa condition est vraie.",
       "type": "array",

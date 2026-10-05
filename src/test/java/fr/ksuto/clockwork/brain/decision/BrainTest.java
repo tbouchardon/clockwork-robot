@@ -280,6 +280,32 @@ class BrainTest {
     }
 
     @Test
+    void higherPriorityRuleStopsAHardCastFirst() {
+
+        String yaml = "rules:\n  - cast: Horion de flammes\n    priority: 120\n  - cast: Éclair\n    priority: 10\n";
+        GameState.Cast boltCasting = new GameState.Cast(188196, false, 1.5);
+
+        // Éclair lancé par sa règle (10) ; pendant l'incantation, Horion (120) redevient disponible
+        Rotation rotation = brain.parse(yaml);
+        brain.decide(state(0, 80, ready("1", 188196), onCooldown("3", 188389)), rotation, spellbook).orElseThrow();
+        Brain.Decision jump = brain.decide(casting(boltCasting, ready("1", 188196), ready("3", 188389)), rotation, spellbook).orElseThrow();
+        assertEquals("3", jump.key());
+        assertEquals(Rotation.StopCasting.JUMP, jump.stopFirst(), "saut par défaut pour couper l'incantation");
+
+        Rotation back = brain.parse("stopCasting: back\n" + yaml);
+        brain.decide(state(0, 80, ready("1", 188196), onCooldown("3", 188389)), back, spellbook).orElseThrow();
+        assertEquals(Rotation.StopCasting.BACK, brain.decide(casting(boltCasting, ready("1", 188196), ready("3", 188389)), back, spellbook).orElseThrow().stopFirst());
+
+        brain.decide(state(0, 80, ready("1", 188196), onCooldown("3", 188389)), rotation, spellbook).orElseThrow();
+        assertTrue(brain.decide(casting(boltCasting, ready("1", 188196), onCooldown("3", 188389)), rotation, spellbook).isEmpty(),
+                   "sa propre règle ne coupe pas l'incantation");
+        assertEquals(Rotation.StopCasting.NONE,
+                     brain.decide(casting(new GameState.Cast(188196, false, 0.3), ready("1", 188196), onCooldown("3", 188389)), rotation, spellbook)
+                          .orElseThrow().stopFirst(), "fin d'incantation : file d'attente, rien à couper");
+        assertThrows(IllegalArgumentException.class, () -> brain.parse("stopCasting: danser\nrules: []\n"));
+    }
+
+    @Test
     void neverInterruptsAChannelItDidNotStart() {
 
         Rotation rotation = brain.parse("rules:\n  - cast: Horion de flammes\n    priority: 120\n");

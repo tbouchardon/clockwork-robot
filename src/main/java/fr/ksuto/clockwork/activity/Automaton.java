@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.brain.BrainService;
 import fr.ksuto.clockwork.brain.decision.Brain;
+import fr.ksuto.clockwork.brain.decision.Rotation;
 import fr.ksuto.clockwork.brain.perception.GameState;
 import fr.ksuto.clockwork.brain.perception.KeyCombo;
 import fr.ksuto.clockwork.brain.perception.QrCodeV2Reader;
@@ -161,6 +162,7 @@ public class Automaton {
         boolean shiftModifier        = false;
         boolean ctrlModifier         = false;
         boolean altModifier          = false;
+        Rotation.StopCasting stopFirst = Rotation.StopCasting.NONE;
         
         checkParty(qrCode.getCapturedQrCode(), qrCode);
         
@@ -227,6 +229,7 @@ public class Automaton {
                 ctrlModifier = combo != null && combo.ctrl();
                 shiftModifier = combo != null && combo.shift();
                 bestPriorityDuration = 0;
+                stopFirst = decision.map(Brain.Decision::stopFirst).orElse(Rotation.StopCasting.NONE);
                 decision.ifPresent(d -> logger.debug("Cerveau : touche {} ({}, priorité {})", d.key(), d.reason(), d.priority()));
             }
             else if (state.isEmpty()) {
@@ -238,6 +241,7 @@ public class Automaton {
         
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
+            stopCasting(stopFirst);
             hitKey(key2hit, altModifier, ctrlModifier, shiftModifier, bestPriorityDuration);
         }
         
@@ -260,6 +264,24 @@ public class Automaton {
         logger.debug("Key2hit is null");
     }
     
+    /**
+     * Interrompt sa propre incantation avant un sort plus prioritaire (WoW refuserait le sort) : se déplacer la coupe.
+     */
+    private void stopCasting(Rotation.StopCasting mode) {
+
+        int key = switch (mode) {
+            case JUMP -> KeyEvent.VK_SPACE;
+            case BACK -> KeyEvent.VK_DOWN; // recul, comme TomTom
+            case NONE -> 0;
+        };
+        if (key == 0) {return;}
+        logger.debug("Cerveau : incantation interrompue ({})", mode);
+        peripherals.robot.keyPress(key);
+        peripherals.robot.delay(60);
+        peripherals.robot.keyRelease(key);
+        peripherals.robot.delay(60);
+    }
+
     /**
      * Journalise l'état de l'automate quand il change, pour savoir pourquoi il ne fait rien.
      */

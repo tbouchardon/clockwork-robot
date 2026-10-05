@@ -202,8 +202,10 @@ grille contient au moins un sort ; elle est vide juste après l'activation), `ke
      prioritaire** peut agir :
      - **canalisation** (Drain de vie…) : une règle plus prioritaire la coupe (le jeu arrête la canalisation), sa propre
        règle ne la relance pas. Un drain de remplissage cède donc à tout ce qui compte, un drain prioritaire va au bout ;
-     - **incantation** (Éclair…) : le jeu refuse les autres sorts ; le cerveau attend les dernières 0,4 s, où le sort
-       suivant part en file d'attente (enchaînement sans temps mort) ;
+     - **incantation** (Éclair…) : le jeu refuse les autres sorts. Une règle plus prioritaire l'interrompt d'abord
+       selon `stopCasting` (saut par défaut, recul, ou rien pour qui préfère des macros `/stopcasting`), puis lance son
+       sort. Sinon, le cerveau attend les dernières 0,4 s, où le sort suivant part en file d'attente (enchaînement sans
+       temps mort) ;
      - sort lancé à la main ou inconnu : jamais coupé ;
   3. parcourt les règles par **priorité décroissante**. Une règle s'applique si son sort est sur une touche (n'importe
      quelle combinaison), que la touche est prête (`ready`) et que la condition `when` est vraie ;
@@ -299,6 +301,10 @@ rules:
 ```
 
 - `name` : nom libre, affiché dans le journal.
+- `stopCasting` : façon d'interrompre sa propre incantation quand une règle plus prioritaire s'applique : `jump` (saut,
+  par défaut : le personnage reste en place, seuls les sorts instantanés partent pendant le saut), `back` (petit recul,
+  immédiat mais le personnage bouge un peu), `none` (rien : sorts utilisables pendant l'incantation, macros
+  `/stopcasting`).
 - `class` : classe visée (`SHAMAN`, `MAGE`…).
 - `spec` : spécialisation visée, nom affiché en jeu (`Élémentaire`, `Farouche`…) ou identifiant (`262`). Sans `spec`, la
   rotation vaut pour toutes les spécialisations de la classe ; une rotation de la spécialisation passe devant.

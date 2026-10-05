@@ -47,8 +47,15 @@ public final class Brain {
      * @param spellId  sort lancé
      * @param priority priorité de la règle retenue
      * @param reason   règle ou recommandation à l'origine du choix
+     * @param stopFirst interrompre d'abord sa propre incantation (NONE si inutile)
      */
-    public record Decision(String key, int spellId, int priority, String reason) {}
+    public record Decision(String key, int spellId, int priority, String reason, Rotation.StopCasting stopFirst) {
+
+        Decision(String key, int spellId, int priority, String reason) {
+
+            this(key, spellId, priority, reason, Rotation.StopCasting.NONE);
+        }
+    }
 
     public Rotation parse(String yaml) {
 
@@ -65,6 +72,9 @@ public final class Brain {
         OptionalInt floor = priorityFloor(state, database);
         if (floor.isEmpty()) {return Optional.empty();}
         int minimum = floor.getAsInt();
+        // Couper sa propre incantation (hors fin d'incantation, où le sort suivant part en file d'attente)
+        Rotation.StopCasting stop = state.casting() && !state.cast().channeling() && state.cast().remaining() > QUEUE_WINDOW
+                                    ? rotation.stopCasting() : Rotation.StopCasting.NONE;
 
         MapContext context = context(state, database);
         SpellView  spells  = new SpellView(state, database);
@@ -75,7 +85,7 @@ public final class Brain {
 
             if (rotation.followAssisted() && rotation.assistedPriority() > rule.priority() && rotation.assistedPriority() > minimum) {
                 Optional<Decision> assisted = assisted(state, rotation, database);
-                if (assisted.isPresent()) {return remember(assisted);}
+                if (assisted.isPresent()) {return remember(assisted, stop);}
             }
 
             Optional<KeyState> key = spells.key(rule.cast());
@@ -85,20 +95,21 @@ public final class Brain {
             }
             if (!key.get().ready() || !holds(rule, context)) {continue;}
 
-            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle « " + rule.cast() + " »")));
+            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle « " + rule.cast() + " »")), stop);
         }
 
         if (!rotation.followAssisted() || rotation.assistedPriority() <= minimum) {return Optional.empty();}
-        return remember(assisted(state, rotation, database));
+        return remember(assisted(state, rotation, database), stop);
     }
 
     /**
      * Priorité qu'une règle doit dépasser pour agir maintenant :
      * <ul>
      *   <li>rien en cours : aucune limite ;</li>
-     *   <li>incantation (Éclair) : WoW refuse les autres sorts ; on attend ses dernières {@value #QUEUE_WINDOW} s, où le
-     *   sort suivant est mis en file d'attente ;</li>
-     *   <li>canalisation (Drain de vie) : la priorité de la règle qui l'a lancée ; une règle plus prioritaire la coupe,
+     *   <li>dernières {@value #QUEUE_WINDOW} s d'une incantation : aucune limite, le sort suivant est mis en file
+     *   d'attente ;</li>
+     *   <li>incantation (Éclair) ou canalisation (Drain de vie) : la priorité de la règle qui l'a lancée ; une règle plus
+     *   prioritaire l'interrompt (la canalisation est coupée par le jeu, l'incantation selon {@link Rotation#stopCasting()}),
      *   sa propre règle ne la relance pas ;</li>
      *   <li>sort inconnu ou lancé à la main : on ne le coupe pas.</li>
      * </ul>
@@ -110,15 +121,16 @@ public final class Brain {
         if (!state.casting()) {return OptionalInt.of(Integer.MIN_VALUE);}
         GameState.Cast cast = state.cast();
         if (cast.spellId() == 0) {return OptionalInt.empty();}
-        if (!cast.channeling()) {return cast.remaining() <= QUEUE_WINDOW ? OptionalInt.of(Integer.MIN_VALUE) : OptionalInt.empty();}
+        if (!cast.channeling() && cast.remaining() <= QUEUE_WINDOW) {return OptionalInt.of(Integer.MIN_VALUE);}
         if (lastDecision != null && database.related(cast.spellId()).contains(lastDecision.spellId())) {return OptionalInt.of(lastDecision.priority());}
         return OptionalInt.empty();
     }
 
-    private Optional<Decision> remember(Optional<Decision> decision) {
+    private Optional<Decision> remember(Optional<Decision> decision, Rotation.StopCasting stop) {
 
-        decision.ifPresent(d -> lastDecision = d);
-        return decision;
+        Optional<Decision> result = decision.map(d -> new Decision(d.key(), d.spellId(), d.priority(), d.reason(), stop));
+        result.ifPresent(d -> lastDecision = d);
+        return result;
     }
 
     private Optional<Decision> assisted(GameState state, Rotation rotation, SpellDatabase database) {
