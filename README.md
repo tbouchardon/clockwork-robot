@@ -159,6 +159,7 @@ historique). Il produit un `GameState` immuable :
 | `facing` | Direction du personnage, en radians. |
 | `recommendedSpell` | Sort recommandé par Blizzard (`C_AssistedCombat`), forme de base. |
 | `form`, `comboPoints` | Sort de la forme active (0 si aucune), points de combo. |
+| `targetCast` | Sort incanté par la cible : en cours, identifiant (0 si secret), interruptible. |
 | `cast` | Sort en cours : identifiant, canalisation, secondes restantes (`Cast.NONE` si aucun). |
 | `playerDead`, `mounted`, `targetTapDenied` | Garde-fous : joueur mort, sur une monture, cible marquée par un autre joueur. |
 | `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
@@ -325,6 +326,7 @@ Variables disponibles dans `when` :
 | `player.combo` | Points de combo. |
 | `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = cible attaquable : ennemie ou neutre (rouge ou jaune), **vivante**, non marquée par un autre joueur. |
 | `target.health`, `target.power` | Pourcentages. |
+| `target.casting`, `target.interruptible`, `target.castSpell` | La cible incante, son sort est interruptible (vrai sauf indication contraire du jeu), nom du sort (`''` si inconnu : il peut être secret). Ex. : `target.casting && target.interruptible` pour une interruption. |
 | `enemies` | Nombre d'ennemis en combat à proximité. |
 | `assisted` | Nom du sort recommandé par Blizzard. |
 | `spell.ready('Nom')`, `spell.usable('Nom')`, `spell.inRange('Nom')`, `spell.proc('Nom')`, `spell.onBar('Nom')` | Booléens. |

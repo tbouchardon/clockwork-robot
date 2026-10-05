@@ -93,6 +93,7 @@ public final class QrCodeV2Reader {
                 version == VERSION ? read24(qr, 11, 2) : 0,
                 qr.rgb(3, 2) == Rgb.ARGB_WHITE ? new GameState.Cast(read24(qr, 9, 13), qr.green(10, 13) > 127, qr.red(10, 13) * CAST_HORIZON / 255)
                                                : GameState.Cast.NONE,
+                qr.green(11, 13) > 127 ? new GameState.TargetCast(true, read24(qr, 12, 13), qr.blue(11, 13) > 127) : GameState.TargetCast.NONE,
                 keys));
     }
 

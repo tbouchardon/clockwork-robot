@@ -29,11 +29,12 @@ import java.util.Optional;
  * @param specId           spécialisation active (identifiant du jeu : 262 = Élémentaire), 0 si inconnue
  * @param frame            compteur de mises à jour de l'addon (v3, 0 en v2) : inchangé, la grille est figée
  * @param cast             sort en cours d'incantation ou de canalisation ({@link Cast#NONE} si aucun)
+ * @param targetCast       sort incanté par la cible ({@link TargetCast#NONE} si aucun)
  * @param keys             état de chaque touche, par nom de touche
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, Map<String, KeyState> keys) {
+                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys) {
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat
@@ -54,6 +55,18 @@ public record GameState(double playerHealth, double playerPower, boolean hasTarg
     public record Cast(int spellId, boolean channeling, double remaining) {
 
         public static final Cast NONE = new Cast(0, false, 0);
+    }
+
+    /**
+     * Sort incanté par la cible, pour l'interrompre.
+     *
+     * @param casting       la cible incante ou canalise
+     * @param spellId       identifiant du sort (0 si aucun, ou secret)
+     * @param interruptible le sort peut être interrompu (vrai sauf indication contraire du jeu)
+     */
+    public record TargetCast(boolean casting, int spellId, boolean interruptible) {
+
+        public static final TargetCast NONE = new TargetCast(false, 0, false);
     }
 
     /**

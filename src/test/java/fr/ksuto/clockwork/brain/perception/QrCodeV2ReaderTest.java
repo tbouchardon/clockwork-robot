@@ -150,6 +150,15 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsTheTargetCast() {
+
+        assertEquals(GameState.TargetCast.NONE, QrCodeV2Reader.read(v2().frame()).orElseThrow().targetCast());
+
+        GameState state = QrCodeV2Reader.read(v2().set(11, 13, 0, 1, 1).set24(12, 13, 8004).frame()).orElseThrow();
+        assertEquals(new GameState.TargetCast(true, 8004, true), state.targetCast());
+    }
+
+    @Test
     void readsLetterKeysOnRow12() {
 
         // Touche "F" : position 17 -> état (6, 12), historique (12, 12), sort (8, 2)

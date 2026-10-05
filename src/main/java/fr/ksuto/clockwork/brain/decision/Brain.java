@@ -173,7 +173,9 @@ public final class Brain {
                                             Map.entry("form", state.form() == 0 ? "" : database.nameOf(state.form())),
                                             Map.entry("combo", state.comboPoints())));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.attackableTarget(), "combat", state.targetInCombat(),
-                                     "health", state.targetHealth(), "power", state.targetPower()));
+                                     "health", state.targetHealth(), "power", state.targetPower(),
+                                     "casting", state.targetCast().casting(), "interruptible", state.targetCast().interruptible(),
+                                     "castSpell", state.targetCast().spellId() == 0 ? "" : database.nameOf(state.targetCast().spellId())));
         context.set("enemies", state.enemies());
         context.set("assisted", state.recommendedSpell() == 0 ? "" : database.nameOf(state.recommendedSpell()));
         context.set("spell", new SpellView(state, database));
