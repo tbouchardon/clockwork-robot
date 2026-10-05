@@ -71,7 +71,12 @@ class SpellDatabaseTest {
                 """, StandardCharsets.UTF_8);
         Files.writeString(retail.resolve("WTF").resolve("Config.wtf"), "SET locale \"x\"\nSET textLocale \"frFR\"\n", StandardCharsets.UTF_8);
 
-        assertEquals(new GameInstall("12.1.0.69933", "frFR"), GameInstall.detect(retail).orElseThrow());
+        assertEquals(new GameInstall("wow", "12.1.0.69933", "frFR"), GameInstall.detect(retail).orElseThrow());
+
+        // Vanilla : le produit vient de .flavor.info du dossier du client
+        Path vanilla = Files.createDirectories(retail.getParent().resolve("_classic_era_"));
+        Files.writeString(vanilla.resolve(".flavor.info"), "Product Flavor!STRING:0\nwow_classic_era\n", StandardCharsets.UTF_8);
+        assertEquals(new GameInstall("wow_classic_era", "1.15.7.61582", "enUS"), GameInstall.detect(vanilla).orElseThrow());
         assertTrue(GameInstall.detect(folder.resolve("ailleurs").resolve("_retail_")).isEmpty());
     }
 

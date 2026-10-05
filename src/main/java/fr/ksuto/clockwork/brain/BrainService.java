@@ -2,8 +2,8 @@ package fr.ksuto.clockwork.brain;
 
 import fr.ksuto.clockwork.brain.data.GameInstall;
 import fr.ksuto.clockwork.brain.data.SpellDatabase;
+import fr.ksuto.clockwork.brain.data.SpellDatabaseLoader;
 import fr.ksuto.clockwork.brain.data.SpellSchema;
-import fr.ksuto.clockwork.brain.data.WagoTables;
 import fr.ksuto.clockwork.brain.decision.Brain;
 import fr.ksuto.clockwork.brain.decision.Rotation;
 import fr.ksuto.clockwork.brain.decision.Spellbook;
@@ -35,7 +35,8 @@ import java.util.TreeSet;
  *   <li>{@code clockwork.cache} : cache des tables du jeu téléchargées depuis wago.tools, {@code ~/.clockwork/wago} par
  *   défaut.</li>
  * </ul>
- * La table complète des sorts est chargée en arrière-plan au démarrage (téléchargée une fois par version du jeu) : elle
+ * La table complète des sorts est chargée en arrière-plan au démarrage (téléchargée une fois par version du jeu, avec
+ * replis sur une version proche ou sur le cache, voir {@link SpellDatabaseLoader}) : elle
  * permet de nommer dans les règles des sorts absents de l'export de l'addon, et sert à générer
  * {@value SpellSchema#FILE_NAME}, la liste des sorts par classe pour l'autocomplétion de l'éditeur.
  */
@@ -110,10 +111,10 @@ public final class BrainService {
                     logger.warn("Version du jeu introuvable dans {} : table complète des sorts non chargée", wowFolder);
                     return;
                 }
-                SpellDatabase loaded = SpellDatabase.load(new WagoTables(cacheFolder, install.get()));
-                logger.info("Table complète des sorts chargée : {} sort(s), {} {}, {} classe(s)", loaded.size(), install.get().build(),
-                            install.get().locale(), loaded.classes().size());
-                database = loaded;
+                SpellDatabaseLoader.Loaded loaded = new SpellDatabaseLoader(cacheFolder).load(install.get());
+                logger.info("Table complète des sorts chargée : {} sort(s), {} {} {}, {} classe(s)", loaded.database().size(),
+                            loaded.install().product(), loaded.install().build(), loaded.install().locale(), loaded.database().classes().size());
+                database = loaded.database();
             }
             catch (IOException | RuntimeException e) {
                 logger.warn("Table complète des sorts indisponible, seuls les sorts exportés par l'addon sont connus : {}", e.getMessage());

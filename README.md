@@ -92,7 +92,7 @@ Propriétés système (`-D…`) :
 | Propriété | Défaut | Rôle |
 |---|---|---|
 | `clockwork.rotation` | `rotation.yaml` | Fichier de rotation du cerveau. |
-| `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier de WoW : dictionnaire des sorts exporté par l'addon, version du jeu (`../.build.info`) et langue (`WTF/Config.wtf`). |
+| `clockwork.wow` | `E:/Perso/World of Warcraft/_retail_` | Dossier du client (`_retail_`, `_classic_era_`…) : dictionnaire des sorts exporté par l'addon, produit, version et langue du jeu. |
 | `clockwork.cache` | `~/.clockwork/wago` | Cache des tables du jeu téléchargées depuis wago.tools. |
 
 ---
@@ -218,10 +218,12 @@ inactif et l'addon décide seul.
 
 Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
 
-1. lit la version du jeu dans `.build.info` (ligne du produit `wow`) et la langue dans `WTF/Config.wtf` (`textLocale`)
-   (`GameInstall`) ;
-2. télécharge les tables DB2 nécessaires au format CSV depuis wago.tools, une seule fois par version et par langue
-   (`WagoTables`, cache `<clockwork.cache>/<build>/<langue>/`) : environ 15 Mo, une dizaine de secondes ;
+1. identifie le client (`GameInstall`) : le **produit** dans `.flavor.info` du dossier du client (`wow` pour retail,
+   `wow_classic_era` pour vanilla…), sa **version** dans `.build.info` (dossier parent) et la **langue** dans
+   `WTF/Config.wtf` (`textLocale`) ;
+2. télécharge les tables DB2 au format CSV depuis wago.tools, une seule fois par produit, version et langue
+   (`WagoTables`, cache `<clockwork.cache>/<produit>/<version>/<langue>/`) : environ 15 Mo, une dizaine de secondes.
+   Seule `SpellName` est indispensable : une table absente de la version (talents en vanilla) est traitée comme vide ;
 3. construit `SpellDatabase` : tous les sorts du jeu (`SpellName`, plus de 400 000), et les sorts **de chaque classe**,
    c'est-à-dire capacités de classe (`SkillLine`, `SkillLineAbility`), de spécialisation (`SpecializationSpells`) et
    talents, avec les variantes qu'ils accordent (`SkillLineXTraitTree` → `TraitNode` → `TraitNodeEntry` →
@@ -229,7 +231,18 @@ Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
 4. génère `rotation.spells.json` à côté de `rotation.yaml` : les noms de sorts de chaque classe, complétés par ceux
    exportés par l'addon. Il est régénéré à chaque nouvel export de l'addon.
 
-Sans réseau ni cache, le cerveau fonctionne avec les seuls sorts exportés par l'addon.
+Le chargement (`SpellDatabaseLoader`) a des replis :
+
+| Situation | Comportement |
+|---|---|
+| Version connue de wago.tools | Téléchargée (ou lue en cache). Les **autres versions du même produit** sont ensuite supprimées du cache ; retail et vanilla gardent chacun le leur. |
+| Version inconnue (client de serveur privé modifié, version sortie dans l'heure) | Version connue la plus proche du même produit (`/api/builds`) : la plus récente qui ne dépasse pas la nôtre, sinon la plus ancienne. Les noms de sorts changent très peu d'une version à l'autre. |
+| Pas de réseau | Version la plus récente entièrement en cache pour ce produit et cette langue. |
+| Rien de tout cela | Le cerveau fonctionne avec les seuls sorts exportés par l'addon. |
+
+Une mise à jour du client par le launcher change la version : au démarrage suivant, les tables sont retéléchargées une
+fois. Pour un autre client (vanilla, Forever…), il suffit de pointer `clockwork.wow` vers son dossier
+(`…/_classic_era_`).
 
 ---
 
@@ -331,7 +344,7 @@ src/main/java/fr/ksuto/clockwork/
 │   └── Healer.java             (historique)
 ├── brain/
 │   ├── BrainService.java       rechargement à chaud de la rotation et du dictionnaire
-│   ├── data/                   GameInstall, WagoTables, Csv, SpellDatabase, SpellSchema (tables du jeu)
+│   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
 │   ├── perception/             QrCodeV2Reader, GameState, KeyState, KeyCombo
 │   └── decision/               Brain, Rotation, Spellbook, SpellView, LuaTableParser
 ├── entities/
@@ -355,8 +368,9 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 - `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 et v3 (blocs à modificateurs, compteur, cible morte).
 - `BrainTest` : priorités, conditions, recommandation de Blizzard (formes liées, cible requise), garde-fous.
 - `SpellbookTest` : lecture de la SavedVariable, noms sans accents, variantes, repli sur les tables du jeu.
-- `SpellDatabaseTest` : CSV de wago.tools, sorts par classe (talents compris), version et langue du jeu, liste pour
-  l'éditeur.
+- `SpellDatabaseTest` : CSV de wago.tools, sorts par classe (talents compris), produit, version et langue du jeu, liste
+  pour l'éditeur.
+- `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 
 ---
 

@@ -22,7 +22,7 @@ public final class SpellDatabase {
     public static final SpellDatabase EMPTY = new SpellDatabase();
 
     /**
-     * Tables nécessaires, à télécharger depuis wago.tools.
+     * Tables utilisées, à télécharger depuis wago.tools.
      */
     public static final String[] TABLES = {"SpellName", "ChrClasses", "ChrSpecialization", "SkillLine", "SkillLineAbility", "SpecializationSpells",
                                     "SkillLineXTraitTree", "TraitNode", "TraitNodeXTraitNodeEntry", "TraitNodeEntry", "TraitDefinition"};
@@ -45,10 +45,24 @@ public final class SpellDatabase {
                          .toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Seule SpellName est indispensable : une autre table absente de cette version du jeu (ex. talents en vanilla) est
+     * traitée comme vide.
+     *
+     * @throws WagoTables.MissingTableException si la version est inconnue de wago.tools (SpellName introuvable)
+     */
     public static SpellDatabase load(WagoTables tables) throws IOException, InterruptedException {
 
         Map<String, Path> files = new HashMap<>();
-        for (String table : TABLES) {files.put(table, tables.table(table));}
+        for (String table : TABLES) {
+            try {
+                files.put(table, tables.table(table));
+            }
+            catch (WagoTables.MissingTableException e) {
+                if (table.equals("SpellName")) {throw e;}
+                files.put(table, tables.markAbsent(table));
+            }
+        }
         return load(files);
     }
 
