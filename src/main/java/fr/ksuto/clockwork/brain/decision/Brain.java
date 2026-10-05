@@ -165,11 +165,13 @@ public final class Brain {
     private static MapContext context(GameState state, SpellDatabase database) {
 
         MapContext context = new MapContext();
-        context.set("player", Map.of("health", state.playerHealth(), "power", state.playerPower(),
-                                     "combat", state.inCombat(), "casting", state.casting(), "aggro", state.aggro(),
-                                     "castSpell", state.cast().spellId() == 0 ? "" : database.nameOf(state.cast().spellId()),
-                                     "channeling", state.cast().channeling(), "castRemaining", state.cast().remaining(),
-                                     "form", state.form() == 0 ? "" : database.nameOf(state.form()), "combo", state.comboPoints()));
+        context.set("player", Map.ofEntries(Map.entry("health", state.playerHealth()), Map.entry("power", state.playerPower()),
+                                            Map.entry("combat", state.inCombat()), Map.entry("casting", state.casting()),
+                                            Map.entry("aggro", state.aggro()), Map.entry("moving", state.moving()),
+                                            Map.entry("castSpell", state.cast().spellId() == 0 ? "" : database.nameOf(state.cast().spellId())),
+                                            Map.entry("channeling", state.cast().channeling()), Map.entry("castRemaining", state.cast().remaining()),
+                                            Map.entry("form", state.form() == 0 ? "" : database.nameOf(state.form())),
+                                            Map.entry("combo", state.comboPoints())));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.attackableTarget(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower()));
         context.set("enemies", state.enemies());

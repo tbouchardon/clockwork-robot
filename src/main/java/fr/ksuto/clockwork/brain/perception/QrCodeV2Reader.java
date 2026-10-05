@@ -85,6 +85,7 @@ public final class QrCodeV2Reader {
                 qr.red(13, 4) > 127,
                 qr.blue(13, 4) > 127,
                 qr.green(13, 4) > 127,
+                qr.red(11, 13) > 127,
                 read24(qr, 8, 4),
                 qr.red(9, 4),
                 qr.red(10, 4),
@@ -107,7 +108,8 @@ public final class QrCodeV2Reader {
         return new KeyState(key,
                             read24(qr, spell[0], spell[1]),
                             seconds(qr.red(state[0], state[1]), false),
-                            qr.green(state[0], state[1]) > 127,
+                            // 1 = utilisable ; 0,5 = sort à incantation pendant un déplacement, que WoW refuserait
+                            qr.green(state[0], state[1]) > 191,
                             range,
                             seconds(qr.red(history[0], history[1]), true),
                             seconds(qr.blue(history[0], history[1]), true),

@@ -60,7 +60,7 @@ class ProvidedRotationsTest {
         keys.put("2", key("2", AGONY, agony));
         keys.put("3", key("3", CORRUPTION, corruption));
         keys.put("4", key("4", SHADOW_BOLT, NEVER));
-        GameState state = new GameState(100, 100, true, true, 80, 0, true, true, false, 1, 0, 0, true, false, false, false, 0, 0, 9, 265, 1,
+        GameState state = new GameState(100, 100, true, true, 80, 0, true, true, false, 1, 0, 0, true, false, false, false, false, 0, 0, 9, 265, 1,
                                         GameState.Cast.NONE, keys);
         return brain.decide(state, rotation, spells).map(Brain.Decision::spellId).orElse(0);
     }

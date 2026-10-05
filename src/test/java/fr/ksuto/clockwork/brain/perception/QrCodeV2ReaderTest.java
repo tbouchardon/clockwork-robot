@@ -136,6 +136,20 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void castTimeSpellWhileMovingIsNotUsable() {
+
+        GameState state = QrCodeV2Reader.read(v2()
+                .set(11, 13, 1, 0, 0)                                  // en mouvement
+                .set(4, 6, 0, 0.5, 1)                                  // touche 3 : utilisable, mais à incantation
+                .set24(5, 3, 188196)
+                .frame()).orElseThrow();
+
+        assertTrue(state.moving());
+        assertFalse(state.keys().get("3").usable());
+        assertFalse(state.keys().get("3").ready());
+    }
+
+    @Test
     void readsLetterKeysOnRow12() {
 
         // Touche "F" : position 17 -> état (6, 12), historique (12, 12), sort (8, 2)

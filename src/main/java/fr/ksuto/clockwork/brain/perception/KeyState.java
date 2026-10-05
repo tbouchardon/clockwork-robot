@@ -6,7 +6,7 @@ package fr.ksuto.clockwork.brain.perception;
  * @param key               combinaison : touche ("1".."=", "Q".."G"), éventuellement préfixée de "SHIFT-", "CTRL-" ou "ALT-"
  * @param spellId           identifiant du sort de la touche (0 si aucun)
  * @param cooldown          temps de recharge restant, en secondes (0 si prêt, plafonné à 60)
- * @param usable            sort utilisable (ressources, conditions)
+ * @param usable            sort utilisable (ressources, conditions ; pas un sort à incantation pendant un déplacement)
  * @param range             portée par rapport à la cible
  * @param sinceCastOnTarget secondes depuis le dernier lancement sur la cible actuelle (infini si jamais ou plus de 60 s)
  * @param sinceCast         secondes depuis le dernier lancement, toutes cibles (infini si jamais ou plus de 60 s)

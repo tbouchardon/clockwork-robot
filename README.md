@@ -171,7 +171,7 @@ Chaque touche est un `KeyState` :
 |---|---|
 | `spellId` | Sort sur la touche (0 = vide). |
 | `cooldown` | Temps de recharge restant en secondes (plafonné à 60). |
-| `usable` | Utilisable (ressources, conditions). |
+| `usable` | Utilisable (ressources, conditions). Faux pour un sort à incantation pendant un déplacement, que WoW refuserait (comme les rotations Lua). |
 | `range` | `IN`, `OUT`, ou `NONE` (portée sans objet : sort sans cible, ou pas de cible). |
 | `sinceCastOnTarget` | Secondes depuis le dernier lancement **sur la cible actuelle** (infini si jamais ou plus de 60 s). |
 | `sinceCast` | Idem, toutes cibles. |
@@ -319,7 +319,7 @@ Variables disponibles dans `when` :
 | Variable | Sens |
 |---|---|
 | `player.health`, `player.power` | Pourcentages. |
-| `player.combat`, `player.casting`, `player.aggro` | Booléens. |
+| `player.combat`, `player.casting`, `player.aggro`, `player.moving` | Booléens. |
 | `player.castSpell`, `player.channeling`, `player.castRemaining` | Sort en cours (`''` si aucun), canalisation ou incantation, secondes restantes. Ex. : ne couper un drain qu'en fin de canalisation. |
 | `player.form` | Nom de la forme active (druide…), `''` sans forme. |
 | `player.combo` | Points de combo. |

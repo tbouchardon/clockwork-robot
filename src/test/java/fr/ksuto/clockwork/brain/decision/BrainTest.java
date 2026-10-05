@@ -40,7 +40,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, false, false, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, map);
+        return new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, 1, 0, recommended, aggro, false, false, false, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, map);
     }
 
     private Optional<Brain.Decision> decide(String yaml, GameState state) {
@@ -199,7 +199,7 @@ class BrainTest {
 
         String yaml = "assisted:\n  follow: true\nrules: []\n";
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, false, false, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, keys);
+        GameState noTarget = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 188196, true, false, false, false, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, keys);
 
         assertTrue(decide(yaml, noTarget).isEmpty());
     }
@@ -210,7 +210,7 @@ class BrainTest {
     private static GameState guarded(boolean casting, boolean mounted, boolean dead, boolean tapDenied) {
 
         Map<String, KeyState> keys = Map.of("1", ready("1", 188196));
-        return new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 188196, true, dead, mounted, tapDenied, 0, 0, 7, 262, 1, GameState.Cast.NONE, keys);
+        return new GameState(100, 100, true, true, 80, 0, true, true, casting, 1, 0, 188196, true, dead, mounted, tapDenied, false, 0, 0, 7, 262, 1, GameState.Cast.NONE, keys);
     }
 
     @Test
@@ -235,7 +235,7 @@ class BrainTest {
 
         Map<String, KeyState> map = new LinkedHashMap<>();
         for (KeyState key : keys) {map.put(key.key(), key);}
-        return new GameState(100, 100, true, true, 80, 0, true, true, true, 1, 0, 0, true, false, false, false, 0, 0, 7, 262, 1, cast, map);
+        return new GameState(100, 100, true, true, 80, 0, true, true, true, 1, 0, 0, true, false, false, false, false, 0, 0, 7, 262, 1, cast, map);
     }
 
     private static KeyState onCooldown(String key, int spellId) {

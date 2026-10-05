@@ -22,6 +22,7 @@ import java.util.Optional;
  * @param playerDead       le joueur est mort (ou fantôme)
  * @param mounted          le joueur est sur une monture
  * @param targetTapDenied  la cible est déjà marquée par un autre joueur
+ * @param moving           le joueur se déplace (les sorts à incantation sont alors marqués inutilisables)
  * @param form             sort de la forme active (druide : félin, ours, sélénien...), 0 si aucune
  * @param comboPoints      points de combo du joueur
  * @param classId          classe du personnage (identifiant du jeu : 7 = chaman), 0 si inconnue
@@ -32,7 +33,7 @@ import java.util.Optional;
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        boolean playerDead, boolean mounted, boolean targetTapDenied, int form, int comboPoints, int classId, int specId, int frame, Cast cast, Map<String, KeyState> keys) {
+                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, Map<String, KeyState> keys) {
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat
