@@ -104,6 +104,15 @@ public final class BrainService {
     }
 
     /**
+     * @return la table des sorts du jeu, si elle est chargée (le chargement démarre au premier appel)
+     */
+    public Optional<SpellDatabase> spellDatabase() {
+
+        startDatabaseLoading();
+        return Optional.ofNullable(database);
+    }
+
+    /**
      * @return au moins une rotation est disponible (le cerveau peut prendre la main sur l'addon)
      */
     public boolean hasRotations() {

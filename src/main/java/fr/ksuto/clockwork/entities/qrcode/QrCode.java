@@ -32,7 +32,7 @@ public class QrCode {
     public  Dot              targetReaction;
     public  Dot              targetHealth;
     public  Dot              targetMana;
-    public  Dot              stance;
+    public  Dot              FISH_MOD;
     public  List<ComplexKey> raid = new ArrayList<>();
     //    public Position         currenPlayerPosition = new Position();
     public  Dot              TOGGLE_ON_OFF;
@@ -156,8 +156,7 @@ public class QrCode {
         
         logger.debug("Starting AutoConfig");
         
-        Point   qrCodePosition = null;
-        boolean bFound         = false;
+        Point qrCodePosition = null;
         
         for (int i = 7; i >= 0; i--) {
     
@@ -173,7 +172,24 @@ public class QrCode {
     
             robot.delay(750);
         }
-        
+
+        return configure(qrCodePosition);
+    }
+
+    /**
+     * Cherche le QR code une seule fois, sans clic ni attente : recherche automatique au démarrage de ClockWork.
+     *
+     * @return vrai si le QR code est à l'écran (positions et touches alors configurées)
+     */
+    public boolean initIfVisible() {
+
+        return configure(findQrCode(Capture.screen()));
+    }
+
+    private boolean configure(Point qrCodePosition) {
+
+        boolean bFound = false;
+
         if (qrCodePosition != null) {
             
             xPosition = qrCodePosition.x;
@@ -182,15 +198,12 @@ public class QrCode {
             this.qrCodePosition = new Dot(xPosition, yPosition);
             
             logger.debug("Found QrCode : X = " + xPosition + ", Y = " + yPosition + ", carrying on.");
-            //            peripherals.robot.mouseMove(xPosition, yPosition);
             
-            robot.delay(100);
             bFound = true;
         }
         
         if (bFound) {
             
-            robot.delay(100);
     
             keys.add(new Key(KeyEvent.VK_Q, 2, 4, "Q"));
             keys.add(new Key(KeyEvent.VK_D, 3, 4, "D"));
@@ -222,7 +235,7 @@ public class QrCode {
             targetHealth = new Dot(12, 3);
             targetMana = new Dot(13, 3);
     
-            stance = new Dot(12, 4);
+            FISH_MOD = new Dot(12, 4); // pêche demandée par l'addon (/clk fish)
     
             TOGGLE_ON_OFF = new Dot(2, 13);
             TARGET_NEAREST_ENEMY = new Dot(3, 13);
@@ -301,6 +314,7 @@ public class QrCode {
         DRIVE_MOD.updateActive(capturedQrCode);
         DRIVE_LOOP.updateActive(capturedQrCode);
         DEBUG_MOD.updateActive(capturedQrCode);
+        FISH_MOD.updateActive(capturedQrCode);
     }
     
     public Frame getCapturedQrCode() {

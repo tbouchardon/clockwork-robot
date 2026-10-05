@@ -102,14 +102,16 @@ Propriétés système (`-D…`) :
 
 1. Dans WoW, en **fenêtré maximisé**, interface visible, addon chargé : la grille verte apparaît en haut à gauche.
 2. Lancer ClockWork : une petite fenêtre toujours au premier plan apparaît en bas à droite de l'écran.
-3. Cliquer sur **Auto Config** (bouton engrenage). ClockWork :
+3. ClockWork **cherche le QR code tout seul**, toutes les 2 s jusqu'à le trouver, puis démarre l'automate (sans clic
+   ni frappe : rien n'est envoyé à une autre fenêtre). Le bouton **Auto Config** (engrenage) reste disponible pour
+   forcer une nouvelle recherche et activer l'addon. Il :
    - cherche la grille à l'écran (`QrCode.init`) : quatre coins verts formant un carré de 16x16 ;
    - clique sur la grille pour donner le focus à WoW, puis tape `/clk toggle` si l'addon est désactivé
      (`ensureAddonActive`) ;
    - démarre l'automate (un seul fil d'exécution, même si on relance Auto Config).
 4. Le champ de texte affiche les touches jouées. Le journal détaillé (niveau DEBUG pour `fr.ksuto.clockwork`) sort sur
    la console.
-5. Le bouton **Pêche** (actif après Auto Config) bascule en mode pêche (voir *Autres activités*).
+5. La **pêche** se lance depuis WoW : bouton « Pêche » du menu de l'addon ou `/clk fish` (voir *Autres activités*).
 
 Le cerveau se pilote depuis les fichiers, à chaud :
 
@@ -403,7 +405,11 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     Vérifié sur des captures en jeu : eau boueuse, eau verte lumineuse.
   - **Touche** : le bouchon est suivi toutes les ~15 ms par une capture de sa seule zone (DXGI). Il y a touche s'il
     s'écarte d'au moins 6 pixels de sa position moyenne, ou s'il disparaît, sur deux images consécutives : clic immédiat.
-  - Bouger la souris arrête la pêche.
+  - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le
+    Java pêche tant qu'elle reste allumée. Bouger la souris l'arrête aussi ; il faut alors rallumer la pêche en jeu.
+  - **Raccourci du sort Pêche détecté** : le Java cherche le sort sur les touches décrites par la grille (avec son
+    modificateur), à défaut `H`. Le leurre (`W`) et l'appât (`Maj+W`) sont des objets, que la grille ne décrit pas
+    encore : leurs touches restent fixes.
 - **Pilote automatique** (`TomTom`) : lit les coordonnées de carte codées en binaire dans la grille, suit une liste de
   points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
   et pendant un repas.

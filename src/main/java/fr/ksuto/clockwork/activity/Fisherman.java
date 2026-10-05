@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.imageio.ImageIO;
 
@@ -33,15 +34,28 @@ public class Fisherman {
     public static final int                   Y_OFFSET        = -190;
     private final       PeripheralRobotHelper peripherals;
     private final       ClockWorkUI           ui;
+
+    /**
+     * Touche à appuyer pour lancer un sort, avec ses modificateurs.
+     *
+     * @param label nom de la combinaison, pour le journal (SHIFT-R...)
+     */
+    record CastKey(int keyCode, boolean alt, boolean ctrl, boolean shift, String label) {}
+
+    /**
+     * Touche du sort Pêche d'après la grille, vide si elle n'est pas sur une touche décrite.
+     */
+    private final Supplier<Optional<CastKey>> fishingKey;
     private long     lCurrentBaitTime = 0;
     private long     lCurrentLureTime = 0;
     private ShowZone show;
     
-    Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals) {
+    Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals, Supplier<Optional<CastKey>> fishingKey) {
         
         this.ui = ui;
         
         this.peripherals = peripherals;
+        this.fishingKey = fishingKey;
     }
     
     /**
@@ -70,8 +84,16 @@ public class Fisherman {
         Frame                     before     = Capture.zone(searchArea);
         BobberDetector.Background water      = BobberDetector.Background.of(before, searchArea);
 
-        ui.appendLog("h");
-        peripherals.getKeyboard().pressKey(KeyEvent.VK_H);
+        // Sort Pêche : sa touche d'après la grille (barres modifiables à tout moment), à défaut H
+        Optional<CastKey> key = fishingKey.get();
+        if (key.isPresent()) {
+            ui.appendLog(key.get().label());
+            peripherals.getKeyboard().pressKey(key.get().keyCode(), key.get().alt(), key.get().ctrl(), key.get().shift());
+        }
+        else {
+            ui.appendLog("h");
+            peripherals.getKeyboard().pressKey(KeyEvent.VK_H);
+        }
         peripherals.robot.delay(2500);
 
         Optional<Point> found = findBobber(searchArea, before, water);

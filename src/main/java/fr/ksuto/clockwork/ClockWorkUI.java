@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings({"Duplicates"})
 public class ClockWorkUI {
@@ -34,8 +37,8 @@ public class ClockWorkUI {
     Automaton  automaton;
     private int     iGrey      = 0;
     private JButton autoConfButton;
-    private JButton fishButton;
-    private volatile QrCode qrCode = new QrCode();
+    private volatile QrCode  qrCode  = new QrCode();
+    private volatile boolean qrFound = false;
     private Thread  automatonThread;
     private boolean shouldExit = false;
     
@@ -51,14 +54,43 @@ public class ClockWorkUI {
         castLogTextfield.setText(sTemp);
     }
     
-    public void dojButtonFishClick() {
-        
-        fishButton.doClick();
-    }
-    
     public void initAutomaton() {
         
         automaton = new Automaton(peripherals, this);
+        startQrCodeSearch();
+    }
+
+    /**
+     * Cherche le QR code de l'addon toutes les 2 s jusqu'à le trouver, puis démarre l'automate. Sans clic ni frappe
+     * (contrairement à Auto Config, qui active l'addon) : rien n'est envoyé à une autre fenêtre pendant l'attente.
+     */
+    private void startQrCodeSearch() {
+
+        ScheduledExecutorService search = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "qr-search");
+            thread.setDaemon(true);
+            return thread;
+        });
+        search.scheduleWithFixedDelay(() -> {
+            if (qrFound || shouldExit) {
+                search.shutdown();
+                return;
+            }
+            try {
+                QrCode candidate = new QrCode();
+                if (candidate.initIfVisible()) {
+                    qrCode = candidate;
+                    qrFound = true;
+                    logger.info("QR code trouvé : démarrage de l'automate");
+                    SwingUtilities.invokeLater(() -> appendLog("QR trouvé"));
+                    startAutomaton();
+                    search.shutdown();
+                }
+            }
+            catch (RuntimeException e) {
+                logger.debug("Recherche du QR code : {}", e.getMessage());
+            }
+        }, 0, 2, TimeUnit.SECONDS);
     }
     
     public void initUI() throws IOException {
@@ -101,9 +133,6 @@ public class ClockWorkUI {
         initAutoConfButton(autoConfButton);
         ui.add(autoConfButton);
         
-        fishButton = new JButton();
-        initFishButton(fishButton);
-        ui.add(fishButton);
         
         castLogTextfield = new JTextField("/Please Auto Config ");
         initTextField(castLogTextfield);
@@ -139,6 +168,7 @@ public class ClockWorkUI {
                     if (initialized) {
                         candidate.ensureAddonActive(peripherals);
                         qrCode = candidate;
+                        qrFound = true;
                     }
                     return initialized;
                 }
@@ -151,7 +181,6 @@ public class ClockWorkUI {
                             appendLog("      Done      ");
                         }
                         if (initialized && !qrCode.getKeys().isEmpty()) {
-                            setEnabledButtonFish(true);
                             startAutomaton();
                         }
                     } catch (InterruptedException | ExecutionException e) {
@@ -188,26 +217,6 @@ public class ClockWorkUI {
         automatonThread.start();
     }
     
-    private ActionListener fishButtonListener() {
-        
-        return actionEvent -> {
-            if (automaton.status == Automaton.Status.RUN) {
-                fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.down.png"));
-                automaton.status = Automaton.Status.FISHING;
-                
-                autoConfButton.setEnabled(false);
-                fishButton.setEnabled(true);
-            } else if (automaton.status == Automaton.Status.FISHING) {
-                fishButton.setIcon(getImageIconFromResourse("/Pictures/button.icon.fish.up.png"));
-
-                automaton.status = Automaton.Status.RUN;
-                
-                autoConfButton.setEnabled(true);
-                fishButton.setEnabled(true);
-            }
-        };
-    }
-    
     private ImageIcon getImageIconFromResourse(String resource) {
 
         try {
@@ -230,11 +239,6 @@ public class ClockWorkUI {
         button.setFocusPainted(false);
         button.setToolTipText(tooltip);
         button.addActionListener(listener);
-    }
-    
-    private void initFishButton(JButton fishButton) {
-        initButton(fishButton, "/Pictures/button.icon.fish.up.png", "Using (H) to Fish and (W) for Lure shortcuts (Shift W) for Bait", fishButtonListener());
-        fishButton.setEnabled(false);
     }
     
     private void initTextField(JTextField castLogTextfield) {
@@ -264,11 +268,6 @@ public class ClockWorkUI {
     private void setEnabledButtonAutoconf(boolean b) {
         
         autoConfButton.setEnabled(b);
-    }
-    
-    private void setEnabledButtonFish(boolean b) {
-        
-        fishButton.setEnabled(b);
     }
     
     public void setiGrey(int iGrey) {

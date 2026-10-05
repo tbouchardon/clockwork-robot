@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.brain.BrainService;
+import fr.ksuto.clockwork.brain.data.SpellDatabase;
 import fr.ksuto.clockwork.brain.decision.Brain;
 import fr.ksuto.clockwork.brain.decision.Rotation;
 import fr.ksuto.clockwork.brain.perception.GameState;
@@ -21,6 +22,7 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Optional;
+import java.util.Set;
 
 public class Automaton {
     
@@ -33,11 +35,6 @@ public class Automaton {
     private static final int MODIFIER_ALT = 2;
     private static final int MODIFIER_SHIFT = 4;
 
-    private static final int STANCE_1 = 112;
-    private static final int STANCE_2 = 113;
-    private static final int STANCE_3 = 114;
-    private static final int STANCE_4 = 115;
-    private static final int STANCE_5 = 116;
 
     private final        PeripheralRobotHelper peripherals;
     private final        ClockWorkUI           ui;
@@ -51,6 +48,7 @@ public class Automaton {
     private              String                state                 = "";
     private final        HitDetector           hitDetector           = new HitDetector();
     private              int                   lastGridFrame         = -1;
+    private              boolean               fishRequested         = false;
     private              long                  lastGridFrameChange   = 0;
     
     public Automaton(PeripheralRobotHelper peripherals, ClockWorkUI autoHitControl) {
@@ -58,6 +56,7 @@ public class Automaton {
         this.peripherals = peripherals;
         this.ui = autoHitControl;
         tomtom = new TomTom(peripherals);
+        brain.spellDatabase(); // table des sorts chargée en arrière-plan dès le démarrage
     }
     
     public void play() throws Exception {
@@ -74,7 +73,7 @@ public class Automaton {
 
             if (status == Status.FISHING) {
                 try {
-                    fish();
+                    fish(qrCode);
                 }
                 catch (Exception e) {
                     // Une erreur de pêche ne doit pas arrêter tout l'automate
@@ -100,18 +99,45 @@ public class Automaton {
         }
     }
     
-    private void fish() throws Exception {
+    /**
+     * Pêche tant que l'addon la demande et que la souris ne bouge pas. Le sort Pêche est cherché sur les touches
+     * décrites par la grille (raccourci et modificateur), à défaut sur H.
+     */
+    private void fish(QrCode qrCode) throws Exception {
         
-        Fisherman natPagle = new Fisherman(ui, peripherals);
+        Fisherman natPagle = new Fisherman(ui, peripherals, () -> castKeyFor(qrCode, "Pêche"));
         natPagle.setup();
         boolean keepFishing = true;
         while (keepFishing) {
             keepFishing = natPagle.fish();
+            qrCode.captureQrCode(peripherals);
+            qrCode.update();
+            if (!qrCode.FISH_MOD.active) {
+                logger.info("Pêche arrêtée par l'addon");
+                keepFishing = false;
+            }
         }
         natPagle.leave();
-        if (status == Status.FISHING) {
-            ui.dojButtonFishClick();
-        }
+        status = Status.RUN;
+    }
+
+    /**
+     * Touche portant ce sort d'après la grille (sorts de chaque touche) et la table des sorts du jeu.
+     */
+    private Optional<Fisherman.CastKey> castKeyFor(QrCode qrCode, String spell) {
+
+        Optional<GameState>     state    = QrCodeV2Reader.read(qrCode.captureQrCode(peripherals));
+        Optional<SpellDatabase> database = brain.spellDatabase();
+        if (state.isEmpty() || database.isEmpty()) {return Optional.empty();}
+        Set<Integer> ids = database.get().idsFor(spell);
+        return state.get().keys().values().stream()
+                    .filter(key -> ids.contains(key.spellId()))
+                    .findFirst()
+                    .flatMap(key -> {
+                        KeyCombo combo = KeyCombo.parse(key.key());
+                        return keyNamed(qrCode, combo.key()).map(physical -> new Fisherman.CastKey(physical.hitKey, combo.alt(), combo.ctrl(),
+                                                                                                   combo.shift(), key.key()));
+                    });
     }
     
     private void hitKey(Key key2hit, boolean altModifier, boolean ctrlModifier, boolean shiftModifier, int duration) {
@@ -135,6 +161,13 @@ public class Automaton {
         }
         
         qrCode.update();
+        
+        // Pêche demandée depuis WoW (/clk fish, menu de l'addon) : elle démarre quand la case s'allume
+        if (qrCode.FISH_MOD.active && !fishRequested && status == Status.RUN) {
+            logger.info("Pêche demandée par l'addon");
+            status = Status.FISHING;
+        }
+        fishRequested = qrCode.FISH_MOD.active;
         
         if (!qrCode.TOGGLE_ON_OFF.active) {
             reportState("En attente : addon désactivé (/clk toggle en jeu)");
@@ -165,32 +198,7 @@ public class Automaton {
         
         checkParty(qrCode.getCapturedQrCode(), qrCode);
         
-        // Check Stance
         Frame capturedQrCode = qrCode.getCapturedQrCode();
-        if (qrCode.stance.getBlue(capturedQrCode) != 0) {
-            bestPriority = qrCode.stance.getGreen(capturedQrCode);
-            int stance = qrCode.stance.getBlue(capturedQrCode);
-            
-            switch (stance) {
-                case STANCE_1:
-                    key2hit = new Key(KeyEvent.VK_F1, "F1");
-                    break;
-                case STANCE_2:
-                    key2hit = new Key(KeyEvent.VK_F2, "F2");
-                    break;
-                case STANCE_3:
-                    key2hit = new Key(KeyEvent.VK_F3, "F3");
-                    break;
-                case STANCE_4:
-                    key2hit = new Key(KeyEvent.VK_F4, "F4");
-                    break;
-                case STANCE_5:
-                    key2hit = new Key(KeyEvent.VK_F5, "F5");
-                    break;
-                default:
-                    key2hit = new Key(0x0, "");
-            }
-        }
         
         if (key2hit != null) {logger.debug("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
         
