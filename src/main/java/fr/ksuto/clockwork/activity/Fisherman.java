@@ -60,6 +60,39 @@ public class Fisherman {
     }
     
     /**
+     * Position où le bot a laissé la souris : si elle s'en écarte, c'est le joueur qui la bouge, et la pêche s'arrête.
+     */
+    private Point expected;
+
+    /**
+     * @return la souris s'est écartée de plus de 20 pixels de la position où le bot l'a laissée
+     */
+    private boolean userMoved() {
+
+        Point pointer = MouseInfo.getPointerInfo().getLocation();
+        if (expected == null) {expected = pointer;}
+        if (pointer.distance(expected) <= 20) {return false;}
+        logger.info("Souris bougée par le joueur : fin de la pêche");
+        return true;
+    }
+
+    /**
+     * Attend, en surveillant la souris : le joueur peut arrêter la pêche à tout moment, pas seulement pendant le suivi
+     * du bouchon.
+     *
+     * @return faux si le joueur a bougé la souris
+     */
+    private boolean pause(int milliseconds) {
+
+        long end = System.currentTimeMillis() + milliseconds;
+        while (System.currentTimeMillis() < end) {
+            if (userMoved()) {return false;}
+            peripherals.robot.delay((int) Math.min(30, Math.max(1, end - System.currentTimeMillis())));
+        }
+        return !userMoved();
+    }
+
+    /**
      * Une pêche : leurre et appât si besoin, lancer, repérer le bouchon, cliquer dès la touche.
      *
      * @return faux si le joueur a bougé la souris (fin de la pêche)
@@ -70,14 +103,14 @@ public class Fisherman {
             lCurrentLureTime = new Date().getTime();
             ui.appendLog("w");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_W);
-            peripherals.robot.delay(3000);
+            if (!pause(3000)) {return false;}
         }
 
         if (new Date().getTime() - lCurrentBaitTime > BAIT_TIME) {
             lCurrentBaitTime = new Date().getTime();
             ui.appendLog("W");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_W, false, false, true);
-            peripherals.robot.delay(1000);
+            if (!pause(1000)) {return false;}
         }
 
         // Image de l'eau avant le lancer : le bouchon sera ce qui est apparu depuis
@@ -94,9 +127,10 @@ public class Fisherman {
             ui.appendLog("h");
             peripherals.getKeyboard().pressKey(KeyEvent.VK_H);
         }
-        peripherals.robot.delay(2500);
+        if (!pause(2500)) {return false;}
 
         Optional<Point> found = findBobber(searchArea, before);
+        if (userMoved()) {return false;}
         if (found.isEmpty()) {
             logger.debug("Bobber not found =(");
             try {
@@ -110,7 +144,8 @@ public class Fisherman {
 
         Point mouse = new Point(found.get().x + 5, found.get().y + 5);
         peripherals.getMouse().move(mouse.x, mouse.y);
-        peripherals.robot.delay(2000);
+        expected = mouse;
+        if (!pause(2000)) {return false;}
 
         // Suivi de la plume rouge : capture de sa seule zone (DXGI : ~0,1 ms), une image toutes les ~15 ms
         BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(found.get());
@@ -120,11 +155,7 @@ public class Fisherman {
 
         try {
             while (System.currentTimeMillis() - start < 21000) {
-                Point pointer = MouseInfo.getPointerInfo().getLocation();
-                if (pointer.distance(mouse) > 20) {
-                    logger.debug("Mouse moved, exiting. ({} != {})", pointer, mouse);
-                    return false;
-                }
+                if (userMoved()) {return false;}
 
                 Frame                              frame    = Capture.zone(watcher.window());
                 Optional<BobberDetector.Blob>      measured = BobberDetector.measure(frame, before, watcher.window(), watcher.seed());
@@ -139,8 +170,7 @@ public class Fisherman {
                                  System.currentTimeMillis() - start, frames);
                     ui.appendLog(verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "ϡ?" : "ϡ");
                     peripherals.getMouse().clickLeft();
-                    peripherals.robot.delay(2000);
-                    return true;
+                    return pause(2000);
                 }
                 peripherals.robot.delay(15);
             }
@@ -197,6 +227,7 @@ public class Fisherman {
         
         peripherals.robot.delay(100);
         peripherals.robot.mouseMove(Screen.SCREEN_WIDTH / 2, Screen.SCREEN_HEIGHT / 2 + 10);
+        expected = new Point(Screen.SCREEN_WIDTH / 2, Screen.SCREEN_HEIGHT / 2 + 10);
         peripherals.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         peripherals.robot.delay(100);
@@ -224,7 +255,7 @@ public class Fisherman {
                 if (count > 0) {logger.debug("Bouchon trouvé au {}e essai", count + 1);}
                 return bobber;
             }
-            peripherals.robot.delay(250);
+            if (!pause(250)) {break;}
         }
         return Optional.empty();
     }
