@@ -7,7 +7,8 @@
 #   - « pas le buff Cri de guerre » : lu hors combat seulement (auras inaccessibles en combat en 12.x) ; en combat,
 #     c'est l'état lu juste avant d'y entrer, ce qui suffit pour un buff d'une heure ;
 #   - « cible hors de portée de mêlée » : hors de portée du Heurtoir, sort de mêlée ;
-#   - les priorités égales sont départagées par l'ordre du fichier (le Lua les départageait par l'ordre des touches).
+#   - les priorités égales sont départagées par l'ordre du fichier (le Lua les départageait par l'ordre des touches) ;
+#   - Volée de coups passe de la priorité 1 à 180, pour que l'interruption parte vraiment.
 # Sanguinaire n'existe qu'en Fureur : dans les autres spécialisations, sa règle est simplement ignorée.
 
 name: Guerrier (toutes spécialisations)
@@ -52,10 +53,11 @@ rules:
     when: "target.hostile"
     priority: 1
 
-  # Interruption : la cible incante
+  # Interruption : la cible incante. Priorité 180 (1 dans la rotation Lua, où elle ne partait presque jamais) : passe
+  # avant tout, sauf le Cri de guerre
   - cast: Volée de coups
     when: "target.hostile && target.casting && target.interruptible"
-    priority: 1
+    priority: 180
 
   - cast: Lancer héroïque
     when: "target.hostile"

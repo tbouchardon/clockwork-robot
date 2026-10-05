@@ -93,7 +93,7 @@ class ProvidedRotationsTest {
 
         assertEquals(6673, warriorCasts(rotation, false, false), "Cri de guerre absent : priorité 200");
         assertEquals(1464, warriorCasts(rotation, true, false), "buff actif : Heurtoir");
-        assertTrue(Set.of(1464, 6552).contains(warriorCasts(rotation, true, true)), "cible qui incante : interruption possible");
+        assertEquals(6552, warriorCasts(rotation, true, true), "cible qui incante : Volée de coups (180) avant Heurtoir");
     }
 
     @Test
