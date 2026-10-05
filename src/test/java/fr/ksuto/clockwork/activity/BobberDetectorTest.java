@@ -111,7 +111,8 @@ class BobberDetectorTest {
         assertTrue(bobber.isPresent(), water);
         assertTrue(bobber.get().distance(expected) < 25, water + " : bouchon vers " + expected + ", trouvé en " + bobber.get());
         assertTrue(BobberDetector.locate(before, null, zone, background).isEmpty(), water + " : pas de bouchon avant le lancer");
-        assertEquals(bobber, BobberDetector.track(after, bobber.get(), background), water + " : suivi");
+        Optional<BobberDetector.Blob> feather = BobberDetector.measure(after, new Rectangle(bobber.get().x - 40, bobber.get().y - 40, 80, 80), background);
+        assertTrue(feather.isPresent() && feather.get().distance(bobber.get().x, bobber.get().y) < 20, water + " : plume mesurée autour du bouchon");
     }
 
     @Test
@@ -144,33 +145,82 @@ class BobberDetectorTest {
         assertTrue(BobberDetector.locate(frame(water(0x204080, 3)), frame(water(0x204080, 4)), ZONE, BLUE_WATER).isEmpty());
     }
 
-    @Test
-    void tracksTheBobberAroundItsLastPosition() {
 
-        Frame frame = frame(bobber(water(0x204080, 5), 52, 31));
 
-        assertEquals(Optional.of(new Point(153, 231)), BobberDetector.track(frame, new Point(151, 230), BLUE_WATER));
-        assertTrue(BobberDetector.track(frame, new Point(120, 210), BLUE_WATER).isEmpty(), "hors du rayon de suivi");
+    private static Optional<BobberDetector.Blob> blob(double x, double y, int count) {
+
+        return Optional.of(new BobberDetector.Blob(x, y, count, 10));
     }
 
     @Test
-    void biteWhenTheBobberMovesAwayOrDisappearsOnTwoFrames() {
+    void measuresTheCenterOfTheWholeRedFeather() {
 
-        Point origin = new Point(150, 230);
-
-        BobberDetector.BiteWatcher calm = new BobberDetector.BiteWatcher(origin);
-        for (int i = 0; i < 20; i++) {
-            assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, calm.feed(Optional.of(new Point(150 + i % 3 - 1, 230 + i % 2))), "tangage");
+        BufferedImage image = water(0x204080, 7);
+        for (int y = 30; y < 34; y++) {
+            for (int x = 40; x < 60; x++) {image.setRGB(x, y, RED);}
         }
 
-        BobberDetector.BiteWatcher dive = new BobberDetector.BiteWatcher(origin);
-        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, dive.feed(Optional.of(new Point(150, 238))), "une image isolée ne suffit pas");
-        assertEquals(BobberDetector.BiteWatcher.Verdict.BITE, dive.feed(Optional.of(new Point(150, 239))), "touche : clic immédiat");
+        BobberDetector.Blob feather = BobberDetector.measure(frame(image), ZONE, BLUE_WATER).orElseThrow();
+        assertEquals(149.5, feather.x(), 0.01, "centre stable, pas le premier pixel trouvé");
+        assertEquals(231.5, feather.y(), 0.01);
+        assertEquals(80, feather.count());
+        assertEquals(4, feather.height());
+        assertTrue(BobberDetector.measure(frame(water(0x204080, 8)), ZONE, BLUE_WATER).isEmpty(), "eau seule");
+    }
 
-        BobberDetector.BiteWatcher lost = new BobberDetector.BiteWatcher(origin);
-        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, lost.feed(Optional.empty()));
-        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, lost.feed(Optional.of(origin)), "réapparu : fausse alerte");
-        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, lost.feed(Optional.empty()));
-        assertEquals(BobberDetector.BiteWatcher.Verdict.LOST, lost.feed(Optional.empty()), "plongé sous l'eau");
+    @Test
+    void onRedWaterTheBlueFeatherCarriesTheMeasure() {
+
+        int           lava  = 0xD04010;
+        BufferedImage image = water(lava, 9);
+        for (int x = 40; x < 60; x++) {image.setRGB(x, 30, RED);}  // plume rouge : à peine plus rouge que la lave
+        for (int x = 40; x < 60; x++) {image.setRGB(x, 26, BLUE);} // plume bleue : très visible
+
+        BobberDetector.Blob feathers = BobberDetector.measure(frame(image), ZONE, background(lava)).orElseThrow();
+        assertEquals(20, feathers.count(), "seule la plume bleue ressort sur la lave");
+        assertEquals(226, feathers.y(), 0.01);
+    }
+
+    @Test
+    void bobbingIsNotABite() {
+
+        BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(new Point(150, 230));
+        for (int i = 0; i < 100; i++) {
+            // Tangage : centre à ±2 px, surface visible à ±20 %
+            Optional<BobberDetector.Blob> bobbing = blob(150 + (i % 5) - 2, 230 + (i % 3) - 1, 100 + (i % 9) * 5 - 20);
+            assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, watcher.feed(bobbing), "image " + i);
+        }
+    }
+
+    @Test
+    void biteWhenTheFeatherDipsOrMovesFarOnTwoFrames() {
+
+        BobberDetector.BiteWatcher dip = calibrated();
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, dip.feed(blob(150, 232, 30)), "une image isolée ne suffit pas");
+        assertEquals(BobberDetector.BiteWatcher.Verdict.LOST, dip.feed(Optional.empty()), "plongé sous l'eau");
+
+        BobberDetector.BiteWatcher jump = calibrated();
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, jump.feed(blob(150, 245, 100)));
+        assertEquals(BobberDetector.BiteWatcher.Verdict.BITE, jump.feed(blob(150, 246, 100)), "écarté de plus que sa hauteur (10 px)");
+
+        BobberDetector.BiteWatcher noise = calibrated();
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, noise.feed(Optional.empty()));
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, noise.feed(blob(150, 230, 100)), "réapparu : fausse alerte");
+    }
+
+    @Test
+    void trackingWindowFollowsTheFeatherSize() {
+
+        BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(new Point(150, 230));
+        assertEquals(new Rectangle(130, 210, 40, 40), watcher.window(), "avant calibrage : autour du point trouvé");
+        for (int i = 0; i < BobberDetector.CALIBRATION; i++) {watcher.feed(Optional.of(new BobberDetector.Blob(160, 240, 300, 12)));}
+        assertEquals(new Rectangle(124, 204, 72, 72), watcher.window(), "plume de 12 px : ± 36 px autour de son centre");
+    }
+
+    private static BobberDetector.BiteWatcher calibrated() {
+
+        BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(new Point(150, 230));
+        for (int i = 0; i < BobberDetector.CALIBRATION; i++) {watcher.feed(blob(150, 230, 100));}
+        return watcher;
     }
 }

@@ -22,14 +22,24 @@ import java.util.Optional;
 final class BobberDetector {
 
     /**
-     * Distance de suivi : le bouchon est recherché à ± cette distance de sa dernière position.
+     * Pixels minimum pour considérer les plumes visibles.
      */
-    static final int TRACK_RADIUS = 10;
+    static final int MIN_PIXELS = 3;
 
     /**
-     * Écart à la position moyenne, en pixels, au-delà duquel le bouchon a plongé.
+     * Images de calibrage : la plume au repos (surface et centre moyens), référence de la touche.
      */
-    static final double BITE_DISTANCE = 6;
+    static final int CALIBRATION = 8;
+
+    /**
+     * Touche : la surface visible de la plume tombe sous cette fraction de sa surface au repos (le bouchon plonge).
+     */
+    static final double DIP_RATIO = 0.5;
+
+    /**
+     * Touche : le centre de la plume s'écarte de sa position au repos de plus que sa hauteur (au moins ce minimum).
+     */
+    static final double MIN_MOVE = 4;
 
     /**
      * Images consécutives nécessaires pour conclure (bouchon écarté ou disparu), contre une image isolée bruitée.
@@ -106,11 +116,46 @@ final class BobberDetector {
     }
 
     /**
-     * Cherche le bouchon à ± {@value #TRACK_RADIUS} pixels de sa dernière position.
+     * Plumes du bouchon dans la fenêtre : leurs pixels (rouges ou bleus par rapport à l'eau), leur centre et leur
+     * hauteur. Les deux plumes comptent : sur une eau rouge, orange ou de lave, la plume rouge ne ressort plus mais la
+     * bleue, très fortement ; sur une eau bleue, c'est l'inverse. Le centre de tous les pixels est stable d'une image à
+     * l'autre, contrairement au premier pixel trouvé : en vue à la première personne, les plumes font des dizaines de
+     * pixels.
+     *
+     * @return vide si moins de {@value #MIN_PIXELS} pixels (bouchon sous l'eau ou hors de la fenêtre)
      */
-    static Optional<Point> track(Frame frame, Point last, Background background) {
+    static Optional<Blob> measure(Frame frame, Rectangle window, Background water) {
 
-        return locate(frame, null, new Rectangle(last.x - TRACK_RADIUS, last.y - TRACK_RADIUS, 2 * TRACK_RADIUS, 2 * TRACK_RADIUS), background);
+        long sumX = 0, sumY = 0;
+        int  count = 0, top = Integer.MAX_VALUE, bottom = Integer.MIN_VALUE;
+        for (int y = window.y; y < window.y + window.height; y++) {
+            for (int x = window.x; x < window.x + window.width; x++) {
+                if (!isRed(frame, x, y, water) && !isBlue(frame, x, y, water)) {continue;}
+                sumX += x;
+                sumY += y;
+                count++;
+                top = Math.min(top, y);
+                bottom = Math.max(bottom, y);
+            }
+        }
+        if (count < MIN_PIXELS) {return Optional.empty();}
+        return Optional.of(new Blob((double) sumX / count, (double) sumY / count, count, bottom - top + 1));
+    }
+
+    /**
+     * Plumes mesurées sur une image.
+     *
+     * @param x      centre, abscisse écran
+     * @param y      centre, ordonnée écran
+     * @param count  nombre de pixels des plumes
+     * @param height hauteur, en pixels
+     */
+    record Blob(double x, double y, int count, int height) {
+
+        double distance(double otherX, double otherY) {
+
+            return Math.hypot(x - otherX, y - otherY);
+        }
     }
 
     /**
@@ -136,7 +181,8 @@ final class BobberDetector {
         int r   = Rgb.red(rgb);
         int g   = Rgb.green(rgb);
         int b   = Rgb.blue(rgb);
-        return (r - g) - (water.red() - water.green()) > RED_MARGIN && (r - b) - (water.red() - water.blue()) > RED_MARGIN;
+        // Plus rouge que l'eau, et rouge dominant : sur une eau verte, la plume reste rouge (120, 60, 20)
+        return r > g && r > b && (r - g) - (water.red() - water.green()) > RED_MARGIN && (r - b) - (water.red() - water.blue()) > RED_MARGIN;
     }
 
     private static boolean isBlue(Frame frame, int x, int y, Background water) {
@@ -146,7 +192,9 @@ final class BobberDetector {
         int r   = Rgb.red(rgb);
         int g   = Rgb.green(rgb);
         int b   = Rgb.blue(rgb);
-        return (b - r) - (water.blue() - water.red()) > BLUE_MARGIN && (b - g) - (water.blue() - water.green()) > BLUE_MARGIN;
+        // Plus bleu que l'eau, et plus bleu que rouge : sur la lave, une plume rouge plus sombre que l'eau serait sinon
+        // « plus bleue » ; sous une lumière verte, la plume bleue reste plus bleue que rouge (69, 107, 84)
+        return b > r && (b - r) - (water.blue() - water.red()) > BLUE_MARGIN && (b - g) - (water.blue() - water.green()) > BLUE_MARGIN;
     }
 
     private static boolean appeared(Frame before, Frame after, int x, int y) {
@@ -170,54 +218,63 @@ final class BobberDetector {
     }
 
     /**
-     * Suit le bouchon image après image et signale la touche : le bouchon s'écarte de sa position moyenne d'au moins
-     * {@value #BITE_DISTANCE} pixels, ou disparaît (il plonge), sur {@value #CONFIRMATIONS} images consécutives.
+     * Suit la plume rouge image après image et signale la touche, par rapport à la plume au repos (moyenne des
+     * {@value #CALIBRATION} premières images) : sa surface visible tombe sous {@value #DIP_RATIO} fois celle au repos ou
+     * disparaît (le bouchon plonge), ou son centre s'écarte de plus que sa hauteur, sur {@value #CONFIRMATIONS} images
+     * consécutives.
      */
     static final class BiteWatcher {
 
         enum Verdict {WAITING, BITE, LOST}
 
-        private double sumX;
-        private double sumY;
-        private int    count;
-        private int    away;
-        private int    missing;
+        private final Point start;
 
-        BiteWatcher(Point initial) {
+        private double sumX, sumY, sumCount;
+        private int    calibrated, height, suspicious;
 
-            add(initial);
+        /**
+         * @param start position du bouchon trouvée par {@link #locate}
+         */
+        BiteWatcher(Point start) {
+
+            this.start = start;
         }
 
         /**
-         * @param position position du bouchon sur la nouvelle image, vide s'il n'est plus visible
+         * Fenêtre de suivi : autour de la plume au repos, assez grande pour sa taille et ses mouvements.
          */
-        Verdict feed(Optional<Point> position) {
+        Rectangle window() {
 
-            if (position.isEmpty()) {
-                away = 0;
-                return ++missing >= CONFIRMATIONS ? Verdict.LOST : Verdict.WAITING;
-            }
-            missing = 0;
-            // Moyenne des positions précédentes, sans la mesure courante : le mouvement n'est pas amorti
-            double distance = position.get().distance(sumX / count, sumY / count);
-            if (distance >= BITE_DISTANCE) {
-                return ++away >= CONFIRMATIONS ? Verdict.BITE : Verdict.WAITING;
-            }
-            away = 0;
-            add(position.get());
-            return Verdict.WAITING;
+            int    radius = Math.max(20, 3 * height);
+            double x      = calibrated == 0 ? start.x : sumX / calibrated;
+            double y      = calibrated == 0 ? start.y : sumY / calibrated;
+            return new Rectangle((int) Math.round(x) - radius, (int) Math.round(y) - radius, 2 * radius, 2 * radius);
         }
 
-        Point average() {
+        Verdict feed(Optional<Blob> measured) {
 
-            return new Point((int) Math.round(sumX / count), (int) Math.round(sumY / count));
-        }
+            if (calibrated < CALIBRATION) {
+                measured.ifPresent(blob -> {
+                    sumX += blob.x();
+                    sumY += blob.y();
+                    sumCount += blob.count();
+                    height = Math.max(height, blob.height());
+                    calibrated++;
+                });
+                return Verdict.WAITING;
+            }
 
-        private void add(Point point) {
+            double restCount = sumCount / calibrated;
+            Verdict verdict;
+            if (measured.isEmpty() || measured.get().count() < DIP_RATIO * restCount) {verdict = Verdict.LOST;}
+            else if (measured.get().distance(sumX / calibrated, sumY / calibrated) > Math.max(MIN_MOVE, height)) {verdict = Verdict.BITE;}
+            else {verdict = Verdict.WAITING;}
 
-            sumX += point.x;
-            sumY += point.y;
-            count++;
+            if (verdict == Verdict.WAITING) {
+                suspicious = 0;
+                return verdict;
+            }
+            return ++suspicious >= CONFIRMATIONS ? verdict : Verdict.WAITING;
         }
     }
 }

@@ -17,6 +17,9 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -112,36 +115,58 @@ public class Fisherman {
         peripherals.getMouse().move(mouse.x, mouse.y);
         peripherals.robot.delay(2000);
 
-        // Suivi du bouchon : capture de sa seule zone (DXGI : ~0,1 ms), une image toutes les ~15 ms
+        // Suivi de la plume rouge : capture de sa seule zone (DXGI : ~0,1 ms), une image toutes les ~15 ms
         BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(found.get());
-        int                        margin  = BobberDetector.TRACK_RADIUS + 6;
+        StringBuilder              trace   = new StringBuilder("ms;x;y;pixels;hauteur;verdict\n");
         long                       start   = System.currentTimeMillis();
         int                        frames  = 0;
 
-        while (System.currentTimeMillis() - start < 21000) {
-            Point pointer = MouseInfo.getPointerInfo().getLocation();
-            if (pointer.distance(mouse) > 20) {
-                logger.debug("Mouse moved, exiting. ({} != {})", pointer, mouse);
-                return false;
-            }
+        try {
+            while (System.currentTimeMillis() - start < 21000) {
+                Point pointer = MouseInfo.getPointerInfo().getLocation();
+                if (pointer.distance(mouse) > 20) {
+                    logger.debug("Mouse moved, exiting. ({} != {})", pointer, mouse);
+                    return false;
+                }
 
-            Point average = watcher.average();
-            Frame frame   = Capture.zone(new Rectangle(average.x - margin, average.y - margin, 2 * margin, 2 * margin));
-            BobberDetector.BiteWatcher.Verdict verdict = watcher.feed(BobberDetector.track(frame, average, water));
-            frames++;
+                Frame                              frame    = Capture.zone(watcher.window());
+                Optional<BobberDetector.Blob>      measured = BobberDetector.measure(frame, watcher.window(), water);
+                BobberDetector.BiteWatcher.Verdict verdict  = watcher.feed(measured);
+                frames++;
+                trace.append(System.currentTimeMillis() - start).append(';')
+                     .append(measured.map(blob -> "%.1f;%.1f;%d;%d".formatted(blob.x(), blob.y(), blob.count(), blob.height())).orElse(";;0;0"))
+                     .append(';').append(verdict).append('\n');
 
-            if (verdict != BobberDetector.BiteWatcher.Verdict.WAITING) {
-                logger.debug("Touche : bouchon {} après {} ms ({} images)", verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "disparu" : "écarté",
-                             System.currentTimeMillis() - start, frames);
-                ui.appendLog(verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "ϡ?" : "ϡ");
-                peripherals.getMouse().clickLeft();
-                peripherals.robot.delay(2000);
-                return true;
+                if (verdict != BobberDetector.BiteWatcher.Verdict.WAITING) {
+                    logger.debug("Touche : bouchon {} après {} ms ({} images)", verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "plongé" : "écarté",
+                                 System.currentTimeMillis() - start, frames);
+                    ui.appendLog(verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "ϡ?" : "ϡ");
+                    peripherals.getMouse().clickLeft();
+                    peripherals.robot.delay(2000);
+                    return true;
+                }
+                peripherals.robot.delay(15);
             }
-            peripherals.robot.delay(15);
+            return true;
         }
+        finally {
+            writeTrace(trace);
+        }
+    }
 
-        return true;
+    /**
+     * Trace du suivi de chaque lancer (centre, surface et hauteur de la plume à chaque image), pour régler les seuils :
+     * dossier traces-peche du dossier de lancement.
+     */
+    private static void writeTrace(StringBuilder trace) {
+
+        try {
+            Path folder = Files.createDirectories(Path.of("traces-peche"));
+            Files.writeString(folder.resolve(System.currentTimeMillis() + ".csv"), trace, StandardCharsets.UTF_8);
+        }
+        catch (IOException e) {
+            logger.debug("Trace de pêche non écrite : {}", e.getMessage());
+        }
     }
 
     /**

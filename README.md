@@ -403,8 +403,13 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     la plume bleue devient gris-vert, mais reste plus bleue que l'eau. La recherche se limite aux pixels apparus depuis
     l'image prise avant le lancer, ce qui écarte un décor rouge et bleu ; le dernier essai se fait sans ce filtre.
     Vérifié sur des captures en jeu : eau boueuse, eau verte lumineuse.
-  - **Touche** : le bouchon est suivi toutes les ~15 ms par une capture de sa seule zone (DXGI). Il y a touche s'il
-    s'écarte d'au moins 6 pixels de sa position moyenne, ou s'il disparaît, sur deux images consécutives : clic immédiat.
+  - **Touche** : les plumes (pixels rouges ou bleus par rapport à l'eau : sur une eau rouge ou de lave, c'est la
+    bleue qui ressort) sont suivies toutes les ~15 ms par une capture de leur seule zone (DXGI). On mesure le centre de
+    tous leurs pixels, stable d'une image à l'autre, et leur surface. Les 8 premières images donnent la position et la
+    surface au repos ; il y a touche si la surface visible tombe sous la moitié (le bouchon plonge) ou si le centre
+    s'écarte de plus que la hauteur des plumes, sur deux images consécutives : clic immédiat.
+  - **Trace** : chaque lancer écrit `traces-peche/<horodatage>.csv` (centre, surface, hauteur et verdict à chaque
+    image), pour régler les seuils sur des données réelles.
   - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le
     Java pêche tant qu'elle reste allumée. Bouger la souris l'arrête aussi ; il faut alors rallumer la pêche en jeu.
   - **Raccourci du sort Pêche détecté** : le Java cherche le sort sur les touches décrites par la grille (avec son

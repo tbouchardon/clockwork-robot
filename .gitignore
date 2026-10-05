@@ -17,3 +17,4 @@ build/
 # Configuration personnelle et schéma de rotation généré (le modèle est dans src/main/resources)
 rotation.yaml
 /rotation.schema.json
+traces-peche/
