@@ -398,16 +398,17 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   5 min, puis lance la ligne (`H`). La pêche se fait **en vue à la première personne** (zoom avant au maximum avec
   `Origine` au démarrage) : le bouchon est plus gros, toujours au même endroit de l'écran (tiers central, de 45 à 85 %
   de la hauteur), et ni le personnage ni le décor lointain ne le gênent.
-  - **Bouchon** : reconnu à sa signature, une plume rouge (3 pixels) avec une plume bleue 2 à 7 pixels au-dessus. Les
-    couleurs sont jugées **par rapport à l'eau** (couleur médiane de la zone avant le lancer) : sous une lumière verte,
-    la plume bleue devient gris-vert, mais reste plus bleue que l'eau. La recherche se limite aux pixels apparus depuis
-    l'image prise avant le lancer, ce qui écarte un décor rouge et bleu ; le dernier essai se fait sans ce filtre.
-    Vérifié sur des captures en jeu : eau boueuse, eau verte lumineuse.
-  - **Touche** : les plumes (pixels rouges ou bleus par rapport à l'eau : sur une eau rouge ou de lave, c'est la
-    bleue qui ressort) sont suivies toutes les ~15 ms par une capture de leur seule zone (DXGI). On mesure le centre de
-    tous leurs pixels, stable d'une image à l'autre, et leur surface. Les 8 premières images donnent la position et la
-    surface au repos ; il y a touche si la surface visible tombe sous la moitié (le bouchon plonge) ou si le centre
-    s'écarte de plus que la hauteur des plumes, sur deux images consécutives : clic immédiat.
+  - **Pixel de plume** : un pixel devenu nettement plus rouge, ou plus bleu, qu'il ne l'était **au même endroit juste
+    avant le lancer**. Ce qui était déjà là (herbes, rive, fleurs) ne compte pas, quelle que soit la taille de
+    l'étendue d'eau, même une flaque ; et la couleur de l'eau, même verte, rouge ou de lave, sert de référence pixel
+    par pixel. Vérifié sur des captures en jeu : eau boueuse, eau verte lumineuse.
+  - **Bouchon** : les pixels de plume apparus sont regroupés en amas reliés de proche en proche ; on retient de
+    préférence l'amas portant les deux plumes, à défaut le plus gros (sur la lave, seule la bleue ressort).
+  - **Touche** : les plumes sont suivies toutes les ~15 ms par une capture de leur seule zone (DXGI), dans une fenêtre
+    bornée (± 20 à 60 px) ; seuls les pixels reliés au bouchon comptent. On mesure le centre de tous leurs pixels,
+    stable d'une image à l'autre, et leur surface. Les 8 premières images donnent la position et la surface au repos ;
+    il y a touche si la surface visible tombe sous la moitié (le bouchon plonge) ou si le centre s'écarte de plus que
+    la hauteur des plumes, sur deux images consécutives : clic immédiat.
   - **Trace** : chaque lancer écrit `traces-peche/<horodatage>.csv` (centre, surface, hauteur et verdict à chaque
     image), pour régler les seuils sur des données réelles.
   - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le

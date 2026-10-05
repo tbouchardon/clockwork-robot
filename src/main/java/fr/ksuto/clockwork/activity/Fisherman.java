@@ -83,9 +83,8 @@ public class Fisherman {
         }
 
         // Image de l'eau avant le lancer : le bouchon sera ce qui est apparu depuis
-        Rectangle                 searchArea = maxSearchArea();
-        Frame                     before     = Capture.zone(searchArea);
-        BobberDetector.Background water      = BobberDetector.Background.of(before, searchArea);
+        Rectangle searchArea = maxSearchArea();
+        Frame     before     = Capture.zone(searchArea);
 
         // Sort Pêche : sa touche d'après la grille (barres modifiables à tout moment), à défaut H
         Optional<CastKey> key = fishingKey.get();
@@ -99,7 +98,7 @@ public class Fisherman {
         }
         peripherals.robot.delay(2500);
 
-        Optional<Point> found = findBobber(searchArea, before, water);
+        Optional<Point> found = findBobber(searchArea, before);
         if (found.isEmpty()) {
             logger.debug("Bobber not found =(");
             try {
@@ -130,7 +129,7 @@ public class Fisherman {
                 }
 
                 Frame                              frame    = Capture.zone(watcher.window());
-                Optional<BobberDetector.Blob>      measured = BobberDetector.measure(frame, watcher.window(), water);
+                Optional<BobberDetector.Blob>      measured = BobberDetector.measure(frame, before, watcher.window(), watcher.seed());
                 BobberDetector.BiteWatcher.Verdict verdict  = watcher.feed(measured);
                 frames++;
                 trace.append(System.currentTimeMillis() - start).append(';')
@@ -219,15 +218,14 @@ public class Fisherman {
     }
     
     /**
-     * Cherche le bouchon dans toute la zone de pêche : grâce au filtre avant/après le lancer, le décor rouge et bleu est
-     * écarté, inutile de commencer petit. Trois essais (le bouchon peut encore tomber), puis un dernier sans filtre
-     * (eau rougeâtre, caméra qui a bougé...).
+     * Cherche le bouchon dans toute la zone de pêche, par comparaison avec l'image d'avant le lancer : le décor, déjà
+     * là, est écarté. Quatre essais : le bouchon peut encore tomber.
      */
-    private Optional<Point> findBobber(Rectangle searchArea, Frame before, BobberDetector.Background water) {
+    private Optional<Point> findBobber(Rectangle searchArea, Frame before) {
 
         for (int count = 0; count < 4; count++) {
             Frame           after  = Capture.zone(searchArea);
-            Optional<Point> bobber = BobberDetector.locate(after, count < 3 ? before : null, searchArea, water);
+            Optional<Point> bobber = BobberDetector.locate(after, before, searchArea);
             if (bobber.isPresent()) {
                 if (count > 0) {logger.debug("Bouchon trouvé au {}e essai", count + 1);}
                 return bobber;

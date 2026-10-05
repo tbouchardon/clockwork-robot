@@ -5,6 +5,7 @@ import fr.ksuto.prh.capture.Rgb;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,33 +14,15 @@ import java.util.Optional;
 /**
  * Repère le bouchon de pêche et détecte la touche, sur des captures d'écran (coordonnées écran).
  * <p>
- * Signature du bouchon : sa plume rouge (3 pixels consécutifs) avec sa plume bleue juste au-dessus (2 à 7 pixels plus
- * haut, à un pixel près en largeur : l'écart change quand le bouchon tangue). Les couleurs sont jugées <b>par rapport à
- * l'eau</b> ({@link Background}, couleur médiane de la zone) : sous une lumière verte, la plume bleue devient gris-vert
- * (69, 107, 84) et ne serait plus « bleue » dans l'absolu, mais elle reste bien plus bleue que l'eau. Vérifiée sur des
- * captures en jeu (12.1) : eau boueuse en vue lointaine, eau verte lumineuse en vue à la première personne.
+ * Un pixel de plume est un pixel devenu nettement plus rouge, ou plus bleu, qu'il ne l'était <b>au même endroit juste
+ * avant le lancer</b> (image de référence). Ce qui était déjà là (herbes, rive, fleurs) ne change pas de teinte et ne
+ * compte pas, quelle que soit la taille de l'étendue d'eau ; et la couleur de l'eau, même verte, rouge ou de lave, sert
+ * de référence pixel par pixel. Vérifié sur des captures en jeu (12.1) : eau boueuse en vue lointaine, eau verte
+ * lumineuse en vue à la première personne.
+ * <p>
+ * Pour le trouver : un amas de pixels de plume apparus, de préférence portant les deux plumes (rouge et bleue).
  */
 final class BobberDetector {
-
-    /**
-     * Pixels minimum pour considérer les plumes visibles.
-     */
-    static final int MIN_PIXELS = 3;
-
-    /**
-     * Images de calibrage : la plume au repos (surface et centre moyens), référence de la touche.
-     */
-    static final int CALIBRATION = 8;
-
-    /**
-     * Touche : la surface visible de la plume tombe sous cette fraction de sa surface au repos (le bouchon plonge).
-     */
-    static final double DIP_RATIO = 0.5;
-
-    /**
-     * Touche : le centre de la plume s'écarte de sa position au repos de plus que sa hauteur (au moins ce minimum).
-     */
-    static final double MIN_MOVE = 4;
 
     /**
      * Images consécutives nécessaires pour conclure (bouchon écarté ou disparu), contre une image isolée bruitée.
@@ -47,95 +30,171 @@ final class BobberDetector {
     static final int CONFIRMATIONS = 2;
 
     /**
-     * Écart de couleur (sur un canal) entre avant et après le lancer à partir duquel un pixel est « apparu ».
-     */
-    static final int CHANGE_THRESHOLD = 40;
-
-    /**
-     * Plume rouge : rouge moins vert, et rouge moins bleu, dépassent ceux de l'eau d'au moins cette valeur.
+     * Plume rouge : rouge moins vert, et rouge moins bleu, dépassent ceux du même pixel avant le lancer d'au moins
+     * cette valeur.
      */
     static final int RED_MARGIN = 45;
 
     /**
-     * Plume bleue : bleu moins rouge, et bleu moins vert, dépassent ceux de l'eau d'au moins cette valeur.
+     * Plume bleue : bleu moins rouge, et bleu moins vert, dépassent ceux du même pixel avant le lancer d'au moins cette
+     * valeur.
      */
     static final int BLUE_MARGIN = 20;
 
     /**
-     * Couleur de l'eau, référence des couleurs des plumes.
+     * Pixels minimum pour considérer les plumes visibles.
      */
-    record Background(int red, int green, int blue) {
+    static final int MIN_PIXELS = 3;
 
-        /**
-         * Couleur médiane de la zone (un pixel sur 4 dans chaque sens) : l'eau, le bouchon étant petit.
-         */
-        static Background of(Frame frame, Rectangle zone) {
+    /**
+     * Taille minimale d'un amas d'une seule couleur pour être retenu comme bouchon.
+     */
+    static final int MIN_CLUSTER = 8;
 
-            List<Integer> reds = new ArrayList<>(), greens = new ArrayList<>(), blues = new ArrayList<>();
-            for (int y = zone.y; y < zone.y + zone.height; y += 4) {
-                for (int x = zone.x; x < zone.x + zone.width; x += 4) {
-                    if (!inside(frame, x, y)) {continue;}
-                    int rgb = at(frame, x, y);
-                    reds.add(Rgb.red(rgb));
-                    greens.add(Rgb.green(rgb));
-                    blues.add(Rgb.blue(rgb));
-                }
-            }
-            if (reds.isEmpty()) {return new Background(0, 0, 0);}
-            return new Background(median(reds), median(greens), median(blues));
-        }
+    /**
+     * Le bouchon est cherché à moins de cette distance de sa position attendue.
+     */
+    static final double SEED_RADIUS = 25;
 
-        private static int median(List<Integer> values) {
+    /**
+     * Pixels des plumes reliés de proche en proche à cette distance près (franchit l'écart entre les deux plumes).
+     */
+    static final int LINK = 3;
 
-            Collections.sort(values);
-            return values.get(values.size() / 2);
-        }
-    }
+    /**
+     * Fenêtre de suivi : demi-côté minimal et maximal, en pixels.
+     */
+    static final int MIN_WINDOW = 20;
+    static final int MAX_WINDOW = 60;
+
+    /**
+     * Images de calibrage : les plumes au repos (surface et centre moyens), référence de la touche.
+     */
+    static final int CALIBRATION = 8;
+
+    /**
+     * Touche : la surface visible des plumes tombe sous cette fraction de leur surface au repos (le bouchon plonge).
+     */
+    static final double DIP_RATIO = 0.5;
+
+    /**
+     * Touche : le centre des plumes s'écarte de sa position au repos de plus que leur hauteur (au moins ce minimum).
+     */
+    static final double MIN_MOVE = 4;
 
     private BobberDetector() {}
 
     /**
-     * Cherche le bouchon dans la zone.
+     * Cherche le bouchon dans la zone : les pixels de plume apparus depuis le lancer, regroupés en amas reliés de proche
+     * en proche. De préférence un amas portant les deux plumes (la signature : rouge et bleue), le plus gros ; à défaut,
+     * le plus gros amas d'au moins {@value #MIN_CLUSTER} pixels (sur la lave, seule la plume bleue ressort).
      *
-     * @param after      capture après le lancer, couvrant la zone
-     * @param before     capture avant le lancer, de la même étendue (null : pas de restriction)
-     * @param background couleur de l'eau
-     * @return la position du bouchon : seuls comptent les pixels apparus depuis {@code before} (la ligne lancée), ce qui
-     * écarte une plume rouge et bleue du décor ou un reflet
+     * @param after     capture après le lancer, couvrant la zone
+     * @param reference capture avant le lancer, couvrant la zone
+     * @return le centre de l'amas retenu
      */
-    static Optional<Point> locate(Frame after, Frame before, Rectangle zone, Background background) {
+    static Optional<Point> locate(Frame after, Frame reference, Rectangle zone) {
 
-        for (int y = zone.y; y < zone.y + zone.height; y++) {
-            for (int x = zone.x; x < zone.x + zone.width; x++) {
-                if (isSignature(after, x, y, background) && (before == null || appeared(before, after, x + 1, y))) {
-                    return Optional.of(new Point(x + 1, y));
+        boolean[][] red  = new boolean[zone.height][zone.width];
+        boolean[][] blue = new boolean[zone.height][zone.width];
+        for (int y = 0; y < zone.height; y++) {
+            for (int x = 0; x < zone.width; x++) {
+                red[y][x] = isRed(after, reference, zone.x + x, zone.y + y);
+                blue[y][x] = !red[y][x] && isBlue(after, reference, zone.x + x, zone.y + y);
+            }
+        }
+
+        boolean[][] seen      = new boolean[zone.height][zone.width];
+        Point       bestBoth  = null, bestAny = null;
+        int         sizeBoth  = 0, sizeAny = 0;
+        for (int y = 0; y < zone.height; y++) {
+            for (int x = 0; x < zone.width; x++) {
+                if (seen[y][x] || !(red[y][x] || blue[y][x])) {continue;}
+                // Amas : parcours de proche en proche
+                long                sumX = 0, sumY = 0;
+                int                 count = 0, reds = 0, blues = 0;
+                ArrayDeque<Integer> queue = new ArrayDeque<>();
+                queue.add(y * zone.width + x);
+                seen[y][x] = true;
+                while (!queue.isEmpty()) {
+                    int current = queue.poll(), cx = current % zone.width, cy = current / zone.width;
+                    sumX += zone.x + cx;
+                    sumY += zone.y + cy;
+                    count++;
+                    if (red[cy][cx]) {reds++;}
+                    else {blues++;}
+                    for (int dy = -LINK; dy <= LINK; dy++) {
+                        for (int dx = -LINK; dx <= LINK; dx++) {
+                            int nx = cx + dx, ny = cy + dy;
+                            if (nx < 0 || ny < 0 || nx >= zone.width || ny >= zone.height || seen[ny][nx] || !(red[ny][nx] || blue[ny][nx])) {continue;}
+                            seen[ny][nx] = true;
+                            queue.add(ny * zone.width + nx);
+                        }
+                    }
+                }
+                Point center = new Point((int) Math.round((double) sumX / count), (int) Math.round((double) sumY / count));
+                if (reds >= 3 && blues >= 1 && count > sizeBoth) {
+                    sizeBoth = count;
+                    bestBoth = center;
+                }
+                if (count >= MIN_CLUSTER && count > sizeAny) {
+                    sizeAny = count;
+                    bestAny = center;
                 }
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(bestBoth != null ? bestBoth : bestAny);
     }
 
     /**
-     * Plumes du bouchon dans la fenêtre : leurs pixels (rouges ou bleus par rapport à l'eau), leur centre et leur
-     * hauteur. Les deux plumes comptent : sur une eau rouge, orange ou de lave, la plume rouge ne ressort plus mais la
-     * bleue, très fortement ; sur une eau bleue, c'est l'inverse. Le centre de tous les pixels est stable d'une image à
-     * l'autre, contrairement au premier pixel trouvé : en vue à la première personne, les plumes font des dizaines de
-     * pixels.
+     * Plumes du bouchon dans la fenêtre : leurs pixels, leur centre et leur hauteur. Les deux plumes comptent : selon
+     * l'eau, c'est l'une ou l'autre qui ressort le mieux. Seuls les pixels reliés au bouchon comptent, de proche en
+     * proche à {@value #LINK} pixels près (pour franchir l'écart entre les deux plumes), en partant du pixel le plus
+     * proche de sa position attendue. Le centre de tous ces pixels est stable d'une image à l'autre.
      *
-     * @return vide si moins de {@value #MIN_PIXELS} pixels (bouchon sous l'eau ou hors de la fenêtre)
+     * @param reference capture avant le lancer, couvrant la fenêtre
+     * @param seed      position attendue du bouchon
+     * @return vide si moins de {@value #MIN_PIXELS} pixels près de la position attendue (bouchon sous l'eau)
      */
-    static Optional<Blob> measure(Frame frame, Rectangle window, Background water) {
+    static Optional<Blob> measure(Frame frame, Frame reference, Rectangle window, Point seed) {
 
-        long sumX = 0, sumY = 0;
-        int  count = 0, top = Integer.MAX_VALUE, bottom = Integer.MIN_VALUE;
-        for (int y = window.y; y < window.y + window.height; y++) {
-            for (int x = window.x; x < window.x + window.width; x++) {
-                if (!isRed(frame, x, y, water) && !isBlue(frame, x, y, water)) {continue;}
-                sumX += x;
-                sumY += y;
-                count++;
-                top = Math.min(top, y);
-                bottom = Math.max(bottom, y);
+        boolean[][] feather = new boolean[window.height][window.width];
+        int         nearest = -1;
+        double      best    = SEED_RADIUS;
+        for (int y = 0; y < window.height; y++) {
+            for (int x = 0; x < window.width; x++) {
+                int screenX = window.x + x, screenY = window.y + y;
+                if (!isFeather(frame, reference, screenX, screenY)) {continue;}
+                feather[y][x] = true;
+                double distance = seed.distance(screenX, screenY);
+                if (distance <= best) {
+                    best = distance;
+                    nearest = y * window.width + x;
+                }
+            }
+        }
+        if (nearest < 0) {return Optional.empty();}
+
+        long                sumX  = 0, sumY = 0;
+        int                 count = 0, top = Integer.MAX_VALUE, bottom = Integer.MIN_VALUE;
+        boolean[][]         seen  = new boolean[window.height][window.width];
+        ArrayDeque<Integer> queue = new ArrayDeque<>();
+        queue.add(nearest);
+        seen[nearest / window.width][nearest % window.width] = true;
+        while (!queue.isEmpty()) {
+            int current = queue.poll(), cx = current % window.width, cy = current / window.width;
+            sumX += window.x + cx;
+            sumY += window.y + cy;
+            count++;
+            top = Math.min(top, cy);
+            bottom = Math.max(bottom, cy);
+            for (int dy = -LINK; dy <= LINK; dy++) {
+                for (int dx = -LINK; dx <= LINK; dx++) {
+                    int nx = cx + dx, ny = cy + dy;
+                    if (nx < 0 || ny < 0 || nx >= window.width || ny >= window.height || seen[ny][nx] || !feather[ny][nx]) {continue;}
+                    seen[ny][nx] = true;
+                    queue.add(ny * window.width + nx);
+                }
             }
         }
         if (count < MIN_PIXELS) {return Optional.empty();}
@@ -158,53 +217,36 @@ final class BobberDetector {
         }
     }
 
+    static boolean isFeather(Frame frame, Frame reference, int x, int y) {
+
+        return isRed(frame, reference, x, y) || isBlue(frame, reference, x, y);
+    }
+
     /**
-     * Plume rouge en (x..x+2, y) et plume bleue dans (x-1..x+3, y-7..y-2).
+     * Devenu nettement plus rouge qu'avant le lancer, et rouge dominant (sous une lumière verte, la plume reste rouge :
+     * 120, 60, 20).
      */
-    static boolean isSignature(Frame frame, int x, int y, Background background) {
+    private static boolean isRed(Frame frame, Frame reference, int x, int y) {
 
-        for (int n = 0; n <= 2; n++) {
-            if (!isRed(frame, x + n, y, background)) {return false;}
-        }
-        for (int dy = 2; dy <= 7; dy++) {
-            for (int dx = -1; dx <= 3; dx++) {
-                if (isBlue(frame, x + dx, y - dy, background)) {return true;}
-            }
-        }
-        return false;
+        if (!inside(frame, x, y) || !inside(reference, x, y)) {return false;}
+        int now = at(frame, x, y), was = at(reference, x, y);
+        int r   = Rgb.red(now), g = Rgb.green(now), b = Rgb.blue(now);
+        int r0  = Rgb.red(was), g0 = Rgb.green(was), b0 = Rgb.blue(was);
+        return r > g && r > b && (r - g) - (r0 - g0) > RED_MARGIN && (r - b) - (r0 - b0) > RED_MARGIN;
     }
 
-    private static boolean isRed(Frame frame, int x, int y, Background water) {
+    /**
+     * Devenu nettement plus bleu qu'avant le lancer, et plus bleu que rouge (sur la lave, une plume rouge plus sombre
+     * que l'eau serait sinon « plus bleue » ; sous une lumière verte, la plume bleue reste plus bleue que rouge :
+     * 69, 107, 84).
+     */
+    private static boolean isBlue(Frame frame, Frame reference, int x, int y) {
 
-        if (!inside(frame, x, y)) {return false;}
-        int rgb = at(frame, x, y);
-        int r   = Rgb.red(rgb);
-        int g   = Rgb.green(rgb);
-        int b   = Rgb.blue(rgb);
-        // Plus rouge que l'eau, et rouge dominant : sur une eau verte, la plume reste rouge (120, 60, 20)
-        return r > g && r > b && (r - g) - (water.red() - water.green()) > RED_MARGIN && (r - b) - (water.red() - water.blue()) > RED_MARGIN;
-    }
-
-    private static boolean isBlue(Frame frame, int x, int y, Background water) {
-
-        if (!inside(frame, x, y)) {return false;}
-        int rgb = at(frame, x, y);
-        int r   = Rgb.red(rgb);
-        int g   = Rgb.green(rgb);
-        int b   = Rgb.blue(rgb);
-        // Plus bleu que l'eau, et plus bleu que rouge : sur la lave, une plume rouge plus sombre que l'eau serait sinon
-        // « plus bleue » ; sous une lumière verte, la plume bleue reste plus bleue que rouge (69, 107, 84)
-        return b > r && (b - r) - (water.blue() - water.red()) > BLUE_MARGIN && (b - g) - (water.blue() - water.green()) > BLUE_MARGIN;
-    }
-
-    private static boolean appeared(Frame before, Frame after, int x, int y) {
-
-        if (!inside(before, x, y)) {return true;}
-        int was = at(before, x, y);
-        int now = at(after, x, y);
-        return Math.abs(Rgb.red(was) - Rgb.red(now)) > CHANGE_THRESHOLD
-               || Math.abs(Rgb.green(was) - Rgb.green(now)) > CHANGE_THRESHOLD
-               || Math.abs(Rgb.blue(was) - Rgb.blue(now)) > CHANGE_THRESHOLD;
+        if (!inside(frame, x, y) || !inside(reference, x, y)) {return false;}
+        int now = at(frame, x, y), was = at(reference, x, y);
+        int r   = Rgb.red(now), g = Rgb.green(now), b = Rgb.blue(now);
+        int r0  = Rgb.red(was), g0 = Rgb.green(was), b0 = Rgb.blue(was);
+        return b > r && (b - r) - (b0 - r0) > BLUE_MARGIN && (b - g) - (b0 - g0) > BLUE_MARGIN;
     }
 
     private static boolean inside(Frame frame, int x, int y) {
@@ -218,7 +260,7 @@ final class BobberDetector {
     }
 
     /**
-     * Suit la plume rouge image après image et signale la touche, par rapport à la plume au repos (moyenne des
+     * Suit les plumes image après image et signale la touche, par rapport à la plume au repos (moyenne des
      * {@value #CALIBRATION} premières images) : sa surface visible tombe sous {@value #DIP_RATIO} fois celle au repos ou
      * disparaît (le bouchon plonge), ou son centre s'écarte de plus que sa hauteur, sur {@value #CONFIRMATIONS} images
      * consécutives.
@@ -227,10 +269,12 @@ final class BobberDetector {
 
         enum Verdict {WAITING, BITE, LOST}
 
-        private final Point start;
+        private final Point         start;
+        private final List<Integer> heights = new ArrayList<>();
 
         private double sumX, sumY, sumCount;
-        private int    calibrated, height, suspicious;
+        private int    calibrated, suspicious;
+        private double lastX, lastY;
 
         /**
          * @param start position du bouchon trouvée par {@link #locate}
@@ -238,27 +282,53 @@ final class BobberDetector {
         BiteWatcher(Point start) {
 
             this.start = start;
+            this.lastX = start.x;
+            this.lastY = start.y;
         }
 
         /**
-         * Fenêtre de suivi : autour de la plume au repos, assez grande pour sa taille et ses mouvements.
+         * Hauteur des plumes au repos : médiane du calibrage (une image aberrante ne la fausse pas).
+         */
+        int restHeight() {
+
+            if (heights.isEmpty()) {return 0;}
+            List<Integer> sorted = new ArrayList<>(heights);
+            Collections.sort(sorted);
+            return sorted.get(sorted.size() / 2);
+        }
+
+        /**
+         * Position attendue du bouchon : au repos une fois calibré, sinon la dernière mesurée.
+         */
+        Point seed() {
+
+            if (calibrated >= CALIBRATION) {return new Point((int) Math.round(sumX / calibrated), (int) Math.round(sumY / calibrated));}
+            return new Point((int) Math.round(lastX), (int) Math.round(lastY));
+        }
+
+        /**
+         * Fenêtre de suivi : autour de la position attendue, de demi-côté 3 fois la hauteur des plumes, bornée entre
+         * {@value #MIN_WINDOW} et {@value #MAX_WINDOW} pixels (elle ne peut pas s'emballer).
          */
         Rectangle window() {
 
-            int    radius = Math.max(20, 3 * height);
-            double x      = calibrated == 0 ? start.x : sumX / calibrated;
-            double y      = calibrated == 0 ? start.y : sumY / calibrated;
-            return new Rectangle((int) Math.round(x) - radius, (int) Math.round(y) - radius, 2 * radius, 2 * radius);
+            int   radius = Math.clamp(3L * restHeight(), MIN_WINDOW, MAX_WINDOW);
+            Point center = seed();
+            return new Rectangle(center.x - radius, center.y - radius, 2 * radius, 2 * radius);
         }
 
         Verdict feed(Optional<Blob> measured) {
 
+            measured.ifPresent(blob -> {
+                lastX = blob.x();
+                lastY = blob.y();
+            });
             if (calibrated < CALIBRATION) {
                 measured.ifPresent(blob -> {
                     sumX += blob.x();
                     sumY += blob.y();
                     sumCount += blob.count();
-                    height = Math.max(height, blob.height());
+                    heights.add(blob.height());
                     calibrated++;
                 });
                 return Verdict.WAITING;
@@ -267,7 +337,7 @@ final class BobberDetector {
             double restCount = sumCount / calibrated;
             Verdict verdict;
             if (measured.isEmpty() || measured.get().count() < DIP_RATIO * restCount) {verdict = Verdict.LOST;}
-            else if (measured.get().distance(sumX / calibrated, sumY / calibrated) > Math.max(MIN_MOVE, height)) {verdict = Verdict.BITE;}
+            else if (measured.get().distance(sumX / calibrated, sumY / calibrated) > Math.max(MIN_MOVE, restHeight())) {verdict = Verdict.BITE;}
             else {verdict = Verdict.WAITING;}
 
             if (verdict == Verdict.WAITING) {
