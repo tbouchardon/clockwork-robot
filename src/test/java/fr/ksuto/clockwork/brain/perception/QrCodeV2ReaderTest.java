@@ -96,6 +96,15 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void neutralTargetIsAttackableLikeTheAddonDid() {
+
+        GameState state = QrCodeV2Reader.read(v2().set(11, 3, 1, 1, 0).frame()).orElseThrow();
+
+        assertTrue(state.targetHostile(), "cible neutre (jaune)");
+        assertFalse(QrCodeV2Reader.read(v2().set(11, 3, 0, 1, 0).frame()).orElseThrow().targetHostile(), "cible amicale (verte)");
+    }
+
+    @Test
     void deadTargetIsNotHostile() {
 
         GameState state = QrCodeV2Reader.read(v2().set(11, 3, 0.5, 0.5, 0.5).frame()).orElseThrow();

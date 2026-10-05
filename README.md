@@ -153,7 +153,7 @@ historique). Il produit un `GameState` immuable :
 | Champ | Source |
 |---|---|
 | `playerHealth`, `playerPower`, `targetHealth`, `targetPower` | Pourcentages, lus dans les cases secrètes côté addon. |
-| `hasTarget`, `targetHostile` | Réaction de la cible : noir = aucune, rouge = hostile. Une cible **morte** est grise : présente mais pas hostile. |
+| `hasTarget`, `targetHostile` | Réaction de la cible : noir = aucune, rouge = hostile, jaune = neutre (attaquable aussi, comme le faisait l'addon). Une cible **morte** est grise : présente mais pas hostile. |
 | `inCombat`, `casting`, `targetInCombat`, `aggro` | Drapeaux. |
 | `enemies` | Ennemis en combat d'après les barres de vie. |
 | `facing` | Direction du personnage, en radians. |
@@ -322,7 +322,7 @@ Variables disponibles dans `when` :
 | `player.castSpell`, `player.channeling`, `player.castRemaining` | Sort en cours (`''` si aucun), canalisation ou incantation, secondes restantes. Ex. : ne couper un drain qu'en fin de canalisation. |
 | `player.form` | Nom de la forme active (druide…), `''` sans forme. |
 | `player.combo` | Points de combo. |
-| `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = ennemi **vivant**, non marqué par un autre joueur. |
+| `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = cible attaquable : ennemie ou neutre (rouge ou jaune), **vivante**, non marquée par un autre joueur. |
 | `target.health`, `target.power` | Pourcentages. |
 | `enemies` | Nombre d'ennemis en combat à proximité. |
 | `assisted` | Nom du sort recommandé par Blizzard. |

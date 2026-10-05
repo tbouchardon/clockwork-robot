@@ -36,6 +36,12 @@ public final class QrCodeV2Reader {
     private static final double HORIZON = 60;
 
     /**
+     * Réaction de la cible : jaune = neutre (sanglier, monture sauvage...), attaquable comme une cible rouge, ainsi que
+     * le faisait l'addon (unitExistCanAndShouldDie).
+     */
+    private static final int ARGB_YELLOW = 0xFFFFFF00;
+
+    /**
      * Secondes encodées pour le temps restant d'une incantation, identique à CAST_HORIZON côté addon.
      */
     private static final double CAST_HORIZON = 10;
@@ -66,7 +72,7 @@ public final class QrCodeV2Reader {
                 percent(qr.red(12, 2)),
                 percent(qr.blue(13, 2)),
                 reaction != Rgb.ARGB_BLACK,
-                reaction == Rgb.ARGB_RED,
+                reaction == Rgb.ARGB_RED || reaction == ARGB_YELLOW,
                 percent(qr.red(12, 3)),
                 percent(qr.blue(13, 3)),
                 qr.green(10, 2) > 127,

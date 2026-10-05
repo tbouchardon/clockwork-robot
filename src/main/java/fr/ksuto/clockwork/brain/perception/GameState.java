@@ -9,7 +9,7 @@ import java.util.Optional;
  * @param playerHealth     vie du joueur, en %
  * @param playerPower      ressource principale du joueur, en %
  * @param hasTarget        une cible est sélectionnée
- * @param targetHostile    la cible est hostile
+ * @param targetHostile    la cible est hostile ou neutre (rouge ou jaune) : on peut l'attaquer
  * @param targetHealth     vie de la cible, en %
  * @param targetPower      ressource principale de la cible, en %
  * @param targetInCombat   la cible est en combat
