@@ -409,8 +409,10 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     position, pour garder les deux plumes). On mesure le centre de tous leurs pixels, stable d'une image à l'autre, et
     leur surface. Les 20 premières images (~0,4 s) donnent la position et la surface au repos, en médiane (insensible à
     l'éclaboussure de l'arrivée) ; il y a touche si la surface visible tombe sous 0,55 fois celle au repos (le bouchon
-    plonge : 0,38 à 0,44 mesuré en jeu, contre 0,58 au plus bas au repos) ou si le centre s'écarte de plus que la
-    hauteur des plumes, sur deux images consécutives : clic immédiat.
+    plonge : 0,38 à 0,44 mesuré en jeu, contre 0,58 au plus bas au repos), si elle baisse sous 0,8 en même temps que
+    le centre s'écarte de plus d'un quart de la hauteur des plumes (plongée brève ou peu profonde : 10 à 20 px mesurés
+    à la touche, 2 à 7 px au repos), ou si le centre s'écarte de plus que la hauteur des plumes, sur deux images
+    consécutives : clic immédiat. Règles vérifiées en rejouant les traces de 19 lancers réels.
   - **Trace** : chaque lancer écrit `traces-peche/<horodatage>.csv` (centre, surface, hauteur et verdict à chaque
     image), pour régler les seuils sur des données réelles.
   - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le

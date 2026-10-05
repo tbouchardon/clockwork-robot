@@ -84,6 +84,14 @@ final class BobberDetector {
      */
     static final double MIN_MOVE = 4;
 
+    /**
+     * Touche : la surface visible baisse un peu (sous cette fraction) et, en même temps, le centre s'écarte de plus de
+     * {@link #SHIFT_RATIO} fois la hauteur des plumes. Mesuré en jeu : à la touche, surface 0,54 à 0,75 et centre déplacé
+     * de 10 à 20 px pour des plumes de 35 à 45 px ; au repos, 2 à 7 px. Rattrape les plongées brèves ou peu profondes.
+     */
+    static final double PARTIAL_DIP_RATIO = 0.8;
+    static final double SHIFT_RATIO       = 0.25;
+
     private BobberDetector() {}
 
     /**
@@ -331,8 +339,12 @@ final class BobberDetector {
 
             Verdict verdict;
             if (measured.isEmpty() || measured.get().count() < DIP_RATIO * rest.count()) {verdict = Verdict.LOST;}
-            else if (measured.get().distance(rest.x(), rest.y()) > Math.max(MIN_MOVE, rest.height())) {verdict = Verdict.BITE;}
-            else {verdict = Verdict.WAITING;}
+            else {
+                double shift = measured.get().distance(rest.x(), rest.y());
+                boolean dipsAndShifts = measured.get().count() < PARTIAL_DIP_RATIO * rest.count()
+                                        && shift > Math.max(MIN_MOVE, SHIFT_RATIO * rest.height());
+                verdict = dipsAndShifts || shift > Math.max(MIN_MOVE, rest.height()) ? Verdict.BITE : Verdict.WAITING;
+            }
 
             if (verdict == Verdict.WAITING) {
                 suspicious = 0;

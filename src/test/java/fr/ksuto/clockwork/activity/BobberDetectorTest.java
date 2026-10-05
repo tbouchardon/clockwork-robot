@@ -267,6 +267,17 @@ class BobberDetectorTest {
     }
 
     @Test
+    void briefShallowDipWithShiftIsABite() {
+
+        // Mesure réelle d'une touche manquée : surface 0,54 à 0,69, centre décalé de 10 à 17 px, plumes de 41 px
+        BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(new Point(150, 230));
+        for (int i = 0; i < BobberDetector.CALIBRATION; i++) {watcher.feed(Optional.of(new BobberDetector.Blob(150, 230, 500, 41)));}
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, watcher.feed(Optional.of(new BobberDetector.Blob(152, 236, 400, 35))), "tangage : centre à 6 px");
+        assertEquals(BobberDetector.BiteWatcher.Verdict.WAITING, watcher.feed(Optional.of(new BobberDetector.Blob(150, 243, 345, 25))));
+        assertEquals(BobberDetector.BiteWatcher.Verdict.BITE, watcher.feed(Optional.of(new BobberDetector.Blob(150, 242, 340, 27))));
+    }
+
+    @Test
     void landingSplashDoesNotSkewTheRestReference() {
 
         // Mesure réelle d'un faux clic : l'éclaboussure de l'arrivée doublait la surface des premières images
