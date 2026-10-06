@@ -6,6 +6,9 @@
 # Les debuffs sont illisibles en combat depuis la 12.x : « absent ou presque fini » devient « lancé sur cette cible il y
 # a plus de X s », d'après les durées des tables du jeu (12.1, SpellMisc) : Affliction instable 8 s, Agonie 18 s,
 # Corruption 14 s. À ajuster si un talent les allonge.
+#
+# Plusieurs ennemis : une fois Agonie et Corruption posées sur la cible, s'il reste des ennemis en combat sans Agonie,
+# passer au suivant (Tab). ClockWork reconnaît chaque ennemi : revenu sur une cible déjà affligée, il ne relance rien.
 
 name: Démoniste Affliction
 class: WARLOCK
@@ -30,6 +33,15 @@ rules:
   - cast: Corruption
     when: "target.hostile && spell.sinceCastOnTarget('Corruption') > 12"
     priority: 85
+
+  # DoT posés ici, d'autres ennemis sans Agonie : cible suivante
+  - action: next-target
+    when: >-
+      player.combat
+      && spell.sinceCastOnTarget('Agonie') < 14
+      && spell.sinceCastOnTarget('Corruption') < 12
+      && spell.dotted('Agonie', 14) < enemies
+    priority: 50
 
   # Remplissage
   - cast: Trait de l'ombre

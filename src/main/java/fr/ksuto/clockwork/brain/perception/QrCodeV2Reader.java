@@ -114,7 +114,8 @@ public final class QrCodeV2Reader {
                 qr.green(11, 13) > 127 ? new GameState.TargetCast(true, read24(qr, 12, 13), qr.blue(11, 13) > 127) : GameState.TargetCast.NONE,
                 keys,
                 version >= 4 && full ? readGroup(qr) : Group.NONE,
-                version >= 4 && qr.red(4, 1) > 127 ? qr.green(4, 1) * WEAPON_ENCHANT_HORIZON / 255 : 0));
+                version >= 4 && qr.red(4, 1) > 127 ? qr.green(4, 1) * WEAPON_ENCHANT_HORIZON / 255 : 0,
+                version >= 4 ? read24(qr, 6, 1) : 0));
     }
 
     /**

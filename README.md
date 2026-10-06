@@ -165,6 +165,7 @@ mode historique). Il produit un `GameState` immuable :
 | `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
 | `frame` | Compteur de mises à jour (v3 et plus). |
 | `group` | Groupe ou raid (v4, `Group.NONE` avant) : mode soigneur, en raid, membres présents. Chaque `Group.Member` a son emplacement (1 à 40, celui du raccourci qui le cible), sa vie en %, sa portée de soin, mort, déconnecté, c'est le joueur, son rôle (tank, soigneur, dégâts). |
+| `targetId` | Identifiant de la cible sur 24 bits, tiré de la fin de son GUID (v4, 0 si aucune) : le cerveau reconnaît un ennemi déjà vu. |
 | `weaponEnchant` | Secondes restantes de l'enchantement temporaire de la main droite : leurre sur la canne à pêche (v4, 0 si aucun). |
 | `keys` | 18 touches en v2, **72** à partir de la v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
 
@@ -321,6 +322,9 @@ rules:
 - `use` : à la place de `cast`, un **objet** à utiliser (potion, pierre de soins, leurre…), par son nom affiché en jeu ou
   son identifiant. Tous les objets de ce nom conviennent : il existe par exemple une vingtaine de « Pierre de soins ».
   L'objet doit être sur une touche décrite par la grille, comme un sort.
+- `action` : à la place de `cast` ou `use`, `next-target` passe à l'ennemi suivant (`Tab`), pour répartir ses DoT
+  (voir *Plusieurs ennemis* ci-dessous). Au plus une fois toutes les 1,5 s, le temps que la grille décrive la nouvelle
+  cible. Pas soumise au mode aggro : quitter une cible hors combat est permis.
 - `activity` : `fishing` pour un fichier qui ne sert pas au combat mais à préparer chaque lancer de pêche (voir *Autres
   activités*). Il n'a pas de classe.
 - `when` : condition JEXL (`&&`, `||`, `!`, `<`, `>`, `==`, arithmétique). Si elle est absente, la règle est toujours
@@ -350,13 +354,33 @@ Variables disponibles dans `when` :
 | `spell.cooldown('Nom')` | Secondes de recharge restantes. |
 | `spell.buffActive('Nom')` | L'aura du sort est active sur le joueur (Cri de guerre, Bouclier de foudre…). Lue **hors combat** seulement, les auras étant inaccessibles en combat en 12.x : en combat, c'est l'état lu juste avant d'y entrer. |
 | `spell.form('Nom')` | Le personnage est sous cette forme (accents, casse et apostrophe indifférents). |
-| `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. |
+| `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. L'addon retient les lancements **par cible** : revenu sur un ennemi déjà affligé, `sinceCastOnTarget` retrouve ses DoT. |
+| `spell.dotted('Nom', s)` | Nombre d'ennemis différents sur lesquels le sort a été lancé depuis moins de `s` secondes (lancements du cerveau, plus la cible actuelle). `spell.dotted('Agonie', 14) < enemies` : il reste des ennemis sans Agonie. |
 | `item.ready('Nom')`, `item.usable('Nom')`, `item.onBar('Nom')`, `item.cooldown('Nom')` | Comme `spell.*`, pour un objet. |
 | `item.count('Nom')`, `item.sinceUse('Nom')`, `item.buffActive('Nom')` | Nombre possédé (charges comprises), secondes depuis la dernière utilisation, aura de l'objet active sur le joueur (lue hors combat). |
 | `healer` | Mode soigneur de l'addon. |
 | `group.size`, `group.below(%)`, `group.avgHealth` | Membres vivants et connectés, nombre d'entre eux sous ce pourcentage de vie, vie moyenne. |
 | `member.health`, `member.role`, `member.tank`, `member.healer`, `member.self` | Règles `on` seulement : le membre candidat. `role` vaut `'tank'`, `'healer'`, `'damager'` ou `''`. |
 | `member.sinceCast('Nom')` | Règles `on` seulement : secondes depuis le dernier lancement **par le cerveau** de ce sort sur ce membre, infini au-delà de 60 s. Remplace les auras, illisibles en combat (Récupération, Bouclier…). |
+
+### Plusieurs ennemis
+
+Pour répartir ses DoT, une règle `action: next-target` passe à l'ennemi suivant quand les DoT sont posés sur la cible
+actuelle et qu'il reste des ennemis sans eux :
+
+```yaml
+  - action: next-target
+    when: >-
+      player.combat
+      && spell.sinceCastOnTarget('Agonie') < 14
+      && spell.dotted('Agonie', 14) < enemies
+    priority: 50
+```
+
+Chaque ennemi est reconnu par son identifiant (grille v4). Le cerveau retient ses propres lancements sur chacun
+(`spell.dotted`), et l'addon les lancements sur la cible actuelle, même faits à la main ou avant d'être passé sur
+d'autres (`spell.sinceCastOnTarget`). `enemies` compte les ennemis en combat dont la barre de vie est affichée : `Tab`
+choisit parmi eux le plus proche devant le personnage.
 
 ### Soigner le groupe
 
@@ -439,7 +463,7 @@ Limites actuelles :
 |---|---|
 | `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. Soins : Rétablissement d'urgence sous 25 % même hors mode soigneur, puis retour en forme de félin ; en mode soigneur, Récupération et Rétablissement avant les dégâts. |
-| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. |
+| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. Agonie et Corruption réparties entre les ennemis en combat (`next-target`). |
 | `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
 | `rotations/peche.yaml` | Pêche (`activity: fishing`) : leurre à reposer sur la canne. Les noms des objets sont à adapter. |
@@ -557,6 +581,8 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 - `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
+- `DotSpreadingTest` : répartition d'Agonie et Corruption entre deux ennemis, retour sur le premier à l'expiration,
+  délai entre deux `Tab`.
 - Pêche : lecture du résultat du dernier lancer (`QrCodeV2ReaderTest`), fichier des résultats (`FishingResultsTest`).
 - Objets : lecture d'un objet sur une touche et de l'enchantement de l'arme (`QrCodeV2ReaderTest`), règles `use` et
   `item.*` (`BrainTest`), fichier de pêche (`BrainServiceTest`).

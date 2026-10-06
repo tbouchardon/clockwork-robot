@@ -212,6 +212,7 @@ public class Automaton {
         boolean altModifier          = false;
         Rotation.StopCasting stopFirst = Rotation.StopCasting.NONE;
         int     member               = 0;
+        boolean tabbed               = false;
         boolean returnToTarget       = false;
         
         Frame capturedQrCode = qrCode.getCapturedQrCode();
@@ -246,6 +247,13 @@ public class Automaton {
             Optional<GameState> state = QrCodeV2Reader.read(qrCode.getCapturedQrCode());
             if (state.isPresent() && brain.handles(state.get())) {
                 Optional<Brain.Decision> decision = gridFrozen(state.get()) ? Optional.empty() : brain.decide(state.get());
+                // Cible suivante (répartition des DoT) : Tab, rien d'autre à ce tour
+                if (decision.isPresent() && decision.get().key().equals(Brain.NEXT_TARGET)) {
+                    logger.debug("Cerveau : cible suivante ({}, priorité {})", decision.get().reason(), decision.get().priority());
+                    peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
+                    tabbed = true;
+                    decision = Optional.empty();
+                }
                 KeyCombo combo = decision.map(d -> KeyCombo.parse(d.key())).orElse(null);
                 key2hit = combo == null ? null : keyNamed(qrCode, combo.key()).orElse(null);
                 altModifier = combo != null && combo.alt();
@@ -272,7 +280,7 @@ public class Automaton {
             if (member > 0 && returnToTarget) {press(GroupTargeting.LAST_TARGET);}
         }
         
-        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
+        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !tabbed && !qrCode.casting.active) {
             peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
         }
         

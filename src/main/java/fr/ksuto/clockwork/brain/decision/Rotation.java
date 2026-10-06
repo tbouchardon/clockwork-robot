@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Rotation décrite en YAML : une liste de règles « lancer tel sort quand telle condition est vraie », avec une priorité,
@@ -109,17 +110,47 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
      * @param script   condition compilée, nulle si toujours vraie
      * @param on       sur qui lancer le sort
      * @param always   un soin sur les autres qui s'applique même hors mode soigneur (urgence)
-     * @param item     la règle utilise un objet ({@code use}) plutôt qu'un sort ({@code cast})
+     * @param kind     sort ({@code cast}), objet ({@code use}) ou action ({@code action})
      */
-    public record Rule(String cast, String when, int priority, JexlScript script, On on, boolean always, boolean item) {
+    public record Rule(String cast, String when, int priority, JexlScript script, On on, boolean always, Kind kind) {
+
+        /**
+         * La règle utilise un objet ({@code use}).
+         */
+        public boolean item() {
+
+            return kind == Kind.ITEM;
+        }
 
         /**
          * Nom affiché dans le journal.
          */
         public String label() {
 
-            return item ? "objet « " + cast + " »" : "« " + cast + " »";
+            return switch (kind) {
+                case SPELL -> "« " + cast + " »";
+                case ITEM -> "objet « " + cast + " »";
+                case NEXT_TARGET -> "cible suivante";
+            };
         }
+    }
+
+    /**
+     * Ce que fait une règle.
+     */
+    public enum Kind {
+        /**
+         * Lancer un sort ({@code cast}).
+         */
+        SPELL,
+        /**
+         * Utiliser un objet ({@code use}).
+         */
+        ITEM,
+        /**
+         * Passer à l'ennemi suivant ({@code action: next-target}, touche Tab) : répartir ses DoT entre plusieurs ennemis.
+         */
+        NEXT_TARGET
     }
 
     @SuppressWarnings("unchecked")
@@ -142,11 +173,15 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
         List<Rule> rules = new ArrayList<>();
         if (map.get("rules") instanceof List<?> list) {
             for (Object item : list) {
-                if (!(item instanceof Map<?, ?> rule) || (rule.get("cast") == null) == (rule.get("use") == null)) {
-                    throw new IllegalArgumentException("Règle sans « cast » (sort) ni « use » (objet), ou avec les deux : " + item);
+                long kinds = item instanceof Map<?, ?> fields ? Stream.of("cast", "use", "action").filter(k -> fields.get(k) != null).count() : 0;
+                if (!(item instanceof Map<?, ?> rule) || kinds != 1) {
+                    throw new IllegalArgumentException("Une règle a soit « cast » (sort), soit « use » (objet), soit « action » : " + item);
                 }
-                boolean    useItem = rule.get("use") != null;
-                String     cast   = String.valueOf(useItem ? rule.get("use") : rule.get("cast"));
+                Kind kind = rule.get("cast") != null ? Kind.SPELL : rule.get("use") != null ? Kind.ITEM : switch (String.valueOf(rule.get("action"))) {
+                    case "next-target" -> Kind.NEXT_TARGET;
+                    default -> throw new IllegalArgumentException("action inconnue : " + rule.get("action") + " (next-target)");
+                };
+                String     cast   = String.valueOf(kind == Kind.SPELL ? rule.get("cast") : kind == Kind.ITEM ? rule.get("use") : rule.get("action"));
                 String     when   = rule.get("when") == null ? null : String.valueOf(rule.get("when"));
                 int        ruleP  = rule.get("priority") instanceof Number number ? number.intValue() : 1;
                 JexlScript script = when == null ? null : jexl.createScript(when);
@@ -161,7 +196,7 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
                     default -> throw new IllegalArgumentException("on inconnu pour « " + cast + " » : " + onKey
                                                                   + " (target, self, lowest, tank ou healer)");
                 };
-                rules.add(new Rule(cast, when, ruleP, script, on, Boolean.TRUE.equals(rule.get("always")), useItem));
+                rules.add(new Rule(cast, when, ruleP, script, on, Boolean.TRUE.equals(rule.get("always")), kind));
             }
         }
         // Tri stable : à priorité égale, l'ordre du fichier est conservé

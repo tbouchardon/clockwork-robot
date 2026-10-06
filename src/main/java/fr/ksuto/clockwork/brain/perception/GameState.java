@@ -34,11 +34,26 @@ import java.util.Optional;
  * @param group            groupe ou raid, et mode soigneur (v4 ; {@link Group#NONE} avant)
  * @param weaponEnchant    secondes restantes de l'enchantement temporaire de la main droite (leurre sur la canne à
  *                         pêche...), 0 si aucun (v4)
+ * @param targetId         identifiant de la cible sur 24 bits, tiré de son GUID (v4, 0 si aucune ou illisible) : reconnaître
+ *                         une cible déjà vue
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
                         boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group,
-                        double weaponEnchant) {
+                        double weaponEnchant, int targetId) {
+
+    /**
+     * État sans identifiant de cible.
+     */
+    public GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
+                     boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
+                     boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId,
+                     int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group, double weaponEnchant) {
+
+        this(playerHealth, playerPower, hasTarget, targetHostile, targetHealth, targetPower, targetInCombat, inCombat, casting, enemies, facing,
+             recommendedSpell, aggro, playerDead, mounted, targetTapDenied, moving, form, comboPoints, classId, specId, frame, cast, targetCast, keys,
+             group, weaponEnchant, 0);
+    }
 
     /**
      * État sans enchantement d'arme.

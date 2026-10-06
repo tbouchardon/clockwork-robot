@@ -51,6 +51,23 @@ public final class Brain {
     private Decision lastDecision;
 
     /**
+     * Touche de la décision « cible suivante » (règle {@code action: next-target}).
+     */
+    public static final String NEXT_TARGET = "TAB";
+
+    /**
+     * Délai minimal entre deux changements de cible : la grille doit d'abord décrire la nouvelle cible.
+     */
+    static final long NEXT_TARGET_DELAY = 1500;
+
+    private long lastNextTarget = Long.MIN_VALUE / 2;
+
+    /**
+     * Derniers lancements sur chaque ennemi (identifiant de cible → sort → instant en ms), pour {@code spell.dotted}.
+     */
+    private final Map<Integer, Map<Integer, Long>> targetCasts = new HashMap<>();
+
+    /**
      * Derniers lancements sur chaque membre (emplacement → sort → instant en ms), pour {@code member.sinceCast}.
      */
     private final Map<Integer, Map<Integer, Long>> memberCasts = new HashMap<>();
@@ -106,9 +123,10 @@ public final class Brain {
         Rotation.StopCasting stop = state.casting() && !state.cast().channeling() && state.cast().remaining() > QUEUE_WINDOW
                                     ? rotation.stopCasting() : Rotation.StopCasting.NONE;
 
-        Map<String, Object> variables = variables(state, database);
+        long                now       = clock.getAsLong();
+        SpellView           spells    = new SpellView(state, database, targetCasts, now);
+        Map<String, Object> variables = variables(state, database, spells);
         MapContext          context   = new MapContext(variables);
-        SpellView           spells    = new SpellView(state, database);
         ItemView            items     = new ItemView(state, database);
 
         for (Rotation.Rule rule : rotation.rules()) {
@@ -117,7 +135,14 @@ public final class Brain {
 
             if (rotation.followAssisted() && rotation.assistedPriority() > rule.priority() && rotation.assistedPriority() > minimum && state.mayAct()) {
                 Optional<Decision> assisted = assisted(state, rotation, database);
-                if (assisted.isPresent()) {return remember(assisted, stop);}
+                if (assisted.isPresent()) {return remember(assisted, stop, state);}
+            }
+
+            if (rule.kind() == Rotation.Kind.NEXT_TARGET) {
+                // Pas de mayAct : quitter une cible hors combat est justement permis
+                if (now - lastNextTarget < NEXT_TARGET_DELAY || !holds(rule, context)) {continue;}
+                lastNextTarget = now;
+                return Optional.of(new Decision(NEXT_TARGET, 0, rule.priority(), "règle " + rule.label()));
             }
 
             Optional<KeyState> key = rule.item() ? items.key(rule.cast()) : spells.key(rule.cast());
@@ -127,16 +152,16 @@ public final class Brain {
             }
             if (rule.on() != Rotation.On.TARGET) {
                 Optional<Decision> onMember = onMember(rule, key.get(), state, rotation, variables, database);
-                if (onMember.isPresent()) {return remember(onMember, stop);}
+                if (onMember.isPresent()) {return remember(onMember, stop, state);}
                 continue;
             }
             if (!state.mayAct() || !key.get().ready() || !holds(rule, context)) {continue;}
 
-            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle " + rule.label())), stop);
+            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle " + rule.label())), stop, state);
         }
 
         if (!rotation.followAssisted() || rotation.assistedPriority() <= minimum || !state.mayAct()) {return Optional.empty();}
-        return remember(assisted(state, rotation, database), stop);
+        return remember(assisted(state, rotation, database), stop, state);
     }
 
     /**
@@ -197,12 +222,18 @@ public final class Brain {
         return OptionalInt.empty();
     }
 
-    private Optional<Decision> remember(Optional<Decision> decision, Rotation.StopCasting stop) {
+    private Optional<Decision> remember(Optional<Decision> decision, Rotation.StopCasting stop, GameState state) {
 
         Optional<Decision> result = decision.map(d -> new Decision(d.key(), d.spellId(), d.priority(), d.reason(), stop, d.member(), d.returnToTarget()));
         result.ifPresent(d -> {
             lastDecision = d;
-            if (d.member() > 0) {memberCasts.computeIfAbsent(d.member(), slot -> new HashMap<>()).put(d.spellId(), clock.getAsLong());}
+            long now = clock.getAsLong();
+            if (d.member() > 0) {memberCasts.computeIfAbsent(d.member(), slot -> new HashMap<>()).put(d.spellId(), now);}
+            else if (state.targetId() != 0 && d.spellId() != 0) {
+                targetCasts.values().forEach(casts -> casts.values().removeIf(time -> now - time > 60_000));
+                targetCasts.values().removeIf(Map::isEmpty);
+                targetCasts.computeIfAbsent(state.targetId(), id -> new HashMap<>()).put(d.spellId(), now);
+            }
         });
         return result;
     }
@@ -239,7 +270,7 @@ public final class Brain {
     /**
      * Variables des conditions ; {@code member} s'y ajoute pour une règle {@code on}.
      */
-    private static Map<String, Object> variables(GameState state, SpellDatabase database) {
+    private static Map<String, Object> variables(GameState state, SpellDatabase database, SpellView spells) {
 
         Map<String, Object> variables = new HashMap<>();
         MapContext          context   = new MapContext(variables); // écrit dans variables
@@ -256,7 +287,7 @@ public final class Brain {
                                      "castSpell", state.targetCast().spellId() == 0 ? "" : database.nameOf(state.targetCast().spellId())));
         context.set("enemies", state.enemies());
         context.set("assisted", state.recommendedSpell() == 0 ? "" : database.nameOf(state.recommendedSpell()));
-        context.set("spell", new SpellView(state, database));
+        context.set("spell", spells);
         context.set("item", new ItemView(state, database));
         context.set("healer", state.group().healerMode());
         context.set("group", new GroupView(state.group()));
