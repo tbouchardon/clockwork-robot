@@ -46,12 +46,17 @@ class DotSpreadingTest {
      */
     private Optional<Brain.Decision> decide(int targetId, int enemies, double agony, double corruption) {
 
+        return decide(targetId, enemies, agony, corruption, true, 80);
+    }
+
+    private Optional<Brain.Decision> decide(int targetId, int enemies, double agony, double corruption, boolean targetInCombat, double targetHealth) {
+
         Map<String, KeyState> keys = new LinkedHashMap<>();
         keys.put("1", new KeyState("1", UNSTABLE_AFFLICTION, 20, true, KeyState.Range.IN, NEVER, NEVER, false));
         keys.put("2", key("2", AGONY, agony));
         keys.put("3", key("3", CORRUPTION, corruption));
         keys.put("4", key("4", SHADOW_BOLT, NEVER));
-        GameState state = new GameState(100, 100, true, true, 80, 0, true, true, false, enemies, 0, 0, true, false, false, false, false, 0, 0, 9,
+        GameState state = new GameState(100, 100, true, true, targetHealth, 0, targetInCombat, true, false, enemies, 0, 0, true, false, false, false, false, 0, 0, 9,
                                         265, 1, GameState.Cast.NONE, GameState.TargetCast.NONE, keys, Group.NONE, 0, targetId);
         return brain.decide(state, rotation, spellbook);
     }
@@ -80,6 +85,30 @@ class DotSpreadingTest {
         // 13 s plus tard, l'Agonie de A expire (14 s) : on y retourne
         now.addAndGet(13_000);
         assertEquals("Tab", action(0xB, 2, 4, 5));
+    }
+
+    @Test
+    void leavesATargetThatIsNotFightingAtOnce() {
+
+        Optional<Brain.Decision> decision = decide(0xC, 2, NEVER, NEVER, false, 100);
+        assertEquals(Brain.NEXT_TARGET, decision.orElseThrow().key(), "Tab tombé sur un monstre non engagé : pas de DoT, on le quitte");
+    }
+
+    @Test
+    void afflictsThreeEnemiesAtMost() {
+
+        for (int target = 1; target <= 3; target++) {
+            assertEquals(String.valueOf(AGONY), action(target, 6, NEVER, NEVER));
+            assertEquals(String.valueOf(CORRUPTION), action(target, 6, 1, NEVER));
+            now.addAndGet(Brain.NEXT_TARGET_DELAY);
+            assertEquals(target < 3 ? "Tab" : String.valueOf(SHADOW_BOLT), action(target, 6, 2, 1), "ennemi " + target);
+        }
+    }
+
+    @Test
+    void noDotOnADyingEnemy() {
+
+        assertEquals(String.valueOf(SHADOW_BOLT), decide(0xA, 1, NEVER, NEVER, true, 15).map(d -> String.valueOf(d.spellId())).orElse(""));
     }
 
     @Test

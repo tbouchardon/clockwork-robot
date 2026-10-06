@@ -93,7 +93,7 @@
             "type": "string"
           },
           "action": {
-            "description": "Action à la place d'un sort ou d'un objet : next-target = passer à l'ennemi suivant (Tab), pour répartir ses DoT entre plusieurs ennemis. Au plus une fois toutes les 1,5 s, le temps que la grille décrive la nouvelle cible. Une règle a soit cast, soit use, soit action.",
+            "description": "Action à la place d'un sort ou d'un objet : next-target = passer à l'ennemi suivant (Tab), pour répartir ses DoT entre plusieurs ennemis. Au plus une fois toutes les 0,5 s (délai partagé avec le ciblage auto), le temps que la grille décrive la nouvelle cible. Une règle a soit cast, soit use, soit action.",
             "enum": [
               "next-target"
             ]

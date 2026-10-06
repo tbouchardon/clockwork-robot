@@ -50,6 +50,7 @@ public class Automaton {
     private              boolean               fishRequested         = false;
     private              long                  invisibleSince        = 0;
     private              long                  lastGridFrameChange   = 0;
+    private              long                  lastTab               = 0;
     
     public Automaton(PeripheralRobotHelper peripherals, ClockWorkUI autoHitControl) {
         
@@ -251,6 +252,7 @@ public class Automaton {
                 if (decision.isPresent() && decision.get().key().equals(Brain.NEXT_TARGET)) {
                     logger.debug("Cerveau : cible suivante ({}, priorité {})", decision.get().reason(), decision.get().priority());
                     peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
+                    lastTab = System.currentTimeMillis();
                     tabbed = true;
                     decision = Optional.empty();
                 }
@@ -280,8 +282,12 @@ public class Automaton {
             if (member > 0 && returnToTarget) {press(GroupTargeting.LAST_TARGET);}
         }
         
-        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !tabbed && !qrCode.casting.active) {
+        // Ciblage auto : pas plus d'un Tab par délai de lecture de la grille, sinon une cible valable serait sautée avant
+        // d'avoir été vue
+        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !tabbed && !qrCode.casting.active
+            && System.currentTimeMillis() - lastTab >= Brain.NEXT_TARGET_DELAY) {
             peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
+            lastTab = System.currentTimeMillis();
         }
         
         tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, qrCode.getPlayerHealth());

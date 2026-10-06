@@ -56,9 +56,10 @@ public final class Brain {
     public static final String NEXT_TARGET = "TAB";
 
     /**
-     * Délai minimal entre deux changements de cible : la grille doit d'abord décrire la nouvelle cible.
+     * Délai minimal entre deux changements de cible : la grille (mise à jour toutes les 0,2 s par l'addon) doit d'abord
+     * décrire la nouvelle cible.
      */
-    static final long NEXT_TARGET_DELAY = 1500;
+    public static final long NEXT_TARGET_DELAY = 500;
 
     private long lastNextTarget = Long.MIN_VALUE / 2;
 

@@ -8,7 +8,9 @@
 # Corruption 14 s. À ajuster si un talent les allonge.
 #
 # Plusieurs ennemis : une fois Agonie et Corruption posées sur la cible, s'il reste des ennemis en combat sans Agonie,
-# passer au suivant (Tab). ClockWork reconnaît chaque ennemi : revenu sur une cible déjà affligée, il ne relance rien.
+# passer au suivant (Tab), jusqu'à 3 ennemis affligés. ClockWork reconnaît chaque ennemi : revenu sur une cible déjà
+# affligée, il ne relance rien. En combat, une cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte)
+# est quittée aussitôt, pour ne pas l'engager par erreur. Pas de DoT sur un ennemi sous 20 % : il mourra avant.
 
 name: Démoniste Affliction
 class: WARLOCK
@@ -19,6 +21,12 @@ assisted:
   follow: false
 
 rules:
+  # En combat, cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte) : la quitter avant tout, pour ne
+  # pas l'engager par erreur, même en mode aggro
+  - action: next-target
+    when: "player.combat && !target.combat"
+    priority: 150
+
   # Lua : absente de la cible
   - cast: Affliction instable
     when: "target.hostile && spell.sinceCastOnTarget('Affliction instable') > 8"
@@ -26,21 +34,22 @@ rules:
 
   # Lua : absente ou à moins de 4 s de la fin
   - cast: Agonie
-    when: "target.hostile && spell.sinceCastOnTarget('Agonie') > 14"
+    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Agonie') > 14"
     priority: 90
 
   # Lua : absente ou à moins de 2 s de la fin
   - cast: Corruption
-    when: "target.hostile && spell.sinceCastOnTarget('Corruption') > 12"
+    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Corruption') > 12"
     priority: 85
 
-  # DoT posés ici, d'autres ennemis sans Agonie : cible suivante
+  # DoT posés ici, d'autres ennemis en combat sans Agonie (3 affligés au plus) : cible suivante
   - action: next-target
     when: >-
       player.combat
       && spell.sinceCastOnTarget('Agonie') < 14
       && spell.sinceCastOnTarget('Corruption') < 12
       && spell.dotted('Agonie', 14) < enemies
+      && spell.dotted('Agonie', 14) < 3
     priority: 50
 
   # Remplissage
