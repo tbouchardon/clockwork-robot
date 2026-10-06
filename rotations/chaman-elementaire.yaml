@@ -1,51 +1,140 @@
 # yaml-language-server: $schema=../rotation.schema.json
-# Rotation du cerveau Java de ClockWork : chaman Élémentaire (exemple de départ).
-# ClockWork choisit dans ce dossier la rotation de la classe et de la spécialisation du personnage (« class » et « spec »),
-# sinon celle de toute sa classe (sans « spec ») ; sans rotation pour lui, c'est l'addon qui décide seul.
-# Les fichiers sont rechargés à chaud à chaque enregistrement. Un rotation.yaml dans le dossier de lancement impose sa
-# rotation quel que soit le personnage.
+# Chaman Élémentaire, d'après le guide Method.gg « Playstyle & Rotation » (patch 12.1, mis à jour le 01/09/2026) :
+# https://www.method.gg/guides/elemental-shaman/playstyle-and-rotation
+# Build « raid » du guide pour une cible (Horion de flamme, Maître des éléments), ses règles de zone en mode
+# multi-cibles. Noms vérifiés dans les tables du jeu 12.1 (wago.tools) ; gameplay non encore testé en jeu.
 #
-# Une règle s'applique si son sort est sur une touche (seule ou avec Maj, Ctrl, Alt), prêt (utilisable, sans temps de recharge,
-# pas hors de portée) et si sa condition « when » est vraie. La plus haute priorité l'emporte.
-# Les sorts se désignent par leur nom (n'importe quel sort du jeu, d'après les tables de wago.tools) ou par leur
-# identifiant. Avec « class », l'éditeur (IntelliJ, VS Code + extension YAML) propose
-# les sorts de la classe grâce au schéma de la première ligne ; ClockWork génère ce schéma (rotation.schema.json) à son démarrage.
+# Liste de priorités du guide, une cible :
+#   Gardien des tempêtes, Rapidité ancestrale, Ascendance (après Gardien des tempêtes), Horion de flamme à rafraîchir
+#   (moins de 6 s), Explosion de lave sans Maître des éléments, Explosion élémentaire (ou Horion de terre) avec Maître
+#   des éléments ou Maelström presque plein, Éclair.
+# Plusieurs cibles (mode multi-cibles du menu de l'addon) :
+#   2 : Brasier voltaïque dès qu'il est prêt, Chaîne d'éclairs au lieu d'Éclair ;
+#   3 et plus : Horion de flamme sur la seule cible actuelle, Explosion de lave seulement sur Vague de lave (bouton en
+#   surbrillance), Séisme comme dépense, Chaîne d'éclairs.
 #
-# Dans les conditions (syntaxe JEXL : &&, ||, !, <, >, ==) :
-#   player.health  player.power   player.combat   player.casting      (% et booléens)
-#   player.form                   nom de la forme active (druide...), '' sans forme ; spell.form('Nom') : sous cette forme
-#   player.combo                  points de combo
-#   target.exists  target.hostile target.health   target.power   (hostile : ennemi vivant, faux sur un cadavre)
-#   enemies                       ennemis en combat à proximité
-#   assisted                      nom du sort recommandé par Blizzard
-#   spell.ready('Nom')  spell.cooldown('Nom')  spell.usable('Nom')  spell.inRange('Nom')  spell.proc('Nom')
-#   spell.sinceCast('Nom')  spell.sinceCastOnTarget('Nom')
-#       secondes depuis le dernier lancement (toutes cibles / sur la cible actuelle), plafonnées à 60 s :
-#       au-delà, ou jamais lancé, la valeur est infinie
+# Approximations, les auras étant illisibles en combat depuis la 12.x :
+#   - « Maître des éléments actif » = Explosion de lave lancée depuis moins de 15 s, et après le dernier autre sort ;
+#   - Horion de flamme dure 18 s : à rafraîchir après 12 s sur la cible (plus que 6 s) ;
+#   - « Maelström presque plein » = ressource principale au-dessus de 85 %.
+# Séisme se pose au sol dans sa version de base : le mettre dans une macro « /cast [@target] Séisme » sur une touche,
+# ou prendre la variante ciblée du talent.
 
-name: Chaman Élémentaire (exemple)
+name: Chaman Élémentaire
 class: SHAMAN
 spec: Élémentaire
 
-# Recommandation de Blizzard en repli : elle passe devant les règles de priorité inférieure
+# La recommandation de Blizzard ne sert plus de repli : la liste du guide la remplace
 assisted:
-  follow: true
-  priority: 50
+  follow: false
 
 rules:
+  # --- Défensifs et interruption ---
+  - cast: Cisaille de vent
+    when: "target.hostile && target.casting && target.interruptible"
+    priority: 300
+
+  - cast: Transfert astral
+    when: "player.combat && player.health < 40"
+    priority: 290
+
   - cast: Afflux de soins
-    when: "player.health < 40"
+    when: "player.health < 35"
+    priority: 280
+
+  # Se déplacer sans perdre ses incantations (le guide : Grâce du marcheur des esprits pendant les déplacements)
+  - cast: Grâce du marcheur des esprits
+    when: "player.combat && player.moving && target.hostile"
     priority: 200
 
-  # Horion de flamme (variante de talent 470411, celle qui est sur la barre) dure 18 s :
-  # on le réapplique sur la cible après 13 s (fenêtre de 30 %)
+  # --- Temps de recharge ---
+  - cast: Gardien des tempêtes
+    when: "target.hostile && player.combat"
+    priority: 160
+
+  - cast: Rapidité ancestrale
+    when: "target.hostile && player.combat"
+    priority: 155
+
+  # Toujours après Gardien des tempêtes
+  - cast: Ascendance
+    when: >-
+      target.hostile && player.combat
+      && (spell.sinceCast('Gardien des tempêtes') < 15 || !spell.onBar('Gardien des tempêtes'))
+    priority: 150
+
+  # --- Horion de flamme / Brasier voltaïque ---
+  # 2 cibles et plus : Brasier voltaïque dès qu'il est prêt
+  - cast: Brasier voltaïque
+    when: "multi && target.hostile && enemies >= 2"
+    priority: 130
+
+  # Moins de 6 s restantes (18 s)
   - cast: Horion de flamme
-    when: "target.hostile && spell.sinceCastOnTarget('Horion de flamme') > 13"
-    priority: 120
+    when: >-
+      target.hostile
+      && spell.sinceCastOnTarget('Horion de flamme') > 12
+      && spell.sinceCastOnTarget('Brasier voltaïque') > 12
+    priority: 125
+
+  - cast: Brasier voltaïque
+    when: >-
+      target.hostile
+      && spell.sinceCastOnTarget('Horion de flamme') > 12
+      && spell.sinceCastOnTarget('Brasier voltaïque') > 12
+    priority: 124
+
+  # --- Explosion de lave ---
+  # Une ou deux cibles : sans Maître des éléments (jamais deux Explosions de lave de suite)
+  - cast: Explosion de lave
+    when: >-
+      target.hostile
+      && !(multi && enemies >= 3)
+      && (spell.sinceCast('Explosion de lave') > 15
+          || spell.sinceCast('Explosion de lave') > spell.sinceCast('Éclair')
+          || spell.sinceCast('Explosion de lave') > spell.sinceCast('Chaîne d’éclairs')
+          || spell.sinceCast('Explosion de lave') > spell.sinceCast('Explosion élémentaire')
+          || spell.sinceCast('Explosion de lave') > spell.sinceCast('Horion de terre'))
+    priority: 110
+
+  # 3 cibles et plus : seulement sur Vague de lave (bouton en surbrillance)
+  - cast: Explosion de lave
+    when: "target.hostile && multi && enemies >= 3 && spell.proc('Explosion de lave')"
+    priority: 110
+
+  # --- Dépense du Maelström ---
+  # Zone : Séisme
+  - cast: Séisme
+    when: "target.hostile && multi && enemies >= 3"
+    priority: 105
+
+  # Une ou deux cibles : avec Maître des éléments (Explosion de lave juste avant) ou Maelström presque plein
+  - cast: Explosion élémentaire
+    when: >-
+      target.hostile && !(multi && enemies >= 3)
+      && (player.power > 85
+          || (spell.sinceCast('Explosion de lave') < 15
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Éclair')
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Chaîne d’éclairs')
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Explosion élémentaire')
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Horion de terre')))
+    priority: 100
 
   - cast: Horion de terre
-    when: "target.hostile && player.power > 60"
+    when: >-
+      target.hostile && !(multi && enemies >= 3)
+      && (player.power > 85
+          || (spell.sinceCast('Explosion de lave') < 15
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Éclair')
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Chaîne d’éclairs')
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Explosion élémentaire')
+              && spell.sinceCast('Explosion de lave') < spell.sinceCast('Horion de terre')))
     priority: 100
+
+  # --- Remplissage ---
+  - cast: Chaîne d’éclairs
+    when: "target.hostile && multi && enemies >= 2"
+    priority: 11
 
   - cast: Éclair
     when: "target.hostile"

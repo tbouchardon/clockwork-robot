@@ -283,7 +283,7 @@ fois. Pour un autre client (vanilla, Forever…), il suffit de pointer `clockwor
 
 ## Écrire une rotation
 
-Une rotation est un fichier YAML du dossier `rotations/`, par exemple `rotations/chaman-elementaire.yaml` :
+Une rotation est un fichier YAML du dossier `rotations/`. Un exemple minimal :
 
 ```yaml
 # yaml-language-server: $schema=../rotation.schema.json
@@ -478,7 +478,7 @@ Limites actuelles :
 
 | Fichier | Contenu |
 |---|---|
-| `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
+| `rotations/chaman-elementaire.yaml` | Chaman Élémentaire **d'après le guide Method.gg 12.1** (build raid, noms vérifiés dans les tables du jeu) : Gardien des tempêtes, Rapidité ancestrale, Ascendance après Gardien des tempêtes, Horion de flamme rafraîchi sous 6 s, Explosion de lave alternée avec Explosion élémentaire ou Horion de terre (Maître des éléments déduit de l'ordre des lancements), Éclair. Multi-cibles : Brasier voltaïque et Chaîne d'éclairs dès 2 ennemis ; dès 3, Séisme et Explosion de lave seulement sur Vague de lave. Interruption, Transfert astral, Afflux de soins, Grâce du marcheur des esprits en mouvement. |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. Soins : Rétablissement d'urgence sous 25 % même hors mode soigneur, puis retour en forme de félin ; en mode soigneur, Récupération et Rétablissement avant les dégâts. |
 | `rotations/demoniste-affliction.yaml` | Démoniste Affliction **d'après le guide Method.gg 12.1** (noms et durées vérifiés dans les tables du jeu) : Hanter, Agonie et Corruption (ou Flétrissement) entretenues, éclats d'âme gardés pour Invocation de Regard-noir, Affliction instable, Sombre moisson à court d'éclats, Étreinte maléfique pendant Regard-noir, Drain d'âme ou Trait de l'ombre en remplissage, défensifs (Résolution interminable, pierres de soins, Voile de mort, Sombre pacte). Multi-cibles : Graine de Corruption dès 3 ennemis, Agonie répartie sur 6 au plus. |
 | `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
@@ -598,6 +598,8 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 - `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
+- `ElementalRotationTest` : `rotations/chaman-elementaire.yaml` (temps de recharge dans l'ordre, Horion de flamme,
+  alternance Explosion de lave / dépense, 2 puis 3 ennemis, interruption).
 - `AfflictionRotationTest` : `rotations/demoniste-affliction.yaml` (ouverture, rafraîchissement des DoT, éclats gardés
   pour Regard-noir puis dépensés, Sombre moisson, zone, Flétrissement, défensif).
 - `DotSpreadingTest` : sur une rotation minimale, répartition d'Agonie et Corruption entre deux ennemis, retour sur le premier à l'expiration,

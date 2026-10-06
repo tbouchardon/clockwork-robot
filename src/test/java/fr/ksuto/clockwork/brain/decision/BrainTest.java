@@ -175,9 +175,9 @@ class BrainTest {
         
         Rotation rotation = brain.parse(Files.readString(Path.of("rotations", "chaman-elementaire.yaml"), StandardCharsets.UTF_8));
         
-        assertEquals(4, rotation.rules().size());
-        assertTrue(rotation.followAssisted());
-        assertEquals("Afflux de soins", rotation.rules().getFirst().cast(), "règles triées par priorité");
+        assertEquals(17, rotation.rules().size());
+        assertFalse(rotation.followAssisted());
+        assertEquals("Cisaille de vent", rotation.rules().getFirst().cast(), "règles triées par priorité");
         
         // Données réelles du chaman : Horion de flamme (variante 470411) sur la touche 4
         KeyState flameShockAlreadyUp = new KeyState("4", 470411, 0, true, KeyState.Range.IN, 5, 5, false);
