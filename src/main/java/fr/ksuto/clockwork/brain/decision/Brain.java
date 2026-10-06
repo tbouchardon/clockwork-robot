@@ -281,7 +281,7 @@ public final class Brain {
                                             Map.entry("castSpell", state.cast().spellId() == 0 ? "" : database.nameOf(state.cast().spellId())),
                                             Map.entry("channeling", state.cast().channeling()), Map.entry("castRemaining", state.cast().remaining()),
                                             Map.entry("form", state.form() == 0 ? "" : database.nameOf(state.form())),
-                                            Map.entry("combo", state.comboPoints()), Map.entry("weaponEnchant", state.weaponEnchant())));
+                                            Map.entry("combo", state.comboPoints()), Map.entry("resource", state.comboPoints()), Map.entry("weaponEnchant", state.weaponEnchant())));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.attackableTarget(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower(),
                                      "casting", state.targetCast().casting(), "interruptible", state.targetCast().interruptible(),

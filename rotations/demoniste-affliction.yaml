@@ -1,54 +1,129 @@
 # yaml-language-server: $schema=../rotation.schema.json
-# Démoniste Affliction : portage de la rotation Lua historique (rotation_warlock.lua de l'addon).
-# ATTENTION : traduction littérale de l'ancienne rotation Lua, gameplay non revu pour la 12.x (priorités et sorts
-# peuvent ne plus être pertinents). Elle est choisie automatiquement pour cette classe et cette spécialisation.
+# Démoniste Affliction, d'après le guide Method.gg « Playstyle & Rotation » (patch 12.1, mis à jour le 12/08/2026) :
+# https://www.method.gg/guides/affliction-warlock/playstyle-and-rotation
+# Noms et durées vérifiés dans les tables du jeu 12.1 (wago.tools) ; gameplay non encore testé en jeu.
 #
-# Les debuffs sont illisibles en combat depuis la 12.x : « absent ou presque fini » devient « lancé sur cette cible il y
-# a plus de X s », d'après les durées des tables du jeu (12.1, SpellMisc) : Affliction instable 8 s, Agonie 18 s,
-# Corruption 14 s. À ajuster si un talent les allonge.
+# Boucle du guide : entretenir Agonie et Corruption (Flétrissement en Hellcaller) sur toutes les cibles, Hanter sur la
+# cible principale ; Agonie génère les éclats d'âme, dépensés en Affliction instable (une cible) ou Graine de
+# Corruption (ennemis regroupés) ; Sombre moisson une fois à court d'éclats ; garder des éclats pour Invocation de
+# Regard-noir, puis Étreinte maléfique tant qu'il est là. Remplissage : Drain d'âme ou Trait de l'ombre selon le talent.
 #
-# Plusieurs ennemis, en mode multi-cibles (menu de l'addon) : une fois Agonie et Corruption posées sur la cible, s'il
-# reste des ennemis en combat sans Agonie, passer au suivant (Tab), jusqu'à 3 ennemis affligés. ClockWork reconnaît
-# chaque ennemi : revenu sur une cible déjà affligée, il ne relance rien. Hors mode multi-cibles, on reste sur sa cible.
-# Sans mode aggro, en combat, une cible qui n'y est pas (Tab tombé sur un monstre non engagé) n'est pas attaquée : rien
-# à faire, le ciblage auto (tne) passe à la suivante. Pas de DoT sur un ennemi sous 20 % : il mourra avant.
+# Les deux voies de talents héroïques (Hellcaller : Flétrissement, Malveillance ; Soul Harvester : Sombre moisson
+# renforcée) et les deux remplissages sont décrits : les sorts absents des barres sont ignorés (signalés une fois).
+#
+# Les debuffs sont illisibles en combat depuis la 12.x : « à rafraîchir » devient « lancé sur cette cible il y a plus de
+# X s ». Durées (tables 12.1) : Agonie 18 s, Corruption 14 s, Flétrissement 18 s, Hanter 18 s, Regard-noir 20 s,
+# Malveillance 20 s. Rafraîchissement à 70 % de la durée (fenêtre de 30 % du jeu, sans perte).
+#
+# Seuils, à ajuster à l'usage (le guide n'en donne pas) :
+#   - Graine de Corruption à partir de 3 ennemis, en mode multi-cibles ;
+#   - Agonie répartie sur 6 ennemis au plus (le guide : « 4 à 6 Agonies » en zone), Corruption sur la cible actuelle ;
+#   - pas de DoT sur un ennemi sous 20 % de vie, pas de Regard-noir sur un ennemi sous 30 %.
+#
+# player.resource = éclats d'âme (0 à 5).
 
 name: Démoniste Affliction
 class: WARLOCK
 spec: Affliction
 
-# La rotation Lua ne suivait pas la recommandation de Blizzard
 assisted:
   follow: false
 
 rules:
-  # Lua : absente de la cible
+  # --- Défensifs (le guide : le démoniste encaisse beaucoup, pierres de soins à utiliser souvent) ---
+  - cast: Résolution interminable
+    when: "player.combat && player.health < 35"
+    priority: 300
+
+  - use: Pierre de soins démoniaque
+    when: "player.combat && player.health < 45"
+    priority: 290
+
+  - use: Pierre de soins
+    when: "player.combat && player.health < 45"
+    priority: 289
+
+  - cast: Voile de mort
+    when: "target.hostile && player.health < 55"
+    priority: 280
+
+  # Sombre pacte : à utiliser santé haute, avant les dégâts (il sacrifie un pourcentage de la vie actuelle)
+  - cast: Sombre pacte
+    when: "player.combat && player.health > 80 && enemies >= 3"
+    priority: 270
+
+  # --- Temps forts ---
+  # Regard-noir une fois Agonie et Corruption fraîches (ses dégâts dépendent des DoT sur la cible), avec des éclats
+  - cast: Invocation de Regard-noir
+    when: >-
+      target.hostile && player.combat && target.health > 30
+      && spell.sinceCastOnTarget('Agonie') < 12
+      && (spell.sinceCastOnTarget('Corruption') < 10 || spell.sinceCastOnTarget('Flétrissement') < 12)
+      && player.resource >= 3
+    priority: 160
+
+  # Hellcaller : Malveillance pendant Regard-noir
+  - cast: Malveillance
+    when: "target.hostile && spell.sinceCast('Invocation de Regard-noir') < 20"
+    priority: 155
+
+  # --- Entretien des DoT sur la cible ---
+  - cast: Hanter
+    when: "target.hostile && target.health > 20"
+    priority: 130
+
+  - cast: Agonie
+    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Agonie') > 12"
+    priority: 125
+
+  - cast: Corruption
+    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Corruption') > 10"
+    priority: 120
+
+  - cast: Flétrissement
+    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Flétrissement') > 12"
+    priority: 120
+
+  # --- Dépense des éclats ---
+  # Zone : Graine de Corruption sur des ennemis regroupés (une graine par cible à la fois)
+  - cast: Graine de Corruption
+    when: "multi && target.hostile && enemies >= 3 && spell.sinceCastOnTarget('Graine de Corruption') > 3"
+    priority: 110
+
+  # Une cible : Affliction instable. Hors Regard-noir, garder des éclats s'il revient bientôt (sauf au maximum)
   - cast: Affliction instable
-    when: "target.hostile && spell.sinceCastOnTarget('Affliction instable') > 8"
+    when: >-
+      target.hostile
+      && (spell.sinceCast('Invocation de Regard-noir') < 20
+          || spell.cooldown('Invocation de Regard-noir') > 15
+          || !spell.onBar('Invocation de Regard-noir')
+          || player.resource >= 4)
     priority: 100
 
-  # Lua : absente ou à moins de 4 s de la fin
-  - cast: Agonie
-    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Agonie') > 14"
-    priority: 90
+  # À court d'éclats : Sombre moisson (Soul Harvester : rend des éclats ; touche tous les ennemis affligés)
+  - cast: Sombre moisson
+    when: "target.hostile && player.resource <= 1"
+    priority: 95
 
-  # Lua : absente ou à moins de 2 s de la fin
-  - cast: Corruption
-    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Corruption') > 12"
-    priority: 85
-
-  # Multi-cibles : DoT posés ici, d'autres ennemis en combat sans Agonie (3 affligés au plus) : cible suivante
+  # --- Plusieurs ennemis (mode multi-cibles) : Agonie sur chacun, 6 au plus ---
   - action: next-target
     when: >-
-      multi
-      && player.combat
-      && spell.sinceCastOnTarget('Agonie') < 14
-      && spell.sinceCastOnTarget('Corruption') < 12
-      && spell.dotted('Agonie', 14) < enemies
-      && spell.dotted('Agonie', 14) < 3
+      multi && player.combat
+      && spell.sinceCastOnTarget('Agonie') < 12
+      && spell.dotted('Agonie', 12) < enemies
+      && spell.dotted('Agonie', 12) < 6
     priority: 50
 
-  # Remplissage
+  # --- Remplissage ---
+  # Pendant Regard-noir : Étreinte maléfique
+  - cast: Étreinte maléfique
+    when: "target.hostile && spell.sinceCast('Invocation de Regard-noir') < 20"
+    priority: 20
+
+  - cast: Drain d’âme
+    when: "target.hostile"
+    priority: 2
+
   - cast: Trait de l'ombre
     when: "target.hostile"
     priority: 1

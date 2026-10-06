@@ -7,9 +7,6 @@ import fr.ksuto.clockwork.brain.perception.Group;
 import fr.ksuto.clockwork.brain.perception.KeyState;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Répartition des DoT entre plusieurs ennemis : chaque cible est reconnue par son identifiant (grille v4), le cerveau
+ * Répartition des DoT entre plusieurs ennemis (mécanisme, sur une rotation minimale) : chaque cible est reconnue par son identifiant (grille v4), le cerveau
  * retient ses lancers sur chacune, et passe à la suivante (Tab) tant qu'il en reste à affliger.
  */
 class DotSpreadingTest {
@@ -31,7 +28,33 @@ class DotSpreadingTest {
     private final AtomicLong    now       = new AtomicLong(1_000_000);
     private final Brain         brain     = new Brain(now::get);
     private final SpellDatabase spellbook = SpellDatabaseFixture.create();
-    private final Rotation      rotation  = brain.parse(Files.readString(Path.of("rotations", "demoniste-affliction.yaml"), StandardCharsets.UTF_8));
+    /**
+     * Rotation à DoT minimale : Agonie (18 s) et Corruption (14 s) entretenues, réparties entre 3 ennemis au plus en
+     * mode multi-cibles, Trait de l'ombre en remplissage.
+     */
+    private final Rotation      rotation  = brain.parse("""
+            rules:
+              - cast: Affliction instable
+                when: "target.hostile && spell.sinceCastOnTarget('Affliction instable') > 8"
+                priority: 100
+              - cast: Agonie
+                when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Agonie') > 14"
+                priority: 90
+              - cast: Corruption
+                when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Corruption') > 12"
+                priority: 85
+              - action: next-target
+                when: >-
+                  multi && player.combat
+                  && spell.sinceCastOnTarget('Agonie') < 14
+                  && spell.sinceCastOnTarget('Corruption') < 12
+                  && spell.dotted('Agonie', 14) < enemies
+                  && spell.dotted('Agonie', 14) < 3
+                priority: 50
+              - cast: Trait de l'ombre
+                when: "target.hostile"
+                priority: 1
+            """);
 
     DotSpreadingTest() throws IOException {}
 
