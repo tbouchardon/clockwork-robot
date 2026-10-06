@@ -105,7 +105,9 @@ Propriétés système (`-D…`) :
    le journal des touches jouées.
 3. ClockWork **cherche le QR code tout seul**, toutes les 2 s jusqu'à le trouver, puis démarre l'automate (sans clic
    ni frappe : rien n'est envoyé à une autre fenêtre). Si le QR code reste invisible plus de 5 s (fenêtre de WoW
-   déplacée ou redimensionnée), la recherche reprend d'elle-même. L'addon s'active depuis son menu dans WoW.
+   déplacée ou redimensionnée), la recherche reprend d'elle-même. L'addon s'active depuis son menu dans WoW, ou par
+   les raccourcis à définir dans *Options > Raccourcis > Addons > ClockWork*. Les modes aggro, multi-cibles et soigneur
+   du menu changent le comportement des rotations (voir *Plusieurs ennemis* et *Soigner le groupe*).
 4. Le champ de texte affiche les touches jouées. Le journal détaillé (niveau DEBUG pour `fr.ksuto.clockwork`) sort sur
    la console.
 5. La **pêche** se lance depuis WoW : bouton « Pêche » du menu de l'addon ou `/clk fish` (voir *Autres activités*).
@@ -492,9 +494,11 @@ Limites actuelles :
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
 | `rotations/peche.yaml` | Pêche (`activity: fishing`) : leurre à reposer sur la canne. Les noms des objets sont à adapter. |
 
-Les portages sont des **traductions littérales** des anciennes rotations Lua, avec les durées des debuffs tirées des
-tables du jeu : leur gameplay n'a pas été revu pour la 12.x. Ils sont choisis automatiquement pour leur classe et leur
-spécialisation ; supprimer le fichier rend la main à l'addon et à la recommandation de Blizzard.
+Druide, guerrier et Destruction sont des **portages** : traductions littérales des anciennes rotations Lua, avec les
+durées des debuffs tirées des tables du jeu, gameplay non revu pour la 12.x. Affliction et Élémentaire suivent les
+guides Method.gg 12.1, avec des approximations là où il faudrait lire une aura en combat ; elles ne sont pas encore
+testées en jeu. Chaque rotation est choisie automatiquement pour sa classe et sa spécialisation ; supprimer le fichier
+rend la main à l'addon et à la recommandation de Blizzard.
 
 Dans `when`, un nom contenant une apostrophe s'écrit avec l'apostrophe typographique (`'Forme d’ours'`), puisque les
 noms sont entre apostrophes droites ; ClockWork confond les deux.
