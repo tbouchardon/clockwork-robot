@@ -120,7 +120,8 @@ public final class QrCodeV2Reader {
     }
 
     /**
-     * Ramassage (v4, case (8, 1)) : mode ramassage actif et cible morte avec du butin pour le joueur.
+     * Ramassage (v4, case (8, 1)) : mode ramassage actif et un ennemi ciblé récemment est un cadavre avec du butin pour
+     * le joueur (même s'il n'est plus ciblé).
      */
     public static boolean targetLootable(Frame qr) {
 
@@ -133,6 +134,15 @@ public final class QrCodeV2Reader {
     public static boolean lootMode(Frame qr) {
 
         return qr.red(8, 13) >= 4 && qr.red(8, 1) > 127;
+    }
+
+    /**
+     * Touche d'interaction de WoW active (option « Activer la touche d'interaction », v4, case (8, 1) bleu) : sans elle,
+     * Interagir avec la cible ne fait rien sans cible.
+     */
+    public static boolean interactKeyEnabled(Frame qr) {
+
+        return qr.red(8, 13) >= 4 && qr.blue(8, 1) > 127;
     }
 
     /**

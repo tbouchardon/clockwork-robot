@@ -286,6 +286,8 @@ class QrCodeV2ReaderTest {
         assertFalse(QrCodeV2Reader.targetLootable(grid.set(8, 1, 0, 1, 0).frame()), "butin, mais mode ramassage éteint");
         assertTrue(QrCodeV2Reader.targetLootable(grid.set(8, 1, 1, 1, 0).frame()));
         assertTrue(QrCodeV2Reader.lootMode(grid.frame()));
+        assertFalse(QrCodeV2Reader.interactKeyEnabled(grid.frame()));
+        assertTrue(QrCodeV2Reader.interactKeyEnabled(grid.set(8, 1, 1, 1, 1).frame()));
         assertTrue(QrCodeV2Reader.targetDead(grid.set(11, 3, 0.5, 0.5, 0.5).frame()));
         assertFalse(QrCodeV2Reader.targetDead(grid.set(11, 3, 1, 0, 0).frame()), "cible hostile vivante");
     }

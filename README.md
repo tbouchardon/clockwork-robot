@@ -131,8 +131,8 @@ Le cerveau se pilote depuis les fichiers, à chaud :
    - case `toggle` éteinte → *« addon désactivé »* : on attend ;
    - le changement d'état est journalisé une seule fois, pour savoir **pourquoi** le bot ne fait rien.
 3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon. **Ramassage** (mode du
-   menu) : si la cible est un cadavre avec du butin, avancer vers lui en appuyant sur `Alt+Maj+L` jusqu'à ouvrir le
-   butin, 6 s au plus ; ni ciblage auto ni pilote pendant ce temps.
+   menu) : si un ennemi récent a laissé du butin, avancer en appuyant sur la touche d'interaction jusqu'à ouvrir le
+   butin, 4 s au plus ; ni ciblage auto ni pilote pendant ce temps.
 4. **Choix de la touche** :
    - mode historique : la touche allumée de plus haute priorité, avec son modificateur et sa durée d'appui ;
    - **si le cerveau est actif**, sa décision **remplace** celle de l'addon (voir plus bas). Une grille figée (compteur
@@ -574,15 +574,16 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   6 dernières secondes alors que le bot n'a appuyé sur aucune touche, c'est qu'un monstre non ciblé le frappe (souvent
   dans le dos) : demi-tour, puis `Tab` le cible. La vie est secrète pour l'addon mais lue en clair par le Java ; le
   journal de combat, qui servait autrefois, est interdit en 12.x.
-- **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : quand la cible est un cadavre
-  avec du butin pour le joueur (`CanLootUnit`, case (8,1)), le personnage lui faisait face pour la tuer : il est
-  devant. Le Java avance (flèche haut) en appuyant toutes les 0,3 s sur `Alt+Maj+L`, posé par l'addon sur « Interagir
-  avec la cible », jusqu'à ouvrir le butin, au plus 6 s (une quarantaine de mètres). Aucun réglage du joueur n'est
-  modifié. Une tentative par cadavre ; ni ciblage auto ni pilote automatique pendant ce temps. Seulement s'il ne reste
-  aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort du dernier) ; la cible
-  morte est gardée jusqu'à 1,5 s, le temps que son butin apparaisse, sans quoi le ciblage auto la quitterait aussitôt. Le ramassage de zone de
-  WoW pille les cadavres voisins en même temps. Les soins de groupe ont leur propre section (règles
-  `on`).
+- **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : la cible morte disparaît
+  souvent à sa mort, avant que son butin soit prêt. L'addon retient donc l'identifiant des ennemis ciblés dans la
+  dernière minute et signale (case (8,1)) qu'un de leurs cadavres a du butin pour le joueur (`CanLootUnit`). Quand il ne
+  reste aucun ennemi en combat, le Java avance (flèche haut : le personnage faisait face à sa cible) en appuyant toutes
+  les 0,3 s sur `Alt+Maj+L`, posé par l'addon sur « Interagir avec la cible » : sans cible, c'est la **touche
+  d'interaction** de WoW, qui agit sur le cadavre le plus proche devant. Il s'arrête au butin ouvert, si un ennemi
+  arrive en combat, ou au bout de 4 s ; deux essais au plus. Après la perte d'une cible ennemie, le ciblage auto attend
+  1,5 s, le temps que le butin apparaisse. Il faut cocher « Activer la touche d'interaction » (Options > Contrôles) :
+  sinon le ramassage est signalé impossible, une fois. Aucun réglage du joueur n'est modifié. Les soins de groupe ont
+  leur propre section (règles `on`).
 
 ---
 

@@ -29,7 +29,8 @@ public class Automaton {
     
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
-    private static final long                  LOOT_WALK             = 6000;
+    private static final long                  LOOT_WALK             = 4000;
+    private static final int                   LOOT_ATTEMPTS         = 2;
     private static final long                  LOOT_APPEARS          = 1500;
 
     private static final int MODIFIER_CTRL = 1;
@@ -49,8 +50,9 @@ public class Automaton {
     private final        HitDetector           hitDetector           = new HitDetector();
     private              int                   lastGridFrame         = -1;
     private              boolean               fishRequested         = false;
-    private              boolean               lootTried             = false;
-    private              long                  targetDeadSince       = 0;
+    private              int                   lootAttempts          = 0;
+    private              long                  lastEnemyTargeted     = 0;
+    private              boolean               interactKeyReported   = false;
     private              long                  invisibleSince        = 0;
     private              long                  lastGridFrameChange   = 0;
     private              long                  lastTab               = 0;
@@ -385,53 +387,59 @@ public class Automaton {
     }
     
     /**
-     * Ramassage (mode du menu de l'addon) : la cible est un cadavre avec du butin. Le personnage lui faisait face pour
-     * la tuer, il est donc devant : avancer (flèche haut) en appuyant sur Alt+Maj+L, posé par l'addon sur « Interagir
-     * avec la cible », jusqu'à ouvrir le butin (la cible n'a plus de butin), au plus {@value #LOOT_WALK} ms. Aucun
-     * réglage du joueur n'est modifié. Une seule tentative par cadavre.
+     * Ramassage (mode du menu de l'addon) : un ennemi ciblé récemment est un cadavre avec du butin (l'addon le sait même
+     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Le personnage lui faisait face, il est devant :
+     * avancer (flèche haut) en appuyant sur Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est
+     * la touche d'interaction de WoW, qui agit sur le cadavre le plus proche devant. Jusqu'à ouvrir le butin (plus aucun
+     * butin signalé), au plus {@value #LOOT_WALK} ms, {@value #LOOT_ATTEMPTS} fois au plus tant que du butin reste
+     * signalé. Aucun réglage du joueur n'est modifié.
      * <p>
      * Seulement s'il ne reste aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort
-     * du dernier). Le butin n'apparaît pas tout de suite : la cible morte est gardée jusqu'à {@value #LOOT_APPEARS} ms,
-     * sans quoi le ciblage auto passerait aussitôt à l'ennemi suivant.
+     * du dernier). Le butin n'apparaît pas tout de suite : après avoir perdu une cible ennemie, le ciblage auto attend
+     * {@value #LOOT_APPEARS} ms, sans quoi il engagerait aussitôt l'ennemi suivant.
      *
      * @return ramassage en cours ou attendu : pas de ciblage auto ni de pilote automatique à ce tour
      */
     private boolean loot(QrCode qrCode) {
 
         Frame grid = qrCode.getCapturedQrCode();
-        if (!QrCodeV2Reader.lootMode(grid) || !QrCodeV2Reader.targetDead(grid)) {
-            targetDeadSince = 0;
-            lootTried = false;
+        long  now  = System.currentTimeMillis();
+        Optional<GameState> state = QrCodeV2Reader.read(grid);
+        if (state.map(GameState::attackableTarget).orElse(false)) {lastEnemyTargeted = now;}
+        if (!QrCodeV2Reader.lootMode(grid)) {return false;}
+
+        int enemies = state.map(GameState::enemies).orElse(0);
+        if (enemies > 0) {return false;} // d'autres ennemis : combattre d'abord
+        if (!QrCodeV2Reader.targetLootable(grid)) {
+            lootAttempts = 0;
+            // Ennemi perdu à l'instant (mort) : laisser au butin le temps d'apparaître
+            return now - lastEnemyTargeted < LOOT_APPEARS;
+        }
+        if (lootAttempts >= LOOT_ATTEMPTS) {return false;}
+        if (!QrCodeV2Reader.interactKeyEnabled(grid)) {
+            if (!interactKeyReported) {
+                logger.warn("Ramassage impossible : cocher « Activer la touche d'interaction » dans les options de WoW (Contrôles)");
+                ui.appendMessage("touche d'interaction ?");
+                interactKeyReported = true;
+            }
             return false;
         }
-        if (QrCodeV2Reader.read(grid).map(GameState::enemies).orElse(0) > 0) {return false;} // d'autres ennemis : combattre
-        long now = System.currentTimeMillis();
-        if (targetDeadSince == 0) {targetDeadSince = now;}
-        if (!QrCodeV2Reader.targetLootable(grid)) {
-            boolean waiting = !lootTried && now - targetDeadSince < LOOT_APPEARS;
-            if (!waiting && !lootTried) {
-                logger.info("Cible morte sans butin pour le personnage (déjà ramassé, ou rien à prendre)");
-                lootTried = true;
-            }
-            return waiting;
-        }
-        if (lootTried) {return false;}
-        lootTried = true;
-        logger.info("Ramassage du butin");
+        lootAttempts++;
+        logger.info("Ramassage du butin (essai {})", lootAttempts);
         ui.appendMessage("butin");
 
-        long end = System.currentTimeMillis() + LOOT_WALK;
+        long end = now + LOOT_WALK;
         peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true); // cadavre peut-être déjà à portée
         peripherals.robot.keyPress(KeyEvent.VK_UP);
         try {
             while (System.currentTimeMillis() < end) {
                 peripherals.robot.delay(300);
                 Frame current = qrCode.captureQrCode(peripherals);
-                // Butin ouvert (la cible n'en a plus), ou un ennemi arrive en combat : on s'arrête
+                // Butin ouvert (plus rien à ramasser), ou un ennemi arrive en combat : on s'arrête
                 if (!QrCodeV2Reader.targetLootable(current) || QrCodeV2Reader.read(current).map(GameState::enemies).orElse(0) > 0) {return true;}
                 peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
             }
-            logger.info("Ramassage abandonné : cadavre non atteint");
+            logger.info("Ramassage : cadavre non atteint en {} s", LOOT_WALK / 1000);
             return true;
         }
         finally {
