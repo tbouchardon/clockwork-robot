@@ -252,6 +252,33 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsItemsOnKeys() {
+
+        // Touche "3" : Pierre de soins (bit 23 + 5512), 2 possédées, utilisée il y a 6 s ; touche "4" : sort
+        GameState state = QrCodeV2Reader.read(new Grid(32)
+                .set(8, 13, 4 / 255.0, 0, 0)
+                .set24(5, 3, 0x800000 + 5512)
+                .set(4, 6, 0, 1, 0.5)                                  // prête, sans portée
+                .set(4, 9, 2 / 255.0, 2 / 3.0, 6 / 60.0)               // 2 possédées, aura active, 6 s
+                .set24(6, 3, 188196)
+                .set(4, 1, 1, 0.5, 0)                                  // leurre sur la canne : 15 min
+                .frame()).orElseThrow();
+
+        KeyState stone = state.keys().get("3");
+        assertEquals(0, stone.spellId());
+        assertEquals(5512, stone.itemId());
+        assertEquals(2, stone.count());
+        assertTrue(stone.buffActive());
+        assertEquals(6, stone.sinceCast(), 0.3);
+        assertEquals(Double.POSITIVE_INFINITY, stone.sinceCastOnTarget());
+        assertTrue(stone.ready());
+        assertEquals(188196, state.keys().get("4").spellId());
+        assertEquals(0, state.keys().get("4").itemId());
+        assertEquals(15 * 60, state.weaponEnchant(), 10);
+        assertTrue(state.keysReady());
+    }
+
+    @Test
     void version3GridHasNoGroup() {
 
         GameState state = QrCodeV2Reader.read(new Grid(32).set(8, 13, 3 / 255.0, 0, 0).set(17, 1, 1, 1, 1).frame()).orElseThrow();

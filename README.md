@@ -165,7 +165,8 @@ mode historique). Il produit un `GameState` immuable :
 | `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
 | `frame` | Compteur de mises à jour (v3 et plus). |
 | `group` | Groupe ou raid (v4, `Group.NONE` avant) : mode soigneur, en raid, membres présents. Chaque `Group.Member` a son emplacement (1 à 40, celui du raccourci qui le cible), sa vie en %, sa portée de soin, mort, déconnecté, c'est le joueur, son rôle (tank, soigneur, dégâts). |
-| `keys` | 18 touches en v2, **72** en v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
+| `weaponEnchant` | Secondes restantes de l'enchantement temporaire de la main droite : leurre sur la canne à pêche (v4, 0 si aucun). |
+| `keys` | 18 touches en v2, **72** à partir de la v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
 
 Chaque touche est un `KeyState` :
 
@@ -178,7 +179,8 @@ Chaque touche est un `KeyState` :
 | `sinceCastOnTarget` | Secondes depuis le dernier lancement **sur la cible actuelle** (infini si jamais ou plus de 60 s). |
 | `sinceCast` | Idem, toutes cibles. |
 | `proc` | Bouton en surbrillance. |
-| `buffActive` | L'aura du sort est active sur le joueur (lue hors combat, dernier état connu en combat). |
+| `buffActive` | L'aura du sort (ou du sort de l'objet) est active sur le joueur (lue hors combat, dernier état connu en combat). |
+| `itemId`, `count` | Objet de la touche (potion, pierre de soins, leurre… ; `spellId` vaut alors 0) et nombre possédé, charges comprises. Pour un objet, `sinceCast` est le temps depuis sa dernière utilisation, et `sinceCastOnTarget` est infini. Une macro est décrite par le sort ou l'objet qu'elle affiche. |
 
 `KeyState.ready()` = un sort, utilisable, sans temps de recharge (moins de 0,05 s), pas hors de portée.
 `KeyState.castable()` = la même chose sans la portée, qui concerne la cible actuelle : c'est le test des règles `on`.
@@ -248,12 +250,14 @@ Paquet `brain.data`. Au premier démarrage du cerveau, un fil d'arrière-plan :
    `wow_classic_era` pour vanilla…), sa **version** dans `.build.info` (dossier parent) et la **langue** dans
    `WTF/Config.wtf` (`textLocale`) ;
 2. télécharge les tables DB2 au format CSV depuis wago.tools, une seule fois par produit, version et langue
-   (`WagoTables`, cache `<clockwork.cache>/<produit>/<version>/<langue>/`) : environ 15 Mo, une dizaine de secondes.
+   (`WagoTables`, cache `<clockwork.cache>/<produit>/<version>/<langue>/`) : environ 70 Mo, dont 53 Mo pour les objets
+   (`ItemSparse`), soit quelques dizaines de secondes.
    Seule `SpellName` est indispensable : une table absente de la version (talents en vanilla) est traitée comme vide ;
 3. construit `SpellDatabase` : tous les sorts du jeu (`SpellName`, plus de 400 000), et les sorts **de chaque classe**,
    c'est-à-dire capacités de classe (`SkillLine`, `SkillLineAbility`), de spécialisation (`SpecializationSpells`) et
    talents, avec les variantes qu'ils accordent (`SkillLineXTraitTree` → `TraitNode` → `TraitNodeEntry` →
-   `TraitDefinition`) : environ 300 noms par classe ;
+   `TraitDefinition`) : environ 300 noms par classe ; plus les noms de tous les objets (`ItemSparse`, environ 175 000),
+   pour les règles `use` ;
 4. génère `rotation.schema.json` dans le dossier de lancement : le modèle `src/main/resources/rotation.schema.json`
    complété par les spécialisations et les sorts de chaque classe et de chaque spécialisation (voir *Autocomplétion dans
    l'éditeur*).
@@ -314,6 +318,11 @@ rules:
 - `spec` : spécialisation visée, nom affiché en jeu (`Élémentaire`, `Farouche`…) ou identifiant (`262`). Sans `spec`, la
   rotation vaut pour toutes les spécialisations de la classe ; une rotation de la spécialisation passe devant.
 - `cast` : nom du sort (tel qu'affiché en jeu, accents et casse indifférents) ou identifiant.
+- `use` : à la place de `cast`, un **objet** à utiliser (potion, pierre de soins, leurre…), par son nom affiché en jeu ou
+  son identifiant. Tous les objets de ce nom conviennent : il existe par exemple une vingtaine de « Pierre de soins ».
+  L'objet doit être sur une touche décrite par la grille, comme un sort.
+- `activity` : `fishing` pour un fichier qui ne sert pas au combat mais à préparer chaque lancer de pêche (voir *Autres
+  activités*). Il n'a pas de classe.
 - `when` : condition JEXL (`&&`, `||`, `!`, `<`, `>`, `==`, arithmétique). Si elle est absente, la règle est toujours
   vraie.
 - `priority` : la plus haute l'emporte.
@@ -331,6 +340,7 @@ Variables disponibles dans `when` :
 | `player.castSpell`, `player.channeling`, `player.castRemaining` | Sort en cours (`''` si aucun), canalisation ou incantation, secondes restantes. Ex. : ne couper un drain qu'en fin de canalisation. |
 | `player.form` | Nom de la forme active (druide…), `''` sans forme. |
 | `player.combo` | Points de combo. |
+| `player.weaponEnchant` | Secondes restantes de l'enchantement temporaire de l'arme (leurre sur la canne), 0 si aucun. |
 | `target.exists`, `target.hostile`, `target.combat` | Booléens. `hostile` = cible attaquable : ennemie ou neutre (rouge ou jaune), **vivante**, non marquée par un autre joueur. |
 | `target.health`, `target.power` | Pourcentages. |
 | `target.casting`, `target.interruptible`, `target.castSpell` | La cible incante, son sort est interruptible (vrai sauf indication contraire du jeu), nom du sort (`''` si inconnu : il peut être secret). Ex. : `target.casting && target.interruptible` pour une interruption. |
@@ -341,6 +351,8 @@ Variables disponibles dans `when` :
 | `spell.buffActive('Nom')` | L'aura du sort est active sur le joueur (Cri de guerre, Bouclier de foudre…). Lue **hors combat** seulement, les auras étant inaccessibles en combat en 12.x : en combat, c'est l'état lu juste avant d'y entrer. |
 | `spell.form('Nom')` | Le personnage est sous cette forme (accents, casse et apostrophe indifférents). |
 | `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. |
+| `item.ready('Nom')`, `item.usable('Nom')`, `item.onBar('Nom')`, `item.cooldown('Nom')` | Comme `spell.*`, pour un objet. |
+| `item.count('Nom')`, `item.sinceUse('Nom')`, `item.buffActive('Nom')` | Nombre possédé (charges comprises), secondes depuis la dernière utilisation, aura de l'objet active sur le joueur (lue hors combat). |
 | `healer` | Mode soigneur de l'addon. |
 | `group.size`, `group.below(%)`, `group.avgHealth` | Membres vivants et connectés, nombre d'entre eux sous ce pourcentage de vie, vie moyenne. |
 | `member.health`, `member.role`, `member.tank`, `member.healer`, `member.self` | Règles `on` seulement : le membre candidat. `role` vaut `'tank'`, `'healer'`, `'damager'` ou `''`. |
@@ -430,6 +442,7 @@ Limites actuelles :
 | `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. |
 | `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
+| `rotations/peche.yaml` | Pêche (`activity: fishing`) : leurre à reposer sur la canne. Les noms des objets sont à adapter. |
 
 Les portages sont des **traductions littérales** des anciennes rotations Lua, avec les durées des debuffs tirées des
 tables du jeu : leur gameplay n'a pas été revu pour la 12.x. Ils sont choisis automatiquement pour leur classe et leur
@@ -444,8 +457,8 @@ noms sont entre apostrophes droites ; ClockWork confond les deux.
 
 Ces fonctions viennent des versions précédentes et sont toujours en place :
 
-- **Pêche** (`Fisherman`, `BobberDetector`) : pose le leurre (`W`) toutes les 10 min et l'appât (`Maj+W`) toutes les
-  5 min, puis lance la ligne (`H`). La pêche se fait **en vue à la première personne** (zoom avant au maximum avec
+- **Pêche** (`Fisherman`, `BobberDetector`) : utilise si besoin leurre et appât selon `rotations/peche.yaml`, puis lance
+  la ligne. La pêche se fait **en vue à la première personne** (zoom avant au maximum avec
   `Origine` au démarrage) : le bouchon est plus gros, toujours au même endroit de l'écran (tiers central, de 45 à 85 %
   de la hauteur), et ni le personnage ni le décor lointain ne le gênent.
   - **Pixel de plume** : un pixel devenu nettement plus rouge, ou plus bleu, qu'il ne l'était **au même endroit juste
@@ -471,8 +484,20 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le
     Java pêche tant qu'elle reste allumée. Bouger la souris l'arrête aussi ; il faut alors rallumer la pêche en jeu.
   - **Raccourci du sort Pêche détecté** : le Java cherche le sort sur les touches décrites par la grille (avec son
-    modificateur), à défaut `H`. Le leurre (`W`) et l'appât (`Maj+W`) sont des objets, que la grille ne décrit pas
-    encore : leurs touches restent fixes.
+    modificateur), à défaut `H`.
+  - **Leurre et appât** : avant chaque lancer, le Java évalue les règles du fichier `activity: fishing`
+    (`rotations/peche.yaml`) et utilise l'objet de la règle applicable, jusqu'à trois fois de suite (leurre, puis
+    appât), en attendant la fin de chaque incantation. Le leurre posé sur la canne se lit avec `player.weaponEnchant`,
+    un appât qui donne une aura avec `item.buffActive('Nom')`. Sans règle applicable, rien n'est utilisé : plus de
+    touche fixe (`W`, `Maj+W`) appuyée sans contrôle.
+
+    ```yaml
+    activity: fishing
+    rules:
+      - use: Attracteur de poissons aquadynamique
+        when: "player.weaponEnchant < 10"
+        priority: 20
+    ```
 - **Pilote automatique** (`TomTom`) : lit les coordonnées de carte codées en binaire dans la grille, suit une liste de
   points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
   et pendant un repas.
@@ -502,7 +527,7 @@ src/main/java/fr/ksuto/clockwork/
 │   ├── BrainService.java       rechargement à chaud de la rotation, chargement de la table des sorts
 │   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
 │   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo
-│   └── decision/               Brain, Rotation, SpellView, MemberView, GroupView
+│   └── decision/               Brain, Rotation, SpellView, ItemView, MemberView, GroupView
 ├── entities/
 │   ├── qrcode/                 QrCode (recherche à l'écran, cases v1), Dot, Key
 │   ├── Player.java, ClkPosition.java
@@ -527,6 +552,8 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 - `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
+- Objets : lecture d'un objet sur une touche et de l'enchantement de l'arme (`QrCodeV2ReaderTest`), règles `use` et
+  `item.*` (`BrainTest`), fichier de pêche (`BrainServiceTest`).
 - `BrainTest` : priorités, conditions, recommandation de Blizzard (formes liées, cible requise), garde-fous.
 - `SpellDatabaseTest` : CSV de wago.tools, noms sans accents, variantes, sorts par classe (talents compris), produit,
   version et langue du jeu, liste pour l'éditeur.

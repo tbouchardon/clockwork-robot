@@ -132,6 +132,14 @@ public final class SpellDatabaseFixture {
             Map.entry("TraitNodeGroupXTraitNode", """
                     ID,TraitNodeGroupID,TraitNodeID,_Index
                     1,77,51,0
+                    """),
+            Map.entry("ItemSparse", """
+                    ID,Description_lang,Display_lang,ExpansionID
+                    5512,"Pierre de soins, rend de la vie",Pierre de soins,0
+                    224464,,"Pierre de soins démoniaque",10
+                    19004,,Pierre de soins,1
+                    191380,,"Potion de soins rafraîchissante",9
+                    6533,,"Attracteur de poissons aquadynamique",0
                     """));
 
     private SpellDatabaseFixture() {}

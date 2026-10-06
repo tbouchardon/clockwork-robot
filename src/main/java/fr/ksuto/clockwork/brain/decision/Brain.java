@@ -109,6 +109,7 @@ public final class Brain {
         Map<String, Object> variables = variables(state, database);
         MapContext          context   = new MapContext(variables);
         SpellView           spells    = new SpellView(state, database);
+        ItemView            items     = new ItemView(state, database);
 
         for (Rotation.Rule rule : rotation.rules()) {
 
@@ -119,9 +120,9 @@ public final class Brain {
                 if (assisted.isPresent()) {return remember(assisted, stop);}
             }
 
-            Optional<KeyState> key = spells.key(rule.cast());
+            Optional<KeyState> key = rule.item() ? items.key(rule.cast()) : spells.key(rule.cast());
             if (key.isEmpty()) {
-                reportOnce("absent:" + rule.cast(), "Règle ignorée : « " + rule.cast() + " » n'est sur aucune touche de la grille");
+                reportOnce("absent:" + rule.label(), "Règle ignorée : " + rule.label() + " n'est sur aucune touche de la grille");
                 continue;
             }
             if (rule.on() != Rotation.On.TARGET) {
@@ -131,7 +132,7 @@ public final class Brain {
             }
             if (!state.mayAct() || !key.get().ready() || !holds(rule, context)) {continue;}
 
-            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle « " + rule.cast() + " »")), stop);
+            return remember(Optional.of(new Decision(key.get().key(), key.get().spellId(), rule.priority(), "règle " + rule.label())), stop);
         }
 
         if (!rotation.followAssisted() || rotation.assistedPriority() <= minimum || !state.mayAct()) {return Optional.empty();}
@@ -147,7 +148,7 @@ public final class Brain {
         if (rule.on().others() && !state.group().healerMode() && !rule.always()) {return Optional.empty();}
         if (!key.castable()) {return Optional.empty();}
         if (state.group().members().isEmpty()) {
-            reportOnce("groupe:" + rule.cast(), "Règle « " + rule.cast() + " » ignorée : la grille ne décrit pas le groupe (addon en v4 requis)");
+            reportOnce("groupe:" + rule.cast(), "Règle " + rule.label() + " ignorée : la grille ne décrit pas le groupe (addon en v4 requis)");
             return Optional.empty();
         }
 
@@ -168,7 +169,7 @@ public final class Brain {
                     })
                     .findFirst()
                     .map(member -> new Decision(key.key(), key.spellId(), rule.priority(),
-                                                "règle « " + rule.cast() + " » sur le membre " + member.slot() + " (" + Math.round(member.health()) + " %)",
+                                                "règle " + rule.label() + " sur le membre " + member.slot() + " (" + Math.round(member.health()) + " %)",
                                                 Rotation.StopCasting.NONE, member.slot(), rotation.returnToTarget() && state.hasTarget()));
     }
 
@@ -230,7 +231,7 @@ public final class Brain {
             return Boolean.TRUE.equals(rule.script().execute(context));
         }
         catch (JexlException e) {
-            reportOnce("erreur:" + rule.when(), "Condition invalide pour « " + rule.cast() + " » (" + rule.when() + ") : " + e.getMessage());
+            reportOnce("erreur:" + rule.when(), "Condition invalide pour " + rule.label() + " (" + rule.when() + ") : " + e.getMessage());
             return false;
         }
     }
@@ -248,7 +249,7 @@ public final class Brain {
                                             Map.entry("castSpell", state.cast().spellId() == 0 ? "" : database.nameOf(state.cast().spellId())),
                                             Map.entry("channeling", state.cast().channeling()), Map.entry("castRemaining", state.cast().remaining()),
                                             Map.entry("form", state.form() == 0 ? "" : database.nameOf(state.form())),
-                                            Map.entry("combo", state.comboPoints())));
+                                            Map.entry("combo", state.comboPoints()), Map.entry("weaponEnchant", state.weaponEnchant())));
         context.set("target", Map.of("exists", state.hasTarget(), "hostile", state.attackableTarget(), "combat", state.targetInCombat(),
                                      "health", state.targetHealth(), "power", state.targetPower(),
                                      "casting", state.targetCast().casting(), "interruptible", state.targetCast().interruptible(),
@@ -256,6 +257,7 @@ public final class Brain {
         context.set("enemies", state.enemies());
         context.set("assisted", state.recommendedSpell() == 0 ? "" : database.nameOf(state.recommendedSpell()));
         context.set("spell", new SpellView(state, database));
+        context.set("item", new ItemView(state, database));
         context.set("healer", state.group().healerMode());
         context.set("group", new GroupView(state.group()));
         return variables;

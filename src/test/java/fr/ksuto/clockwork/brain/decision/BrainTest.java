@@ -379,4 +379,39 @@ class BrainTest {
 
         assertThrows(IllegalArgumentException.class, () -> brain.parse("rules:\n  - when: \"true\"\n"));
     }
+
+    private static KeyState item(String key, int itemId, int count, double cooldown) {
+
+        return new KeyState(key, 0, cooldown, count > 0, KeyState.Range.NONE, NEVER, NEVER, false, false, itemId, count);
+    }
+
+    @Test
+    void usesItemsByName() {
+
+        String yaml = """
+                rules:
+                  - use: Pierre de soins
+                    when: "player.health < 40 && item.count('Pierre de soins') > 0"
+                    priority: 200
+                  - cast: Éclair
+                """;
+        GameState hurt = new GameState(30, 100, true, true, 80, 0, true, true, false, 1, 0, 0, true, false, false, false, false, 0, 0, 7, 262, 1,
+                                       GameState.Cast.NONE, GameState.TargetCast.NONE, Map.of("1", ready("1", 188196), "Q", item("Q", 19004, 1, 0)));
+
+        Brain.Decision decision = decide(yaml, hurt).orElseThrow();
+        assertEquals("Q", decision.key(), "une des « Pierre de soins » du jeu, quel que soit son identifiant");
+        assertEquals("règle objet « Pierre de soins »", decision.reason());
+
+        GameState used = new GameState(30, 100, true, true, 80, 0, true, true, false, 1, 0, 0, true, false, false, false, false, 0, 0, 7, 262, 1,
+                                       GameState.Cast.NONE, GameState.TargetCast.NONE, Map.of("1", ready("1", 188196), "Q", item("Q", 19004, 1, 50)));
+        assertEquals("1", decide(yaml, used).orElseThrow().key(), "objet en recharge");
+        assertEquals("1", decide(yaml, state(0, 80, ready("1", 188196))).orElseThrow().key(), "objet absent des barres");
+    }
+
+    @Test
+    void ruleNeedsCastOrUseButNotBoth() {
+
+        assertThrows(IllegalArgumentException.class, () -> brain.parse("rules:\n  - cast: Éclair\n    use: Pierre de soins\n"));
+        assertThrows(IllegalArgumentException.class, () -> brain.parse("activity: danse\nrules: []\n"));
+    }
 }

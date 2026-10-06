@@ -53,6 +53,16 @@ public final class QrCodeV2Reader {
      */
     private static final double CAST_HORIZON = 10;
 
+    /**
+     * Secondes encodées pour l'enchantement temporaire de l'arme, identique à WEAPON_ENCHANT_HORIZON côté addon.
+     */
+    private static final double WEAPON_ENCHANT_HORIZON = 30 * 60;
+
+    /**
+     * Bit 23 de la case du sort : la touche porte un objet, identique à ITEM_FLAG côté addon.
+     */
+    private static final int ITEM_FLAG = 0x800000;
+
     private QrCodeV2Reader() {}
 
     /**
@@ -103,7 +113,8 @@ public final class QrCodeV2Reader {
                                                : GameState.Cast.NONE,
                 qr.green(11, 13) > 127 ? new GameState.TargetCast(true, read24(qr, 12, 13), qr.blue(11, 13) > 127) : GameState.TargetCast.NONE,
                 keys,
-                version >= 4 && full ? readGroup(qr) : Group.NONE));
+                version >= 4 && full ? readGroup(qr) : Group.NONE,
+                version >= 4 && qr.red(4, 1) > 127 ? qr.green(4, 1) * WEAPON_ENCHANT_HORIZON / 255 : 0));
     }
 
     /**
@@ -144,15 +155,18 @@ public final class QrCodeV2Reader {
         int flags      = (int) Math.round(qr.green(history[0], history[1]) / 85.0);
         KeyState.Range range = rangeValue > 191 ? KeyState.Range.IN : rangeValue < 64 ? KeyState.Range.OUT : KeyState.Range.NONE;
 
-        return new KeyState(key,
-                            read24(qr, spell[0], spell[1]),
-                            seconds(qr.red(state[0], state[1]), false),
-                            // 1 = utilisable ; 0,5 = sort à incantation pendant un déplacement, que WoW refuserait
-                            qr.green(state[0], state[1]) > 191,
-                            range,
-                            seconds(qr.red(history[0], history[1]), true),
-                            seconds(qr.blue(history[0], history[1]), true),
-                            (flags & 1) != 0,
+        int     content  = read24(qr, spell[0], spell[1]);
+        boolean item     = (content & ITEM_FLAG) != 0;
+        double  cooldown = seconds(qr.red(state[0], state[1]), false);
+        // 1 = utilisable ; 0,5 = sort à incantation pendant un déplacement, que WoW refuserait
+        boolean usable   = qr.green(state[0], state[1]) > 191;
+        double  since    = seconds(qr.blue(history[0], history[1]), true);
+        if (item) {
+            // Objet : l'historique porte le nombre possédé (rouge) à la place du temps sur la cible
+            return new KeyState(key, 0, cooldown, usable, range, Double.POSITIVE_INFINITY, since, false, (flags & 2) != 0,
+                                content & ~ITEM_FLAG, qr.red(history[0], history[1]));
+        }
+        return new KeyState(key, content, cooldown, usable, range, seconds(qr.red(history[0], history[1]), true), since, (flags & 1) != 0,
                             (flags & 2) != 0);
     }
 

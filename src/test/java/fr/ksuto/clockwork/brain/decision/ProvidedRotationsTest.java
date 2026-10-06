@@ -43,7 +43,7 @@ class ProvidedRotationsTest {
         try (DirectoryStream<Path> files = Files.newDirectoryStream(Path.of("rotations"), "*.yaml")) {
             for (Path file : files) {
                 Rotation rotation = brain.parse(Files.readString(file, StandardCharsets.UTF_8));
-                assertFalse(rotation.playerClass().isBlank(), file + " : classe manquante");
+                assertTrue(!rotation.playerClass().isBlank() || !rotation.activity().isEmpty(), file + " : ni classe ni activité");
                 assertFalse(rotation.rules().isEmpty(), file + " : aucune règle");
                 count++;
             }

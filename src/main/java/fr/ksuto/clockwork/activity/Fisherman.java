@@ -19,10 +19,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import javax.imageio.ImageIO;
@@ -31,8 +31,10 @@ public class Fisherman {
     
     private static final Logger logger = LoggerFactory.getLogger(Fisherman.class);
     
-    public static final int                   BAIT_TIME       = 5 * 60000; // Shift + W
-    public static final int                   LURE_TIME       = 10 * 60000; // W
+    /**
+     * Préparations au plus avant un lancer (leurre puis appât...), contre une règle qui se répéterait sans fin.
+     */
+    private static final int                  MAX_PREPARATIONS = 3;
     public static final int                   STARTING_HEIGHT = 90;
     public static final int                   STARTING_WIDTH  = 180;
     public static final int                   Y_OFFSET        = -190;
@@ -50,15 +52,26 @@ public class Fisherman {
      * Touche du sort Pêche d'après la grille, vide si elle n'est pas sur une touche décrite.
      */
     private final Supplier<Optional<CastKey>> fishingKey;
-    private long     lCurrentBaitTime = 0;
-    private long     lCurrentLureTime = 0;
-    
-    Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals, Supplier<Optional<CastKey>> fishingKey) {
-        
+
+    /**
+     * Objet à utiliser avant de lancer (leurre, appât...) d'après rotations/peche.yaml, vide si rien à faire.
+     */
+    private final Supplier<Optional<CastKey>> preparation;
+
+    /**
+     * Le personnage incante (pose d'un leurre...), d'après la grille.
+     */
+    private final BooleanSupplier casting;
+
+    Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals, Supplier<Optional<CastKey>> fishingKey, Supplier<Optional<CastKey>> preparation,
+              BooleanSupplier casting) {
+
         this.ui = ui;
-        
+
         this.peripherals = peripherals;
         this.fishingKey = fishingKey;
+        this.preparation = preparation;
+        this.casting = casting;
     }
     
     /**
@@ -95,24 +108,33 @@ public class Fisherman {
     }
 
     /**
+     * Attend la fin d'une incantation (pose d'un leurre : quelques secondes), 10 s au plus.
+     *
+     * @return faux si le joueur a bougé la souris
+     */
+    private boolean waitEndOfCast() {
+
+        long end = System.currentTimeMillis() + 10000;
+        while (casting.getAsBoolean() && System.currentTimeMillis() < end) {
+            if (!pause(200)) {return false;}
+        }
+        return pause(300);
+    }
+
+    /**
      * Une pêche : leurre et appât si besoin, lancer, repérer le bouchon, cliquer dès la touche.
      *
      * @return faux si le joueur a bougé la souris (fin de la pêche)
      */
     boolean fish() {
 
-        if (new Date().getTime() - lCurrentLureTime > LURE_TIME) {
-            lCurrentLureTime = new Date().getTime();
-            ui.appendLog("w");
-            peripherals.getKeyboard().pressKey(KeyEvent.VK_W);
-            if (!pause(3000)) {return false;}
-        }
-
-        if (new Date().getTime() - lCurrentBaitTime > BAIT_TIME) {
-            lCurrentBaitTime = new Date().getTime();
-            ui.appendLog("W");
-            peripherals.getKeyboard().pressKey(KeyEvent.VK_W, false, false, true);
-            if (!pause(1000)) {return false;}
+        // Leurre, appât... : seulement si la règle le demande (enchantement de la canne ou aura absents), plus de touche fixe
+        for (int i = 0; i < MAX_PREPARATIONS; i++) {
+            Optional<CastKey> item = preparation.get();
+            if (item.isEmpty()) {break;}
+            ui.appendLog(item.get().label());
+            peripherals.getKeyboard().pressKey(item.get().keyCode(), item.get().alt(), item.get().ctrl(), item.get().shift());
+            if (!pause(1000) || !waitEndOfCast()) {return false;}
         }
 
         // Image de l'eau avant le lancer : le bouchon sera ce qui est apparu depuis

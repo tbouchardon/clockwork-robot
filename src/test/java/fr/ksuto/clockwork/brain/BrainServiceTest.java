@@ -3,6 +3,7 @@ package fr.ksuto.clockwork.brain;
 import fr.ksuto.clockwork.brain.data.SpellDatabase;
 import fr.ksuto.clockwork.brain.data.SpellDatabaseFixture;
 import fr.ksuto.clockwork.brain.perception.GameState;
+import fr.ksuto.clockwork.brain.perception.Group;
 import fr.ksuto.clockwork.brain.perception.KeyState;
 
 import java.io.IOException;
@@ -99,5 +100,26 @@ class BrainServiceTest {
 
         assertFalse(empty.hasRotations());
         assertFalse(empty.handles(character(SHAMAN, ELEMENTAL)));
+    }
+
+    @Test
+    void fishingRulesPrepareEachCastButNeverFight() throws IOException {
+
+        BrainService service = service();
+        Files.writeString(folder.resolve("rotations").resolve("peche.yaml"), """
+                activity: fishing
+                rules:
+                  - use: Attracteur de poissons aquadynamique
+                    when: "player.weaponEnchant < 10"
+                """, StandardCharsets.UTF_8);
+        KeyState lure = new KeyState("4", 0, 0, true, KeyState.Range.NONE, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, false, false, 6533, 3);
+        GameState noLure = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 0, true, false, false, false, false, 0, 0, DRUID, 0,
+                                         1, GameState.Cast.NONE, GameState.TargetCast.NONE, Map.of("4", lure), Group.NONE, 0);
+        GameState lured = new GameState(100, 100, false, false, 0, 0, false, false, false, 0, 0, 0, true, false, false, false, false, 0, 0, DRUID, 0,
+                                        1, GameState.Cast.NONE, GameState.TargetCast.NONE, Map.of("4", lure), Group.NONE, 300);
+
+        assertEquals("4", service.prepareFishing(noLure).orElseThrow().key());
+        assertTrue(service.prepareFishing(lured).isEmpty(), "leurre en place");
+        assertEquals("3", keyFor(service, character(DRUID, 0)), "le fichier de pêche n'est jamais une rotation de combat");
     }
 }

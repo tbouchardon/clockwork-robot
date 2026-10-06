@@ -36,6 +36,12 @@
         }
       ]
     },
+    "activity": {
+      "description": "Activité hors combat réglée par ce fichier, à la place d'une rotation de combat : fishing = ce qu'il faut utiliser avant chaque lancer de pêche (leurre, appât). Un tel fichier n'a pas de classe et n'est jamais choisi pour combattre.",
+      "enum": [
+        "fishing"
+      ]
+    },
     "assisted": {
       "description": "Recommandation de Blizzard (combat assisté) en repli : elle passe devant les règles de priorité inférieure. Suivie seulement contre une cible ennemie vivante.",
       "type": "object",
@@ -73,9 +79,6 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "cast"
-        ],
         "properties": {
           "cast": {
             "description": "Sort à lancer : nom tel qu'affiché en jeu (accents et casse indifférents pour ClockWork), ou identifiant. L'éditeur propose les sorts de toutes les classes ; les conditions sur la classe et la spécialisation signalent ceux qui ne leur appartiennent pas.",
@@ -84,6 +87,10 @@
                 "$ref": "#/definitions/spells"
               }
             ]
+          },
+          "use": {
+            "description": "Objet à utiliser (potion, pierre de soins, leurre...) à la place d'un sort : nom tel qu'affiché en jeu (accents et casse indifférents ; tous les objets de ce nom conviennent), ou identifiant. L'objet doit être sur une touche décrite par la grille. Une règle a soit cast, soit use.",
+            "type": "string"
           },
           "on": {
             "description": "Sur qui lancer le sort (grille v4 de l'addon) : target (cible actuelle, par défaut), self (soi-même), lowest (le membre le plus blessé pour qui la condition est vraie), tank, healer (le tank ou le soigneur le plus blessé). Seuls les membres vivants, connectés et à portée sont candidats ; la variable member les décrit dans when. lowest, tank et healer n'agissent qu'en mode soigneur, sauf always.",
@@ -102,7 +109,7 @@
             "default": false
           },
           "when": {
-            "description": "Condition JEXL (&&, ||, !, <, >, ==, calculs) ; toujours vraie si absente.\nplayer.health, player.power (%), player.combat, player.casting, player.aggro, player.moving, player.form (nom de la forme, '' sans forme), player.combo (points de combo)\nplayer.castSpell (sort en cours, '' si aucun), player.channeling, player.castRemaining (secondes)\ntarget.exists, target.hostile (cible ennemie ou neutre, vivante, non marquée par un autre joueur), target.combat, target.health, target.power (%), target.casting, target.interruptible, target.castSpell (sort incanté par la cible)\nenemies : ennemis en combat à proximité ; assisted : nom du sort recommandé par Blizzard\nspell.ready('Nom'), spell.usable('Nom'), spell.inRange('Nom'), spell.proc('Nom'), spell.onBar('Nom')\nspell.cooldown('Nom') : secondes de recharge restantes ; spell.form('Nom') : sous cette forme ; spell.buffActive('Nom') : aura du sort active sur le joueur (lue hors combat, dernier état connu en combat)\nspell.sinceCast('Nom'), spell.sinceCastOnTarget('Nom') : secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s\nhealer : mode soigneur ; group.size (membres vivants), group.below(%) (nombre de membres vivants sous ce seuil), group.avgHealth\nRègles on : member.health (%), member.role ('tank', 'healer', 'damager', ''), member.tank, member.healer, member.self, member.sinceCast('Nom') (secondes depuis le dernier lancement du cerveau sur ce membre, infini au-delà de 60 s)",
+            "description": "Condition JEXL (&&, ||, !, <, >, ==, calculs) ; toujours vraie si absente.\nplayer.health, player.power (%), player.combat, player.casting, player.aggro, player.moving, player.form (nom de la forme, '' sans forme), player.combo (points de combo), player.weaponEnchant (secondes restantes de l'enchantement temporaire de l'arme : leurre sur la canne, 0 si aucun)\nplayer.castSpell (sort en cours, '' si aucun), player.channeling, player.castRemaining (secondes)\ntarget.exists, target.hostile (cible ennemie ou neutre, vivante, non marquée par un autre joueur), target.combat, target.health, target.power (%), target.casting, target.interruptible, target.castSpell (sort incanté par la cible)\nenemies : ennemis en combat à proximité ; assisted : nom du sort recommandé par Blizzard\nspell.ready('Nom'), spell.usable('Nom'), spell.inRange('Nom'), spell.proc('Nom'), spell.onBar('Nom')\nspell.cooldown('Nom') : secondes de recharge restantes ; spell.form('Nom') : sous cette forme ; spell.buffActive('Nom') : aura du sort active sur le joueur (lue hors combat, dernier état connu en combat)\nspell.sinceCast('Nom'), spell.sinceCastOnTarget('Nom') : secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s\nhealer : mode soigneur ; group.size (membres vivants), group.below(%) (nombre de membres vivants sous ce seuil), group.avgHealth\nRègles on : member.health (%), member.role ('tank', 'healer', 'damager', ''), member.tank, member.healer, member.self, member.sinceCast('Nom') (secondes depuis le dernier lancement du cerveau sur ce membre, infini au-delà de 60 s)\nitem.ready('Nom'), item.usable('Nom'), item.onBar('Nom'), item.cooldown('Nom'), item.count('Nom') (nombre possédé, charges comprises), item.sinceUse('Nom') (secondes depuis la dernière utilisation), item.buffActive('Nom') (aura de l'objet active sur le joueur, lue hors combat)",
             "type": "string"
           },
           "priority": {
@@ -110,7 +117,19 @@
             "type": "integer",
             "default": 1
           }
-        }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "cast"
+            ]
+          },
+          {
+            "required": [
+              "use"
+            ]
+          }
+        ]
       }
     }
   },

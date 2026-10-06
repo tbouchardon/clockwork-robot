@@ -32,10 +32,26 @@ import java.util.Optional;
  * @param targetCast       sort incanté par la cible ({@link TargetCast#NONE} si aucun)
  * @param keys             état de chaque touche, par nom de touche
  * @param group            groupe ou raid, et mode soigneur (v4 ; {@link Group#NONE} avant)
+ * @param weaponEnchant    secondes restantes de l'enchantement temporaire de la main droite (leurre sur la canne à
+ *                         pêche...), 0 si aucun (v4)
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group) {
+                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group,
+                        double weaponEnchant) {
+
+    /**
+     * État sans enchantement d'arme.
+     */
+    public GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
+                     boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
+                     boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId,
+                     int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group) {
+
+        this(playerHealth, playerPower, hasTarget, targetHostile, targetHealth, targetPower, targetInCombat, inCombat, casting, enemies, facing,
+             recommendedSpell, aggro, playerDead, mounted, targetTapDenied, moving, form, comboPoints, classId, specId, frame, cast, targetCast, keys,
+             group, 0);
+    }
 
     /**
      * État sans groupe (grilles v2 et v3).
@@ -47,7 +63,7 @@ public record GameState(double playerHealth, double playerPower, boolean hasTarg
 
         this(playerHealth, playerPower, hasTarget, targetHostile, targetHealth, targetPower, targetInCombat, inCombat, casting, enemies, facing,
              recommendedSpell, aggro, playerDead, mounted, targetTapDenied, moving, form, comboPoints, classId, specId, frame, cast, targetCast, keys,
-             Group.NONE);
+             Group.NONE, 0);
     }
 
     /**
@@ -105,7 +121,7 @@ public record GameState(double playerHealth, double playerPower, boolean hasTarg
      */
     public boolean keysReady() {
         
-        return keys.values().stream().anyMatch(key -> key.spellId() != 0);
+        return keys.values().stream().anyMatch(KeyState::bound);
     }
     
     /**

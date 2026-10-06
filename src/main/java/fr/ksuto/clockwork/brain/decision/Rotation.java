@@ -38,9 +38,16 @@ import java.util.Map;
  * @param rules            règles, de la plus prioritaire à la moins prioritaire
  * @param stopCasting      façon d'interrompre sa propre incantation quand une règle plus prioritaire s'applique
  * @param returnToTarget   après un sort lancé sur un membre du groupe, revenir à la cible précédente
+ * @param activity         activité hors combat que règle ce fichier ({@code fishing} : préparation de chaque lancer de
+ *                         pêche), vide pour une rotation de combat
  */
 public record Rotation(String name, String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules,
-                       StopCasting stopCasting, boolean returnToTarget) {
+                       StopCasting stopCasting, boolean returnToTarget, String activity) {
+
+    /**
+     * Activité de la pêche : leurre, appât... avant chaque lancer.
+     */
+    public static final String FISHING = "fishing";
 
     /**
      * Interrompre sa propre incantation : WoW refuse un autre sort pendant une incantation (pas pendant une
@@ -96,14 +103,24 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
     }
 
     /**
-     * @param cast     nom du sort (ou identifiant numérique)
+     * @param cast     nom du sort ou de l'objet (ou identifiant numérique)
      * @param when     condition JEXL, nulle si toujours vraie
      * @param priority priorité (la plus haute l'emporte)
      * @param script   condition compilée, nulle si toujours vraie
      * @param on       sur qui lancer le sort
      * @param always   un soin sur les autres qui s'applique même hors mode soigneur (urgence)
+     * @param item     la règle utilise un objet ({@code use}) plutôt qu'un sort ({@code cast})
      */
-    public record Rule(String cast, String when, int priority, JexlScript script, On on, boolean always) {}
+    public record Rule(String cast, String when, int priority, JexlScript script, On on, boolean always, boolean item) {
+
+        /**
+         * Nom affiché dans le journal.
+         */
+        public String label() {
+
+            return item ? "objet « " + cast + " »" : "« " + cast + " »";
+        }
+    }
 
     @SuppressWarnings("unchecked")
     static Rotation parse(String yaml, JexlEngine jexl) {
@@ -125,10 +142,11 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
         List<Rule> rules = new ArrayList<>();
         if (map.get("rules") instanceof List<?> list) {
             for (Object item : list) {
-                if (!(item instanceof Map<?, ?> rule) || rule.get("cast") == null) {
-                    throw new IllegalArgumentException("Règle sans « cast » : " + item);
+                if (!(item instanceof Map<?, ?> rule) || (rule.get("cast") == null) == (rule.get("use") == null)) {
+                    throw new IllegalArgumentException("Règle sans « cast » (sort) ni « use » (objet), ou avec les deux : " + item);
                 }
-                String     cast   = String.valueOf(rule.get("cast"));
+                boolean    useItem = rule.get("use") != null;
+                String     cast   = String.valueOf(useItem ? rule.get("use") : rule.get("cast"));
                 String     when   = rule.get("when") == null ? null : String.valueOf(rule.get("when"));
                 int        ruleP  = rule.get("priority") instanceof Number number ? number.intValue() : 1;
                 JexlScript script = when == null ? null : jexl.createScript(when);
@@ -143,7 +161,7 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
                     default -> throw new IllegalArgumentException("on inconnu pour « " + cast + " » : " + onKey
                                                                   + " (target, self, lowest, tank ou healer)");
                 };
-                rules.add(new Rule(cast, when, ruleP, script, on, Boolean.TRUE.equals(rule.get("always"))));
+                rules.add(new Rule(cast, when, ruleP, script, on, Boolean.TRUE.equals(rule.get("always")), useItem));
             }
         }
         // Tri stable : à priorité égale, l'ordre du fichier est conservé
@@ -158,7 +176,10 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
 
         boolean returnToTarget = !Boolean.FALSE.equals(map.get("returnToTarget"));
 
-        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting, returnToTarget);
+        String activity = map.get("activity") == null ? "" : String.valueOf(map.get("activity"));
+        if (!activity.isEmpty() && !activity.equals(FISHING)) {throw new IllegalArgumentException("activity inconnue : " + activity + " (fishing)");}
+
+        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting, returnToTarget, activity);
     }
 
     /**
@@ -168,7 +189,7 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
      */
     public boolean appliesTo(String playerClass, SpellDatabase.Spec spec) {
 
-        if (!this.playerClass.equals(playerClass)) {return false;}
+        if (!activity.isEmpty() || !this.playerClass.equals(playerClass)) {return false;}
         return forWholeClass() || (spec != null && (this.spec.equals(String.valueOf(spec.id()))
                                                     || SpellDatabase.normalize(this.spec).equals(SpellDatabase.normalize(spec.name()))));
     }
@@ -187,6 +208,7 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
     public String label() {
 
         if (!name.isBlank()) {return name;}
+        if (!activity.isEmpty()) {return activity;}
         return (playerClass + " " + spec).trim();
     }
 }

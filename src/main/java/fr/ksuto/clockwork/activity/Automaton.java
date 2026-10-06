@@ -92,7 +92,8 @@ public class Automaton {
      */
     private void fish(QrCode qrCode) throws Exception {
         
-        Fisherman natPagle = new Fisherman(ui, peripherals, () -> castKeyFor(qrCode, "Pêche"));
+        Fisherman natPagle = new Fisherman(ui, peripherals, () -> castKeyFor(qrCode, "Pêche"), () -> fishingPreparation(qrCode),
+                                           () -> QrCodeV2Reader.read(qrCode.captureQrCode(peripherals)).map(GameState::casting).orElse(false));
         natPagle.setup();
         boolean keepFishing = true;
         while (keepFishing) {
@@ -120,11 +121,30 @@ public class Automaton {
         return state.get().keys().values().stream()
                     .filter(key -> ids.contains(key.spellId()))
                     .findFirst()
-                    .flatMap(key -> {
-                        KeyCombo combo = KeyCombo.parse(key.key());
-                        return keyNamed(qrCode, combo.key()).map(physical -> new Fisherman.CastKey(physical.hitKey, combo.alt(), combo.ctrl(),
-                                                                                                   combo.shift(), key.key()));
-                    });
+                    .flatMap(key -> castKey(qrCode, key.key()));
+    }
+
+    /**
+     * Objet à utiliser avant un lancer (leurre, appât...) selon rotations/peche.yaml, s'il y a lieu.
+     */
+    private Optional<Fisherman.CastKey> fishingPreparation(QrCode qrCode) {
+
+        return QrCodeV2Reader.read(qrCode.captureQrCode(peripherals))
+                             .flatMap(brain::prepareFishing)
+                             .flatMap(decision -> {
+                                 logger.info("Pêche : {}", decision.reason());
+                                 return castKey(qrCode, decision.key());
+                             });
+    }
+
+    /**
+     * Touche physique d'une combinaison de la grille ("SHIFT-R"...).
+     */
+    private static Optional<Fisherman.CastKey> castKey(QrCode qrCode, String combination) {
+
+        KeyCombo combo = KeyCombo.parse(combination);
+        return keyNamed(qrCode, combo.key()).map(physical -> new Fisherman.CastKey(physical.hitKey, combo.alt(), combo.ctrl(), combo.shift(),
+                                                                                   combination));
     }
     
     private void hitKey(Key key2hit, boolean altModifier, boolean ctrlModifier, boolean shiftModifier, int duration) {

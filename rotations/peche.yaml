@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../rotation.schema.json
+# Pêche : ce qu'il faut utiliser avant chaque lancer. ClockWork évalue ces règles avant de lancer la ligne, et utilise
+# l'objet de la règle applicable de plus haute priorité (jusqu'à trois fois de suite : leurre, puis appât...).
+# Sans règle applicable, il lance directement. Plus de touche fixe (W, Maj+W) : rien n'est utilisé sans contrôle.
+#
+# L'objet doit être sur une touche décrite par la grille (1 à =, Q D R T F G, seules ou avec Maj, Ctrl, Alt).
+# Un objet absent des barres est signalé une fois dans le journal, puis ignoré.
+#
+# - Leurre posé sur la canne (enchantement temporaire de l'arme) : player.weaponEnchant, secondes restantes (0 si aucun).
+# - Appât ou objet qui donne une aura : item.buffActive('Nom') (auras lisibles hors combat, donc pendant la pêche).
+# - item.count('Nom') : nombre possédé ; un objet épuisé est de toute façon inutilisable.
+#
+# Remplacer les noms ci-dessous par ceux de tes objets (noms affichés en jeu, accents et casse indifférents).
+
+name: Pêche
+activity: fishing
+
+rules:
+  # Leurre sur la canne : à reposer quand il reste moins de 10 s
+  - use: Attracteur de poissons aquadynamique
+    when: "player.weaponEnchant < 10"
+    priority: 20
+
+  # Exemple d'appât (aura sur le joueur) :
+  # - use: Appât de léviathan
+  #   when: "!item.buffActive('Appât de léviathan')"
+  #   priority: 10

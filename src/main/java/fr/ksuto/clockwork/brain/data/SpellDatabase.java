@@ -20,7 +20,8 @@ import java.util.TreeSet;
  * la classe (SkillLineAbility), de la spécialisation (SpecializationSpells) et talents (arbre de talents de la classe ;
  * un nœud réservé à certaines spécialisations par une condition l'est aussi pour ses sorts). Relie aussi chaque sort à
  * ses variantes (un talent remplace souvent un sort par une variante d'un autre identifiant, et Blizzard recommande la
- * forme de base) : c'est le dictionnaire du cerveau pour traduire les noms des règles en identifiants.
+ * forme de base) : c'est le dictionnaire du cerveau pour traduire les noms des règles en identifiants. Les noms des
+ * objets (ItemSparse) servent aux règles {@code use} (potions, pierres de soins, leurres...).
  */
 public final class SpellDatabase {
 
@@ -31,7 +32,8 @@ public final class SpellDatabase {
      */
     public static final String[] TABLES = {"SpellName", "ChrClasses", "ChrSpecialization", "SkillLine", "SkillLineAbility", "SpecializationSpells",
                                            "SkillLineXTraitTree", "TraitNode", "TraitNodeXTraitNodeEntry", "TraitNodeEntry", "TraitDefinition",
-                                           "TraitCond", "SpecSetMember", "TraitNodeXTraitCond", "TraitNodeGroupXTraitCond", "TraitNodeGroupXTraitNode"};
+                                           "TraitCond", "SpecSetMember", "TraitNodeXTraitCond", "TraitNodeGroupXTraitCond", "TraitNodeGroupXTraitNode",
+                                           "ItemSparse"};
 
     private static final String CLASS_SKILL_CATEGORY = "7";
     private static final String ACQUIRED_THROUGH_ANOTHER_SPELL = "3";
@@ -53,6 +55,8 @@ public final class SpellDatabase {
     private final Map<String, Set<Integer>>  classSpells = new HashMap<>();
     private final Map<Integer, Set<Integer>> specSpells  = new HashMap<>();
     private final Map<Integer, Set<Integer>> variants    = new HashMap<>();
+    private final Map<Integer, String>       itemNames   = new HashMap<>();
+    private final Map<String, Set<Integer>>  itemIds     = new HashMap<>();
 
     private SpellDatabase() {}
 
@@ -138,6 +142,17 @@ public final class SpellDatabase {
         });
 
         loadTalents(database, files, classBySkillLine);
+
+        // Objets (une cinquantaine de Mo) : absents, seuls les identifiants numériques sont utilisables dans les règles use
+        if (files.get("ItemSparse") != null) {
+            Csv.read(files.get("ItemSparse"), row -> {
+                String name = row.get("Display_lang");
+                if (name == null || name.isBlank()) {return;}
+                int id = Integer.parseInt(row.get("ID"));
+                database.itemNames.put(id, name);
+                database.itemIds.computeIfAbsent(normalize(name), n -> new HashSet<>()).add(id);
+            });
+        }
         return database;
     }
 
@@ -239,6 +254,24 @@ public final class SpellDatabase {
 
         if (reference.matches("\\d+")) {return Set.of(Integer.parseInt(reference));}
         return ids.getOrDefault(normalize(reference), Set.of());
+    }
+
+    /**
+     * Objets désignés par une référence de règle {@code use} : un nom d'objet (accents et casse indifférents ; souvent
+     * plusieurs identifiants, ex. une vingtaine de « Pierre de soins »), ou directement un identifiant numérique.
+     */
+    public Set<Integer> itemIdsFor(String reference) {
+
+        if (reference.matches("\\d+")) {return Set.of(Integer.parseInt(reference));}
+        return itemIds.getOrDefault(normalize(reference), Set.of());
+    }
+
+    /**
+     * @return le nom de l'objet, ou son identifiant s'il est inconnu
+     */
+    public String itemNameOf(int id) {
+
+        return itemNames.getOrDefault(id, String.valueOf(id));
     }
 
     /**

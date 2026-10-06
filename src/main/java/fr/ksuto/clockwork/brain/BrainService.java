@@ -54,7 +54,8 @@ public final class BrainService {
      */
     private static final long RELOAD_INTERVAL = 1000;
 
-    private final Brain brain = new Brain();
+    private final Brain brain        = new Brain();
+    private final Brain fishingBrain = new Brain();
     private final Path  rotationsFolder;
     private final Path  forcedFile;
     private final Path  wowFolder;
@@ -146,6 +147,24 @@ public final class BrainService {
             return Optional.empty();
         }
         return rotationFor(state).flatMap(rotation -> brain.decide(state, rotation, spells));
+    }
+
+    /**
+     * Préparation d'un lancer de pêche : la règle applicable du fichier {@code activity: fishing} (leurre, appât...).
+     *
+     * @return la touche à appuyer avant de lancer, ou vide si rien à faire, pas de fichier de pêche ou table des sorts
+     * pas encore chargée
+     */
+    public Optional<Brain.Decision> prepareFishing(GameState state) {
+
+        reloadIfChanged();
+        SpellDatabase spells = database;
+        if (spells == null) {return Optional.empty();}
+        return rotations.values().stream()
+                        .map(Loaded::rotation)
+                        .filter(rotation -> Rotation.FISHING.equals(rotation.activity()))
+                        .findFirst()
+                        .flatMap(rotation -> fishingBrain.decide(state, rotation, spells));
     }
 
     /**
