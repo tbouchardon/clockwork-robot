@@ -93,7 +93,8 @@ public class Automaton {
     private void fish(QrCode qrCode) throws Exception {
         
         Fisherman natPagle = new Fisherman(ui, peripherals, () -> castKeyFor(qrCode, "Pêche"), () -> fishingPreparation(qrCode),
-                                           () -> QrCodeV2Reader.read(qrCode.captureQrCode(peripherals)).map(GameState::casting).orElse(false));
+                                           () -> QrCodeV2Reader.read(qrCode.captureQrCode(peripherals)).map(GameState::casting).orElse(false),
+                                           () -> QrCodeV2Reader.fishingResult(qrCode.captureQrCode(peripherals)));
         natPagle.setup();
         boolean keepFishing = true;
         while (keepFishing) {

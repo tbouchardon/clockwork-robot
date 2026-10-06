@@ -118,6 +118,19 @@ public final class QrCodeV2Reader {
     }
 
     /**
+     * Résultat du dernier lancer de pêche (v4) : case (5, 1), R = compteur, G = résultat.
+     *
+     * @return vide si la grille n'est pas en v4
+     */
+    public static Optional<FishingResult> fishingResult(Frame qr) {
+
+        if (qr.red(8, 13) < 4) {return Optional.empty();}
+        int code = qr.green(5, 1);
+        FishingResult.Outcome[] outcomes = FishingResult.Outcome.values();
+        return Optional.of(new FishingResult(qr.red(5, 1), code < outcomes.length ? outcomes[code] : FishingResult.Outcome.NONE));
+    }
+
+    /**
      * Groupe (v4) : mode soigneur en (3, 1), un membre par case du bloc 2, identique à group.lua.
      */
     private static Group readGroup(Frame qr) {

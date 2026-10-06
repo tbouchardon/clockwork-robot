@@ -279,6 +279,18 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsTheLastFishingResult() {
+
+        Grid grid = new Grid(32).set(8, 13, 4 / 255.0, 0, 0);
+        assertEquals(new FishingResult(0, FishingResult.Outcome.NONE), QrCodeV2Reader.fishingResult(grid.frame()).orElseThrow());
+
+        grid.set(5, 1, 7 / 255.0, 3 / 255.0, 0);                       // 7e lancer : rien à ferrer
+        assertEquals(new FishingResult(7, FishingResult.Outcome.NOT_HOOKED), QrCodeV2Reader.fishingResult(grid.frame()).orElseThrow());
+
+        assertTrue(QrCodeV2Reader.fishingResult(new Grid(32).set(8, 13, 3 / 255.0, 0, 0).frame()).isEmpty(), "v3");
+    }
+
+    @Test
     void version3GridHasNoGroup() {
 
         GameState state = QrCodeV2Reader.read(new Grid(32).set(8, 13, 3 / 255.0, 0, 0).set(17, 1, 1, 1, 1).frame()).orElseThrow();

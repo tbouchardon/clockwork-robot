@@ -478,6 +478,11 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     consécutives : clic immédiat. Règles vérifiées en rejouant les traces de 19 lancers réels.
   - **Trace** : chaque lancer écrit `traces-peche/<horodatage>.csv` (centre, surface, hauteur et verdict à chaque
     image), pour régler les seuils sur des données réelles ; les 300 plus récentes sont conservées.
+  - **Résultat de chaque lancer** (grille v4) : l'addon publie si le lancer a ramené une prise, si le poisson s'est
+    échappé (clic trop tardif), si rien n'était à ferrer (clic trop tôt, faux clic) ou s'il ne s'est rien passé. Le
+    Java l'associe à son clic, le journalise avec les statistiques de la session (*« Pêche : prise — 12 prise(s) sur 15
+    lancer(s), 1 échappé(s), 0 faux clic(s) »*) et l'ajoute à `traces-peche/resultats.csv` (trace, moment du clic,
+    résultat). C'est la vérité terrain des tests de rejeu : un lancer mal détecté s'y retrouve sans avoir à le noter.
   - **Rejeu** : `TraceReplayTest` rejoue 27 lancers réels (`src/test/resources/fishing/traces`, avec le moment de la
     vraie touche observée en jeu dans `attendu.csv`) et vérifie que la détection actuelle clique au bon moment. Un
     lancer mal détecté en jeu y est ajouté avec la bonne réponse.
@@ -526,7 +531,7 @@ src/main/java/fr/ksuto/clockwork/
 ├── brain/
 │   ├── BrainService.java       rechargement à chaud de la rotation, chargement de la table des sorts
 │   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
-│   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo
+│   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo, FishingResult
 │   └── decision/               Brain, Rotation, SpellView, ItemView, MemberView, GroupView
 ├── entities/
 │   ├── qrcode/                 QrCode (recherche à l'écran, cases v1), Dot, Key
@@ -552,6 +557,7 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 - `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
+- Pêche : lecture du résultat du dernier lancer (`QrCodeV2ReaderTest`), fichier des résultats (`FishingResultsTest`).
 - Objets : lecture d'un objet sur une touche et de l'enchantement de l'arme (`QrCodeV2ReaderTest`), règles `use` et
   `item.*` (`BrainTest`), fichier de pêche (`BrainServiceTest`).
 - `BrainTest` : priorités, conditions, recommandation de Blizzard (formes liées, cible requise), garde-fous.

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import fr.ksuto.bot.generated.enums.InterfaceEnum;
 import fr.ksuto.clockwork.ClockWorkUI;
+import fr.ksuto.clockwork.brain.perception.FishingResult;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
@@ -19,8 +20,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -63,8 +67,18 @@ public class Fisherman {
      */
     private final BooleanSupplier casting;
 
+    /**
+     * Résultat du dernier lancer terminé, publié par l'addon (vide avant la grille v4).
+     */
+    private final Supplier<Optional<FishingResult>> results;
+
+    /**
+     * Résultats des lancers de cette session.
+     */
+    private final Map<FishingResult.Outcome, Integer> stats = new EnumMap<>(FishingResult.Outcome.class);
+
     Fisherman(ClockWorkUI ui, PeripheralRobotHelper peripherals, Supplier<Optional<CastKey>> fishingKey, Supplier<Optional<CastKey>> preparation,
-              BooleanSupplier casting) {
+              BooleanSupplier casting, Supplier<Optional<FishingResult>> results) {
 
         this.ui = ui;
 
@@ -72,6 +86,7 @@ public class Fisherman {
         this.fishingKey = fishingKey;
         this.preparation = preparation;
         this.casting = casting;
+        this.results = results;
     }
     
     /**
@@ -153,6 +168,10 @@ public class Fisherman {
         }
         if (!pause(2500)) {return false;}
 
+        // Compteur de lancers terminés, lu une fois ce lancer parti : un lancer précédent interrompu par celui-ci est
+        // clôturé par l'addon à son démarrage. Le prochain changement annoncera le résultat de ce lancer
+        Optional<FishingResult> previous = results.get();
+
         Optional<Point> found = findBobber(searchArea, before);
         if (userMoved()) {return false;}
         if (found.isEmpty()) {
@@ -175,6 +194,7 @@ public class Fisherman {
         BobberDetector.BiteWatcher watcher = new BobberDetector.BiteWatcher(found.get());
         StringBuilder              trace   = new StringBuilder("ms;x;y;pixels;hauteur;verdict\n");
         long                       start   = System.currentTimeMillis();
+        long                       traceId = start;
         int                        frames  = 0;
 
         try {
@@ -194,14 +214,79 @@ public class Fisherman {
                                  System.currentTimeMillis() - start, frames);
                     ui.appendLog(verdict == BobberDetector.BiteWatcher.Verdict.LOST ? "ϡ?" : "ϡ");
                     peripherals.getMouse().clickLeft();
-                    return pause(2000);
+                    return awaitOutcome(previous, traceId, System.currentTimeMillis() - start);
                 }
                 peripherals.robot.delay(15);
             }
-            return true;
+            return awaitOutcome(previous, traceId, -1);
         }
         finally {
-            writeTrace(trace);
+            writeTrace(traceId, trace);
+        }
+    }
+
+    /**
+     * Attend le résultat du lancer publié par l'addon (le compteur change 1,5 s après la fin de la canalisation),
+     * le journalise avec les statistiques de la session, et l'ajoute à {@value #RESULTS_FILE}.
+     *
+     * @param previous résultat lu avant le lancer (vide : grille sans résultat de pêche, on attend simplement)
+     * @param clickMs  moment du clic depuis le début du suivi, -1 sans clic
+     * @return faux si le joueur a bougé la souris
+     */
+    private boolean awaitOutcome(Optional<FishingResult> previous, long traceId, long clickMs) {
+
+        if (previous.isEmpty()) {return pause(2000);}
+        long end = System.currentTimeMillis() + 4000;
+        while (System.currentTimeMillis() < end) {
+            if (!pause(100)) {return false;}
+            Optional<FishingResult> now = results.get();
+            if (now.isPresent() && now.get().counter() != previous.get().counter()) {
+                record(now.get().outcome(), traceId, clickMs);
+                return pause(500);
+            }
+        }
+        logger.debug("Pêche : résultat du lancer non publié par l'addon");
+        return true;
+    }
+
+    private void record(FishingResult.Outcome outcome, long traceId, long clickMs) {
+
+        stats.merge(outcome, 1, Integer::sum);
+        int casts  = stats.values().stream().mapToInt(Integer::intValue).sum();
+        int caught = stats.getOrDefault(FishingResult.Outcome.CAUGHT, 0);
+        logger.info("Pêche : {}{} — {} prise(s) sur {} lancer(s), {} échappé(s), {} faux clic(s)", label(outcome),
+                    clickMs < 0 ? " (sans clic)" : "", caught, casts, stats.getOrDefault(FishingResult.Outcome.ESCAPED, 0),
+                    stats.getOrDefault(FishingResult.Outcome.NOT_HOOKED, 0));
+        appendResult(Path.of(TRACES_FOLDER), traceId, clickMs, outcome);
+    }
+
+    private static String label(FishingResult.Outcome outcome) {
+
+        return switch (outcome) {
+            case CAUGHT -> "prise";
+            case ESCAPED -> "poisson échappé (clic trop tard)";
+            case NOT_HOOKED -> "rien à ferrer (clic trop tôt)";
+            case NOTHING -> "rien";
+            case NONE -> "?";
+        };
+    }
+
+    /**
+     * Fichier des résultats, à côté des traces : une ligne par lancer (trace, moment du clic, résultat). C'est la
+     * vérité terrain des tests de rejeu : une touche manquée ou un faux clic s'y retrouvent sans avoir à les noter.
+     */
+    static final String RESULTS_FILE = "resultats.csv";
+
+    static void appendResult(Path folder, long traceId, long clickMs, FishingResult.Outcome outcome) {
+
+        try {
+            Files.createDirectories(folder);
+            Path file = folder.resolve(RESULTS_FILE);
+            if (!Files.exists(file)) {Files.writeString(file, "trace;clic_ms;resultat\n", StandardCharsets.UTF_8);}
+            Files.writeString(file, traceId + ";" + clickMs + ";" + outcome + "\n", StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+        }
+        catch (IOException e) {
+            logger.debug("Résultat de pêche non écrit : {}", e.getMessage());
         }
     }
 
@@ -210,19 +295,21 @@ public class Fisherman {
      */
     static final int KEPT_TRACES = 300;
 
+    static final String TRACES_FOLDER = "traces-peche";
+
     /**
      * Trace du suivi de chaque lancer (centre, surface et hauteur des plumes à chaque image), pour régler les seuils et
      * enrichir les tests de rejeu (TraceReplayTest) : dossier traces-peche du dossier de lancement, limité aux
      * {@value #KEPT_TRACES} plus récentes.
      */
-    private static void writeTrace(StringBuilder trace) {
+    private static void writeTrace(long traceId, StringBuilder trace) {
 
         try {
-            Path folder = Files.createDirectories(Path.of("traces-peche"));
-            Files.writeString(folder.resolve(System.currentTimeMillis() + ".csv"), trace, StandardCharsets.UTF_8);
+            Path folder = Files.createDirectories(Path.of(TRACES_FOLDER));
+            Files.writeString(folder.resolve(traceId + ".csv"), trace, StandardCharsets.UTF_8);
             try (var files = Files.list(folder)) {
                 // Noms horodatés : l'ordre alphabétique est l'ordre chronologique
-                List<Path> traces = files.filter(file -> file.toString().endsWith(".csv")).sorted().toList();
+                List<Path> traces = files.filter(file -> file.toString().endsWith(".csv") && !file.endsWith(RESULTS_FILE)).sorted().toList();
                 for (Path old : traces.subList(0, Math.max(0, traces.size() - KEPT_TRACES))) {Files.deleteIfExists(old);}
             }
         }
