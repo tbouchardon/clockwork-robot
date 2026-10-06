@@ -29,9 +29,8 @@ public class Automaton {
     
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
-    private static final long                  LOOT_WALK             = 4000;
-    private static final int                   LOOT_STEP             = 400;
-    private static final int                   LOOT_ATTEMPTS         = 2;
+    private static final int                   LOOT_PRESSES          = 3;
+    private static final int                   LOOT_ATTEMPTS         = 1;
     private static final long                  LOOT_APPEARS          = 1500;
 
     private static final int MODIFIER_CTRL = 1;
@@ -389,11 +388,10 @@ public class Automaton {
     
     /**
      * Ramassage (mode du menu de l'addon) : un ennemi ciblé récemment est un cadavre avec du butin (l'addon le sait même
-     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Le personnage lui faisait face, il est devant :
-     * d'abord interagir sur place (Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est la
-     * touche d'interaction de WoW, qui agit sur le cadavre le plus proche devant), puis avancer par pas de
-     * {@value #LOOT_STEP} ms en s'arrêtant pour interagir. Jusqu'à ouvrir le butin (plus aucun butin signalé), au plus
-     * {@value #LOOT_WALK} ms de marche, {@value #LOOT_ATTEMPTS} fois au plus tant que du butin reste
+     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Sur place seulement : après 0,5 s,
+     * {@value #LOOT_PRESSES} appuis espacés de 0,3 s sur Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ;
+     * sans cible, c'est la touche d'interaction de WoW, qui agit sur le cadavre à portée devant le personnage. Un cadavre
+     * hors de portée est laissé : avancer en ligne droite le rate le plus souvent. Une tentative tant que du butin reste
      * signalé. Aucun réglage du joueur n'est modifié.
      * <p>
      * Seulement s'il ne reste aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort
@@ -430,22 +428,13 @@ public class Automaton {
         logger.info("Ramassage du butin (essai {})", lootAttempts);
         ui.appendMessage("butin");
 
-        // D'abord sur place : le cadavre est souvent déjà à portée (corps à corps), et la touche d'interaction met un
-        // instant à le prendre ; avancer d'emblée le ferait dépasser
+        // Sur place seulement : avancer en ligne droite rate le plus souvent le cadavre. La touche d'interaction met un
+        // instant à le prendre, d'où l'attente et quelques appuis
         peripherals.robot.delay(500);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < LOOT_PRESSES; i++) {
             if (interact(qrCode)) {return true;}
         }
-        // Puis par petits pas, en s'arrêtant pour interagir : sans arrêt, le cadavre passerait derrière le personnage, hors
-        // de portée de la touche d'interaction (qui agit devant)
-        long end = System.currentTimeMillis() + LOOT_WALK;
-        while (System.currentTimeMillis() < end) {
-            peripherals.robot.keyPress(KeyEvent.VK_UP);
-            peripherals.robot.delay(LOOT_STEP);
-            peripherals.robot.keyRelease(KeyEvent.VK_UP);
-            if (interact(qrCode)) {return true;}
-        }
-        logger.info("Ramassage : cadavre non atteint en {} s", LOOT_WALK / 1000);
+        logger.info("Ramassage : cadavre hors de portée, laissé");
         return true;
     }
 

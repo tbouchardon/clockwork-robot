@@ -131,8 +131,8 @@ Le cerveau se pilote depuis les fichiers, à chaud :
    - case `toggle` éteinte → *« addon désactivé »* : on attend ;
    - le changement d'état est journalisé une seule fois, pour savoir **pourquoi** le bot ne fait rien.
 3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon. **Ramassage** (mode du
-   menu) : si un ennemi récent a laissé du butin, avancer en appuyant sur la touche d'interaction jusqu'à ouvrir le
-   butin, 4 s au plus ; ni ciblage auto ni pilote pendant ce temps.
+   menu) : si un ennemi récent a laissé du butin, la touche d'interaction sur place (cadavre à ses pieds) ; ni ciblage
+   auto ni pilote pendant ce temps.
 4. **Choix de la touche** :
    - mode historique : la touche allumée de plus haute priorité, avec son modificateur et sa durée d'appui ;
    - **si le cerveau est actif**, sa décision **remplace** celle de l'addon (voir plus bas). Une grille figée (compteur
@@ -578,10 +578,9 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   souvent à sa mort, avant que son butin soit prêt. L'addon retient donc l'identifiant des ennemis ciblés dans la
   dernière minute et signale (case (8,1)) qu'un de leurs cadavres a du butin pour le joueur (`CanLootUnit`). Quand il ne
   reste aucun ennemi en combat, le Java appuie sur `Alt+Maj+L`, posé par l'addon sur « Interagir avec la cible » : sans
-  cible, c'est la **touche d'interaction** de WoW, qui agit sur le cadavre le plus proche devant. D'abord sur place
-  pendant environ 1 s (corps à corps), puis en avançant par pas de 0,4 s (le personnage faisait face à sa cible), avec
-  un arrêt pour interagir après chaque pas : sans arrêt, il dépasserait le cadavre. Il s'arrête au butin ouvert, si un
-  ennemi arrive en combat, ou au bout de 4 s de marche ; deux essais au plus. Après la perte d'une cible ennemie, le ciblage auto attend
+  cible, c'est la **touche d'interaction** de WoW, qui agit sur le cadavre à portée devant le personnage. **Sur place
+  seulement** : une demi-seconde d'attente puis trois appuis espacés de 0,3 s. Un cadavre hors de portée est laissé :
+  avancer en ligne droite le rate le plus souvent. Une seule tentative par butin signalé. Après la perte d'une cible ennemie, le ciblage auto attend
   1,5 s, le temps que le butin apparaisse. Il faut cocher « Activer la touche d'interaction » (Options > Contrôles) :
   sinon le ramassage est signalé impossible, une fois. Aucun réglage du joueur n'est modifié. Les soins de groupe ont
   leur propre section (règles `on`).
