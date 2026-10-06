@@ -79,4 +79,22 @@ class ProvidedRotationsTest {
         assertEquals(1464, warriorCasts(rotation, true, false), "buff actif : Heurtoir");
         assertEquals(6552, warriorCasts(rotation, true, true), "cible qui incante : Volée de coups (180) avant Heurtoir");
     }
+
+    @Test
+    void referenceExampleUsesEveryFeature() throws IOException {
+
+        Rotation example = brain.parse(Files.readString(Path.of("docs", "exemple-rotation.yaml"), StandardCharsets.UTF_8));
+
+        assertTrue(example.followAssisted());
+        assertEquals(50, example.assistedPriority());
+        assertEquals(Rotation.StopCasting.JUMP, example.stopCasting());
+        assertTrue(example.returnToTarget());
+        for (Rotation.Kind kind : Rotation.Kind.values()) {
+            assertTrue(example.rules().stream().anyMatch(rule -> rule.kind() == kind), "règle " + kind);
+        }
+        for (Rotation.On on : java.util.List.of(Rotation.On.TARGET, Rotation.On.SELF, Rotation.On.LOWEST, Rotation.On.TANK)) {
+            assertTrue(example.rules().stream().anyMatch(rule -> rule.on() == on), "on " + on);
+        }
+        assertTrue(example.rules().stream().anyMatch(Rotation.Rule::always));
+    }
 }

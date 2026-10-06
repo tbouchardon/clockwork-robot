@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=../rotation.schema.json
+# =====================================================================================================================
+# Exemple de référence : toutes les possibilités d'une rotation ClockWork, commentées.
+# Ce fichier n'est PAS chargé (il n'est pas dans rotations/) : le copier dans rotations/ et l'adapter.
+# Les règles ci-dessous illustrent la syntaxe, pas une vraie rotation de chaman.
+#
+# Choix de la rotation : ClockWork prend dans rotations/ celle de la classe et de la spécialisation du personnage,
+# sinon celle de toute sa classe (sans « spec »). Un rotation.yaml dans le dossier de lancement s'impose à tous.
+# Les fichiers sont rechargés à chaud ; une rotation invalide est signalée et la précédente conservée.
+#
+# Une règle s'applique si :
+#   - son sort (cast) ou son objet (use) est sur une touche décrite par la grille (1 à =, Q D R T F G, seules ou avec
+#     Maj, Ctrl, Alt ; une macro compte pour le sort ou l'objet qu'elle affiche) ;
+#   - il est prêt : utilisable, sans temps de recharge, pas hors de portée de la cible ;
+#   - sa condition « when » est vraie.
+# La règle applicable de plus haute priorité l'emporte. Rien n'est lancé sur une monture, mort, ni contre une cible
+# marquée par un autre joueur ; un sort en cours garde la priorité de sa règle (seule une règle plus prioritaire le
+# coupe).
+#
+# ---------------------------------------------------------------------------------------------------------------------
+# Variables des conditions (syntaxe JEXL : &&, ||, !, <, >, ==, calculs, parenthèses) :
+#
+#   player.health  player.power            vie, ressource principale (mana, Maelström...), en %
+#   player.combat  player.casting  player.moving  player.aggro          booléens (aggro : mode du menu de l'addon)
+#   player.castSpell  player.channeling  player.castRemaining          sort en cours ('' si aucun), canalisation, secondes
+#   player.form                            forme active (druide...), '' sans forme
+#   player.resource  (= player.combo)      ressource de classe : points de combo, éclats d'âme, puissance sacrée, chi...
+#   player.weaponEnchant                   secondes restantes du leurre posé sur la canne, 0 si aucun
+#
+#   target.exists  target.hostile  target.combat                       hostile : ennemi ou neutre, vivant, non marqué
+#   target.health  target.power                                        en %
+#   target.casting  target.interruptible  target.castSpell             incantation de la cible (interruption)
+#
+#   enemies                                ennemis en combat dont la barre de vie est affichée
+#   assisted                               nom du sort recommandé par Blizzard ('' si aucun)
+#   multi                                  mode multi-cibles du menu de l'addon (répartir ses DoT, sorts de zone)
+#   healer                                 mode soigneur du menu de l'addon (soigner les autres membres)
+#
+#   spell.ready('Nom')  spell.usable('Nom')  spell.inRange('Nom')  spell.proc('Nom')  spell.onBar('Nom')
+#   spell.cooldown('Nom')                  secondes de recharge restantes
+#   spell.sinceCast('Nom')                 secondes depuis le dernier lancement, toutes cibles (infini au-delà de 60 s)
+#   spell.sinceCastOnTarget('Nom')         idem sur la cible actuelle, retrouvé en revenant sur une cible déjà vue
+#   spell.dotted('Nom', secondes)          ennemis différents ayant reçu le sort depuis moins de tant de secondes
+#   spell.buffActive('Nom')                aura du sort active sur le joueur (lue hors combat seulement)
+#   spell.form('Nom')                      sous cette forme
+#
+#   item.ready('Nom')  item.usable('Nom')  item.onBar('Nom')  item.cooldown('Nom')
+#   item.count('Nom')                      nombre possédé, charges comprises
+#   item.sinceUse('Nom')                   secondes depuis la dernière utilisation
+#   item.buffActive('Nom')                 aura de l'objet active sur le joueur (lue hors combat)
+#
+#   group.size  group.below(%)  group.avgHealth                        membres vivants, sous ce % de vie, vie moyenne
+#   member.health  member.role  member.tank  member.healer  member.self   règles « on » seulement : le membre visé
+#   member.sinceCast('Nom')                secondes depuis le dernier lancement du cerveau sur ce membre
+#
+# Les noms de sorts et d'objets s'écrivent tels qu'affichés en jeu (accents et casse indifférents) ; un nom contenant
+# une apostrophe s'écrit avec l'apostrophe typographique dans les conditions : 'Chaîne d’éclairs'.
+# =====================================================================================================================
+
+# Valeurs par défaut d'un champ absent :
+#   name           : classe et spécialisation              assisted.follow   : false (Blizzard ignoré)
+#   spec           : toutes les spécialisations            assisted.priority : 50
+#   stopCasting    : jump                                  returnToTarget    : true
+#   activity       : aucune (rotation de combat)
+#   règle  priority: 1     when: toujours vraie     on: target     always: false
+# Une règle a exactement un champ parmi cast (sort), use (objet) et action (next-target).
+
+name: Exemple complet       # défaut : classe et spécialisation
+class: SHAMAN               # obligatoire (sauf fichier « activity »)
+spec: Élémentaire           # défaut : toutes les spécialisations de la classe
+
+# Recommandation de Blizzard (combat assisté) : elle agit comme une règle de cette priorité. Les règles au-dessus
+# passent avant elle, celles en dessous ne servent que si elle ne recommande rien d'utilisable. Suivie seulement
+# contre une cible ennemie vivante.
+assisted:
+  follow: true              # défaut : false
+  priority: 50              # défaut : 50
+
+# Couper sa propre incantation quand une règle plus prioritaire s'applique : jump (saut, par défaut), back (petit
+# recul), none (rien : macros /stopcasting sur la barre)
+stopCasting: jump           # défaut : jump
+
+# Après un sort lancé sur un membre du groupe (règle « on »), revenir à la cible précédente (vrai par défaut)
+returnToTarget: true        # défaut : true
+
+rules:
+  # --- Interruption : la cible incante un sort interruptible ---
+  - cast: Cisaille de vent
+    when: "target.hostile && target.casting && target.interruptible"
+    priority: 300
+
+  # --- Objet (« use » au lieu de « cast ») : potion, pierre de soins... ---
+  - use: Pierre de soins
+    when: "player.combat && player.health < 40 && item.count('Pierre de soins') > 0"
+    priority: 290
+
+  # --- Soins de groupe (« on ») ---
+  # Urgence, même hors mode soigneur (« always ») : le membre le plus blessé sous 25 %
+  - cast: Afflux de soins
+    on: lowest              # target (défaut), self, lowest, tank, healer
+    always: true            # défaut : false (soins des autres seulement en mode soigneur)
+    when: "member.health < 25"
+    priority: 280
+
+  # Mode soigneur seulement : le tank, s'il n'a pas reçu ce soin depuis 10 s
+  - cast: Afflux de soins
+    on: tank
+    when: "member.health < 70 && member.sinceCast('Afflux de soins') > 10"
+    priority: 150
+
+  # Soi-même : toujours permis
+  - cast: Afflux de soins
+    on: self
+    when: "member.health < 50 && !player.moving"
+    priority: 140
+
+  # --- DoT entretenu sur la cible (les auras sont illisibles en combat : temps depuis le lancement) ---
+  - cast: Horion de flamme
+    when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Horion de flamme') > 12"
+    priority: 125
+
+  # --- Proc : bouton en surbrillance ---
+  - cast: Explosion de lave
+    when: "target.hostile && spell.proc('Explosion de lave')"
+    priority: 120
+
+  # --- Zone, en mode multi-cibles ---
+  - cast: Chaîne d’éclairs
+    when: "multi && target.hostile && enemies >= 3"
+    priority: 110
+
+  # --- Dépense de ressource ---
+  - cast: Horion de terre
+    when: "target.hostile && player.power > 60"
+    priority: 100
+
+  # --- Répartir un DoT entre plusieurs ennemis : passer au suivant (Tab) ---
+  - action: next-target
+    when: >-
+      multi && player.combat
+      && spell.sinceCastOnTarget('Horion de flamme') < 12
+      && spell.dotted('Horion de flamme', 12) < enemies
+      && spell.dotted('Horion de flamme', 12) < 3
+    priority: 60
+
+  # --- Buff hors combat (lu hors combat seulement) ---
+  - cast: Bouclier de foudre
+    when: "!player.combat && !spell.buffActive('Bouclier de foudre')"
+    priority: 55
+
+  # --- Remplissage (sous la recommandation de Blizzard, priorité 50) ---
+  - cast: Éclair
+    when: "target.hostile"  # défaut : toujours vraie
+    priority: 10            # défaut : 1
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Fichier de pêche (rotations/peche.yaml) : pas de classe, « activity: fishing », évalué avant chaque lancer.
+#
+#   name: Pêche
+#   activity: fishing
+#   rules:
+#     - use: Attracteur de poissons aquadynamique     # leurre posé sur la canne
+#       when: "player.weaponEnchant < 10"
+#       priority: 20
+#     - use: Appât de léviathan                       # appât qui donne une aura
+#       when: "!item.buffActive('Appât de léviathan')"
+#       priority: 10

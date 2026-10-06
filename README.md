@@ -283,7 +283,10 @@ fois. Pour un autre client (vanilla, Forever…), il suffit de pointer `clockwor
 
 ## Écrire une rotation
 
-Une rotation est un fichier YAML du dossier `rotations/`. Un exemple minimal :
+Une rotation est un fichier YAML du dossier `rotations/`. **`docs/exemple-rotation.yaml` reprend toutes les
+possibilités, commentées** (variables des conditions, `assisted` et son seuil de priorité, `stopCasting`,
+`returnToTarget`, règles `cast`, `use`, `action`, `on`, `always`, fichier de pêche) : il n'est pas chargé, il est fait
+pour être copié dans `rotations/` et adapté. Un exemple minimal :
 
 ```yaml
 # yaml-language-server: $schema=../rotation.schema.json
@@ -316,6 +319,10 @@ rules:
   par défaut : le personnage reste en place, seuls les sorts instantanés partent pendant le saut), `back` (petit recul,
   immédiat mais le personnage bouge un peu), `none` (rien : sorts utilisables pendant l'incantation, macros
   `/stopcasting`).
+- `assisted` : recommandation de Blizzard. `follow` la suit ou non ; `priority` (50 par défaut) est son **seuil** : elle
+  agit comme une règle de cette priorité. Les règles au-dessus passent avant elle, celles en dessous ne servent que si
+  elle ne recommande rien d'utilisable. Avec `priority: 105`, par exemple, interruption, défensifs et entretien des DoT
+  restent prioritaires, et Blizzard choisit le reste.
 - `class` : classe visée (`SHAMAN`, `MAGE`…).
 - `spec` : spécialisation visée, nom affiché en jeu (`Élémentaire`, `Farouche`…) ou identifiant (`262`). Sans `spec`, la
   rotation vaut pour toutes les spécialisations de la classe ; une rotation de la spécialisation passe devant.
@@ -613,7 +620,8 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
   version et langue du jeu, liste pour l'éditeur.
 - `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme ; soin d'urgence et retour en félin, mode
   soigneur.
-- `ProvidedRotationsTest` : toutes les rotations de `rotations/` valides ; le démoniste Affliction entretient ses debuffs.
+- `ProvidedRotationsTest` : toutes les rotations de `rotations/` valides, et `docs/exemple-rotation.yaml` utilise bien
+  toutes les possibilités ; le démoniste Affliction entretient ses debuffs.
 - `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
 - `BobberDetectorTest` : signature du bouchon sur des captures en jeu (eau boueuse, eau verte lumineuse en première
   personne) et sur des images synthétiques bruitées, décor écarté, plume bleue décalée, suivi, touche (écart,
