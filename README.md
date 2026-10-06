@@ -577,10 +577,11 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
 - **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : la cible morte disparaît
   souvent à sa mort, avant que son butin soit prêt. L'addon retient donc l'identifiant des ennemis ciblés dans la
   dernière minute et signale (case (8,1)) qu'un de leurs cadavres a du butin pour le joueur (`CanLootUnit`). Quand il ne
-  reste aucun ennemi en combat, le Java avance (flèche haut : le personnage faisait face à sa cible) en appuyant toutes
-  les 0,3 s sur `Alt+Maj+L`, posé par l'addon sur « Interagir avec la cible » : sans cible, c'est la **touche
-  d'interaction** de WoW, qui agit sur le cadavre le plus proche devant. Il s'arrête au butin ouvert, si un ennemi
-  arrive en combat, ou au bout de 4 s ; deux essais au plus. Après la perte d'une cible ennemie, le ciblage auto attend
+  reste aucun ennemi en combat, le Java appuie sur `Alt+Maj+L`, posé par l'addon sur « Interagir avec la cible » : sans
+  cible, c'est la **touche d'interaction** de WoW, qui agit sur le cadavre le plus proche devant. D'abord sur place
+  pendant environ 1 s (corps à corps), puis en avançant par pas de 0,4 s (le personnage faisait face à sa cible), avec
+  un arrêt pour interagir après chaque pas : sans arrêt, il dépasserait le cadavre. Il s'arrête au butin ouvert, si un
+  ennemi arrive en combat, ou au bout de 4 s de marche ; deux essais au plus. Après la perte d'une cible ennemie, le ciblage auto attend
   1,5 s, le temps que le butin apparaisse. Il faut cocher « Activer la touche d'interaction » (Options > Contrôles) :
   sinon le ramassage est signalé impossible, une fois. Aucun réglage du joueur n'est modifié. Les soins de groupe ont
   leur propre section (règles `on`).

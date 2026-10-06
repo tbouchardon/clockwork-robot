@@ -30,6 +30,7 @@ public class Automaton {
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
     private static final long                  LOOT_WALK             = 4000;
+    private static final int                   LOOT_STEP             = 400;
     private static final int                   LOOT_ATTEMPTS         = 2;
     private static final long                  LOOT_APPEARS          = 1500;
 
@@ -389,9 +390,10 @@ public class Automaton {
     /**
      * Ramassage (mode du menu de l'addon) : un ennemi ciblé récemment est un cadavre avec du butin (l'addon le sait même
      * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Le personnage lui faisait face, il est devant :
-     * avancer (flèche haut) en appuyant sur Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est
-     * la touche d'interaction de WoW, qui agit sur le cadavre le plus proche devant. Jusqu'à ouvrir le butin (plus aucun
-     * butin signalé), au plus {@value #LOOT_WALK} ms, {@value #LOOT_ATTEMPTS} fois au plus tant que du butin reste
+     * d'abord interagir sur place (Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est la
+     * touche d'interaction de WoW, qui agit sur le cadavre le plus proche devant), puis avancer par pas de
+     * {@value #LOOT_STEP} ms en s'arrêtant pour interagir. Jusqu'à ouvrir le butin (plus aucun butin signalé), au plus
+     * {@value #LOOT_WALK} ms de marche, {@value #LOOT_ATTEMPTS} fois au plus tant que du butin reste
      * signalé. Aucun réglage du joueur n'est modifié.
      * <p>
      * Seulement s'il ne reste aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort
@@ -428,23 +430,36 @@ public class Automaton {
         logger.info("Ramassage du butin (essai {})", lootAttempts);
         ui.appendMessage("butin");
 
-        long end = now + LOOT_WALK;
-        peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true); // cadavre peut-être déjà à portée
-        peripherals.robot.keyPress(KeyEvent.VK_UP);
-        try {
-            while (System.currentTimeMillis() < end) {
-                peripherals.robot.delay(300);
-                Frame current = qrCode.captureQrCode(peripherals);
-                // Butin ouvert (plus rien à ramasser), ou un ennemi arrive en combat : on s'arrête
-                if (!QrCodeV2Reader.targetLootable(current) || QrCodeV2Reader.read(current).map(GameState::enemies).orElse(0) > 0) {return true;}
-                peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
-            }
-            logger.info("Ramassage : cadavre non atteint en {} s", LOOT_WALK / 1000);
-            return true;
+        // D'abord sur place : le cadavre est souvent déjà à portée (corps à corps), et la touche d'interaction met un
+        // instant à le prendre ; avancer d'emblée le ferait dépasser
+        peripherals.robot.delay(500);
+        for (int i = 0; i < 3; i++) {
+            if (interact(qrCode)) {return true;}
         }
-        finally {
+        // Puis par petits pas, en s'arrêtant pour interagir : sans arrêt, le cadavre passerait derrière le personnage, hors
+        // de portée de la touche d'interaction (qui agit devant)
+        long end = System.currentTimeMillis() + LOOT_WALK;
+        while (System.currentTimeMillis() < end) {
+            peripherals.robot.keyPress(KeyEvent.VK_UP);
+            peripherals.robot.delay(LOOT_STEP);
             peripherals.robot.keyRelease(KeyEvent.VK_UP);
+            if (interact(qrCode)) {return true;}
         }
+        logger.info("Ramassage : cadavre non atteint en {} s", LOOT_WALK / 1000);
+        return true;
+    }
+
+    /**
+     * Appuie sur la touche d'interaction (Alt+Maj+L) et regarde le résultat.
+     *
+     * @return fini : butin ouvert (plus rien à ramasser), ou un ennemi arrive en combat
+     */
+    private boolean interact(QrCode qrCode) {
+
+        peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
+        peripherals.robot.delay(300);
+        Frame current = qrCode.captureQrCode(peripherals);
+        return !QrCodeV2Reader.targetLootable(current) || QrCodeV2Reader.read(current).map(GameState::enemies).orElse(0) > 0;
     }
 
     private void turnAround() {
