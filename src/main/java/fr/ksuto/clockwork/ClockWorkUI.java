@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import fr.ksuto.clockwork.activity.Automaton;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
-import fr.ksuto.prh.peripherals.Screen;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -108,7 +107,6 @@ public class ClockWorkUI {
         ui.setAlwaysOnTop(true);
         ui.setPreferredSize(new Dimension(260, 71));
         ui.setResizable(false);
-        ui.setLocation(Screen.SCREEN_WIDTH - 270, Screen.SCREEN_HEIGHT - 95);
         ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
         ui.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         
@@ -127,6 +125,9 @@ public class ClockWorkUI {
         ui.add(castLogTextfield, BorderLayout.CENTER);
         
         ui.pack();
+        // En bas à droite de la zone utile de l'écran : au-dessus de la barre des tâches, quelle que soit sa hauteur
+        Rectangle usable = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        ui.setLocation(usable.x + usable.width - ui.getWidth() - 10, usable.y + usable.height - ui.getHeight() - 10);
         ui.setVisible(true);
         
         ActionListener fadeOutAction = actionEvent -> {
