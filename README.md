@@ -105,7 +105,9 @@ Propriétés système (`-D…`) :
    le journal des touches jouées.
 3. ClockWork **cherche le QR code tout seul**, toutes les 2 s jusqu'à le trouver, puis démarre l'automate (sans clic
    ni frappe : rien n'est envoyé à une autre fenêtre). Si le QR code reste invisible plus de 5 s (fenêtre de WoW
-   déplacée ou redimensionnée), la recherche reprend d'elle-même. L'addon s'active depuis son menu dans WoW, ou par
+   déplacée ou redimensionnée), la recherche reprend d'elle-même. Le journal de la fenêtre affiche alors « QR perdu », puis
+   « QR trouvé » une fois la grille retrouvée. Les messages y sont entourés de points pour les distinguer des touches
+   (`1 2 . QR perdu . 3`). L'addon s'active depuis son menu dans WoW, ou par
    les raccourcis à définir dans *Options > Raccourcis > Addons > ClockWork*. Les modes aggro, multi-cibles et soigneur
    du menu changent le comportement des rotations (voir *Plusieurs ennemis* et *Soigner le groupe*).
 4. Le champ de texte affiche les touches jouées. Le journal détaillé (niveau DEBUG pour `fr.ksuto.clockwork`) sort sur
@@ -212,10 +214,10 @@ grille contient au moins un sort ; elle est vide juste après l'activation), `ke
      prioritaire** peut agir :
      - **canalisation** (Drain de vie…) : une règle plus prioritaire la coupe (le jeu arrête la canalisation), sa propre
        règle ne la relance pas. Un drain de remplissage cède donc à tout ce qui compte, un drain prioritaire va au bout ;
-     - **incantation** (Éclair…) : le jeu refuse les autres sorts. Une règle plus prioritaire l'interrompt d'abord
-       selon `stopCasting` (saut par défaut, recul, ou rien pour qui préfère des macros `/stopcasting`), puis lance son
-       sort. Sinon, le cerveau attend les dernières 0,4 s, où le sort suivant part en file d'attente (enchaînement sans
-       temps mort) ;
+     - **incantation** (Éclair…) : le jeu refuse les autres sorts. Seule une règle plus prioritaire **et** d'au moins
+       `stopCastingFrom` (250 par défaut : interruption, défensifs, urgences) l'interrompt d'abord selon `stopCasting`
+       (saut par défaut, recul, ou rien pour qui préfère des macros `/stopcasting`), puis lance son sort. Sinon, le
+       cerveau attend les dernières 0,4 s, où le sort suivant part en file d'attente (enchaînement sans temps mort) ;
      - sort lancé à la main ou inconnu : jamais coupé ;
   3. parcourt les règles par **priorité décroissante**. Une règle s'applique si son sort est sur une touche (n'importe
      quelle combinaison), que la touche est prête (`ready`) et que la condition `when` est vraie ;
@@ -321,6 +323,10 @@ rules:
   par défaut : le personnage reste en place, seuls les sorts instantanés partent pendant le saut), `back` (petit recul,
   immédiat mais le personnage bouge un peu), `none` (rien : sorts utilisables pendant l'incantation, macros
   `/stopcasting`).
+- `stopCastingFrom` : priorité minimale d'une règle pour couper sa propre incantation (250 par défaut : interruption,
+  défensifs, urgences). En dessous, la règle attend la fin de l'incantation et part en file d'attente dans ses dernières
+  0,4 s : couper un sort à moitié lancé est rarement rentable. Les canalisations restent coupées par toute règle plus
+  prioritaire.
 - `assisted` : recommandation de Blizzard. `follow` la suit ou non ; `priority` (50 par défaut) est son **seuil** : elle
   agit comme une règle de cette priorité. Les règles au-dessus passent avant elle, celles en dessous ne servent que si
   elle ne recommande rien d'utilisable. Avec `priority: 105`, par exemple, interruption, défensifs et entretien des DoT
@@ -557,7 +563,8 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     ```
 - **Pilote automatique** (`TomTom`) : lit les coordonnées de carte codées en binaire dans la grille, suit une liste de
   points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
-  et pendant un repas.
+  et pendant un repas. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
+  flèches gauche et droite ; la flèche bas l'arrête. Ces flèches sont les raccourcis par défaut de WoW.
 - **Frappé sans riposter** (`HitDetector`) : en pilote automatique, si la vie du joueur a baissé d'au moins 2 points ces
   6 dernières secondes alors que le bot n'a appuyé sur aucune touche, c'est qu'un monstre non ciblé le frappe (souvent
   dans le dos) : demi-tour, puis `Tab` le cible. La vie est secrète pour l'addon mais lue en clair par le Java ; le

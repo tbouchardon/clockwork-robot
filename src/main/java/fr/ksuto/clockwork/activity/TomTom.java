@@ -16,7 +16,6 @@ public class TomTom {
     
     private static final Logger logger = LoggerFactory.getLogger(TomTom.class);
     
-    private static final int                         KEY_J                 = 74;
     private static final int                         KEY_SPACE             = 32;
     private static final int                         KEY_Y                 = 89;
     private static final int                         TURN_BACK_DURATION    = 100;
@@ -99,13 +98,16 @@ public class TomTom {
         return capturedQrCode.rgb(x, y) == Rgb.ARGB_WHITE ? 1 : 0;
     }
     
+    /**
+     * Arrête la course automatique : un appui sur la flèche bas (reculer, raccourci par défaut de WoW) la coupe.
+     */
     public void runStop() {
     
         if (!isRunning) {return;}
     
-        peripherals.robot.keyPress(KeyEvent.VK_S);
+        peripherals.robot.keyPress(KeyEvent.VK_DOWN);
         peripherals.robot.delay(100);
-        peripherals.robot.keyRelease(KeyEvent.VK_S);
+        peripherals.robot.keyRelease(KeyEvent.VK_DOWN);
         isRunning = false;
     }
     
@@ -291,13 +293,15 @@ public class TomTom {
         peripherals.robot.delay(100);
     }
     
+    /**
+     * Lance la course automatique : Alt+Maj+V, posé en surcharge par l'addon (bindings.lua, TOGGLEAUTORUN), pour ne pas
+     * dépendre des raccourcis du joueur.
+     */
     private void runStart() {
     
         if (isRunning) {return;}
-        logger.debug("Run Start/Stop");
-        peripherals.robot.keyPress(KEY_J);
-        peripherals.robot.delay(100);
-        peripherals.robot.keyRelease(KEY_J);
+        logger.debug("Course automatique");
+        peripherals.getKeyboard().pressKey(KeyEvent.VK_V, true, false, true);
         isRunning = true;
     }
     
@@ -323,10 +327,7 @@ public class TomTom {
         
         logger.debug("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
         
-        if (isFlying && !isRunning) {
-            peripherals.getKeyboard().typeString("j");
-            isRunning = true;
-        }
+        if (isFlying && !isRunning) {runStart();}
         
         logger.debug("Tourne à Gauche");
         
@@ -342,10 +343,7 @@ public class TomTom {
         
         logger.debug("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
         
-        if (isFlying && !isRunning) {
-            peripherals.getKeyboard().typeString("j");
-            isRunning = true;
-        }
+        if (isFlying && !isRunning) {runStart();}
         
         logger.debug("Tourne à Droite");
         

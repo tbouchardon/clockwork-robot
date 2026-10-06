@@ -54,6 +54,14 @@ public class ClockWorkUI {
         while (sTemp.length() > 32) {sTemp = sTemp.substring(1);}
         castLogTextfield.setText(sTemp);
     }
+
+    /**
+     * Message (et non touche) dans le journal, entre deux points pour le distinguer des touches : « 1 2 . QR perdu . 3 ».
+     */
+    public void appendMessage(String message) {
+
+        appendLog(". " + message + " .");
+    }
     
     public void initAutomaton() {
         
@@ -85,7 +93,7 @@ public class ClockWorkUI {
                     qrCode = candidate;
                     qrFound = true;
                     logger.info("QR code trouvé : démarrage de l'automate");
-                    SwingUtilities.invokeLater(() -> appendLog("QR trouvé"));
+                    SwingUtilities.invokeLater(() -> appendMessage("QR trouvé"));
                     startAutomaton();
                     searching.set(false);
                     search.shutdown();
@@ -99,7 +107,8 @@ public class ClockWorkUI {
     
     public void initUI() throws IOException {
         
-        JDialog ui = new JDialog();
+        // JFrame plutôt que JDialog : bouton de réduction et place dans la barre des tâches
+        JFrame ui = new JFrame();
         ui.setContentPane(new JPanel(new BorderLayout()));
         ui.setTitle("ClockWork");
         URL url = getClass().getResource("/Pictures/icons/Default.jpg");
@@ -108,7 +117,7 @@ public class ClockWorkUI {
         ui.setPreferredSize(new Dimension(260, 71));
         ui.setResizable(false);
         ui.getContentPane().setBackground(new Color(RED, GREEN, BLUE));
-        ui.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        ui.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
         ui.addWindowListener(new WindowAdapter() {
 
@@ -149,6 +158,7 @@ public class ClockWorkUI {
 
         if (searching.get()) {return;}
         logger.info("QR code introuvable à sa position : nouvelle recherche toutes les 2 s");
+        SwingUtilities.invokeLater(() -> appendMessage("QR perdu"));
         qrFound = false;
         startQrCodeSearch();
     }

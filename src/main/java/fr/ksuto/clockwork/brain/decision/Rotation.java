@@ -38,12 +38,19 @@ import java.util.stream.Stream;
  * @param assistedPriority priorité de la recommandation de Blizzard
  * @param rules            règles, de la plus prioritaire à la moins prioritaire
  * @param stopCasting      façon d'interrompre sa propre incantation quand une règle plus prioritaire s'applique
+ * @param stopCastingFrom  priorité minimale d'une règle pour interrompre sa propre incantation (250 par défaut :
+ *                         interruption, défensifs, urgences) ; en dessous, elle attend la fin de l'incantation
  * @param returnToTarget   après un sort lancé sur un membre du groupe, revenir à la cible précédente
  * @param activity         activité hors combat que règle ce fichier ({@code fishing} : préparation de chaque lancer de
  *                         pêche), vide pour une rotation de combat
  */
 public record Rotation(String name, String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules,
-                       StopCasting stopCasting, boolean returnToTarget, String activity) {
+                       StopCasting stopCasting, int stopCastingFrom, boolean returnToTarget, String activity) {
+
+    /**
+     * Priorité minimale par défaut pour interrompre sa propre incantation.
+     */
+    public static final int STOP_CASTING_FROM = 250;
 
     /**
      * Activité de la pêche : leurre, appât... avant chaque lancer.
@@ -214,7 +221,9 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
         String activity = map.get("activity") == null ? "" : String.valueOf(map.get("activity"));
         if (!activity.isEmpty() && !activity.equals(FISHING)) {throw new IllegalArgumentException("activity inconnue : " + activity + " (fishing)");}
 
-        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting, returnToTarget, activity);
+        int stopCastingFrom = map.get("stopCastingFrom") instanceof Number number ? number.intValue() : STOP_CASTING_FROM;
+
+        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting, stopCastingFrom, returnToTarget, activity);
     }
 
     /**

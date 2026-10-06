@@ -117,7 +117,7 @@ public final class Brain {
         if (!state.keysReady() || state.busy()) {return Optional.empty();}
 
         // Sort en cours : seule une règle plus prioritaire que lui peut agir
-        OptionalInt floor = priorityFloor(state, database);
+        OptionalInt floor = priorityFloor(state, rotation, database);
         if (floor.isEmpty()) {return Optional.empty();}
         int minimum = floor.getAsInt();
         // Couper sa propre incantation (hors fin d'incantation, où le sort suivant part en file d'attente)
@@ -205,21 +205,26 @@ public final class Brain {
      *   <li>rien en cours : aucune limite ;</li>
      *   <li>dernières {@value #QUEUE_WINDOW} s d'une incantation : aucune limite, le sort suivant est mis en file
      *   d'attente ;</li>
-     *   <li>incantation (Éclair) ou canalisation (Drain de vie) : la priorité de la règle qui l'a lancée ; une règle plus
-     *   prioritaire l'interrompt (la canalisation est coupée par le jeu, l'incantation selon {@link Rotation#stopCasting()}),
-     *   sa propre règle ne la relance pas ;</li>
+     *   <li>canalisation (Drain de vie) : la priorité de la règle qui l'a lancée ; une règle plus prioritaire la coupe
+     *   (le jeu l'arrête), sa propre règle ne la relance pas ;</li>
+     *   <li>incantation (Éclair) : seule une règle plus prioritaire <b>et</b> d'au moins {@link Rotation#stopCastingFrom()}
+     *   (interruption, défensif, urgence) l'interrompt, selon {@link Rotation#stopCasting()} ; les autres attendent la
+     *   file d'attente de fin d'incantation (couper un sort à moitié lancé est rarement rentable) ;</li>
      *   <li>sort inconnu ou lancé à la main : on ne le coupe pas.</li>
      * </ul>
      *
      * @return la priorité à dépasser, ou vide s'il faut attendre
      */
-    private OptionalInt priorityFloor(GameState state, SpellDatabase database) {
+    private OptionalInt priorityFloor(GameState state, Rotation rotation, SpellDatabase database) {
 
         if (!state.casting()) {return OptionalInt.of(Integer.MIN_VALUE);}
         GameState.Cast cast = state.cast();
         if (cast.spellId() == 0) {return OptionalInt.empty();}
         if (!cast.channeling() && cast.remaining() <= QUEUE_WINDOW) {return OptionalInt.of(Integer.MIN_VALUE);}
-        if (lastDecision != null && database.related(cast.spellId()).contains(lastDecision.spellId())) {return OptionalInt.of(lastDecision.priority());}
+        if (lastDecision != null && database.related(cast.spellId()).contains(lastDecision.spellId())) {
+            if (cast.channeling()) {return OptionalInt.of(lastDecision.priority());}
+            return OptionalInt.of(Math.max(lastDecision.priority(), rotation.stopCastingFrom() - 1));
+        }
         return OptionalInt.empty();
     }
 

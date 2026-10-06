@@ -68,6 +68,11 @@
       ],
       "default": "jump"
     },
+    "stopCastingFrom": {
+      "description": "Priorité minimale d'une règle pour interrompre sa propre incantation (250 par défaut : interruption, défensifs, urgences). En dessous, la règle attend la fin de l'incantation et part en file d'attente : couper un sort à moitié lancé est rarement rentable. Les canalisations restent coupées par toute règle plus prioritaire.",
+      "type": "integer",
+      "default": 250
+    },
     "returnToTarget": {
       "description": "Après un sort lancé sur un membre du groupe (règle on), revenir à la cible précédente (/targetlasttarget). Utile à un hybride qui soigne puis reprend son ennemi.",
       "type": "boolean",

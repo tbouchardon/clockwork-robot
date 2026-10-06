@@ -61,6 +61,7 @@
 #   name           : classe et spécialisation              assisted.follow   : false (Blizzard ignoré)
 #   spec           : toutes les spécialisations            assisted.priority : 50
 #   stopCasting    : jump                                  returnToTarget    : true
+#   stopCastingFrom: 250
 #   activity       : aucune (rotation de combat)
 #   règle  priority: 1     when: toujours vraie     on: target     always: false
 # Une règle a exactement un champ parmi cast (sort), use (objet) et action (next-target).
@@ -79,6 +80,11 @@ assisted:
 # Couper sa propre incantation quand une règle plus prioritaire s'applique : jump (saut, par défaut), back (petit
 # recul), none (rien : macros /stopcasting sur la barre)
 stopCasting: jump           # défaut : jump
+
+# Priorité minimale d'une règle pour couper sa propre incantation (interruption, défensifs, urgences). En dessous, la
+# règle attend la fin de l'incantation et part en file d'attente. Les canalisations restent coupées par toute règle
+# plus prioritaire.
+stopCastingFrom: 250        # défaut : 250
 
 # Après un sort lancé sur un membre du groupe (règle « on »), revenir à la cible précédente (vrai par défaut)
 returnToTarget: true        # défaut : true
