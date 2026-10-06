@@ -98,11 +98,10 @@ class DotSpreadingTest {
     }
 
     @Test
-    void withoutAggroLeavesATargetThatIsNotFightingAtOnce() {
+    void aMonsterNotFightingIsLeftToTheAutoTargetingWithoutAggro() {
 
-        Optional<Brain.Decision> decision = decide(0xC, 2, NEVER, NEVER, false, 100, false, false);
-        assertEquals(Brain.NEXT_TARGET, decision.orElseThrow().key(), "Tab tombé sur un monstre non engagé : pas de DoT, on le quitte");
-
+        assertTrue(decide(0xC, 2, NEVER, NEVER, false, 100, false, false).isEmpty(),
+                   "sans aggro : rien à faire sur un monstre non engagé, le ciblage auto passe au suivant");
         assertEquals(AGONY, decide(0xC, 2, NEVER, NEVER, false, 100, true, false).orElseThrow().spellId(), "avec aggro : on l'attaque");
     }
 

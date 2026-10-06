@@ -371,11 +371,6 @@ Pour répartir ses DoT, une règle `action: next-target` passe à l'ennemi suiva
 actuelle et qu'il reste des ennemis sans eux :
 
 ```yaml
-  # Sans aggro, en combat : quitter aussitôt une cible qui n'y est pas (monstre non engagé choisi par Tab, cible morte)
-  - action: next-target
-    when: "player.combat && !player.aggro && !target.combat"
-    priority: 150          # avant les DoT, qui sinon l'engageraient
-
   # Multi-cibles : DoT posés ici, d'autres ennemis sans Agonie : suivant, 3 ennemis affligés au plus
   - action: next-target
     when: >-
@@ -390,8 +385,10 @@ actuelle et qu'il reste des ennemis sans eux :
 Chaque ennemi est reconnu par son identifiant (grille v4). Le cerveau retient ses propres lancements sur chacun
 (`spell.dotted`), et l'addon les lancements sur la cible actuelle, même faits à la main ou avant d'être passé sur
 d'autres (`spell.sinceCastOnTarget`). `enemies` compte les ennemis en combat dont la barre de vie est affichée : `Tab`
-choisit le plus proche devant le personnage, **en combat ou non** : d'où la première règle, qui quitte un monstre non
-engagé quand on ne veut combattre que ce qui attaque (sans aggro). Les modes du menu de l'addon se combinent ainsi :
+choisit le plus proche devant le personnage, **en combat ou non**. Avec le mode aggro, un monstre non engagé est
+attaqué ; sans lui, il ne l'est pas, le cerveau n'a rien à faire et le ciblage auto (`tne`) passe au suivant : inutile
+d'écrire une règle pour le quitter. `next-target` ne sert qu'à quitter une cible **encore valable** pour une autre qui
+rapporte plus. Les modes du menu de l'addon se combinent ainsi :
 
 | Pour… | Aggro | Ciblage auto | Multi-cibles |
 |---|---|---|---|
@@ -483,7 +480,7 @@ Limites actuelles :
 |---|---|
 | `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. Soins : Rétablissement d'urgence sous 25 % même hors mode soigneur, puis retour en forme de félin ; en mode soigneur, Récupération et Rétablissement avant les dégâts. |
-| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. En multi-cibles, Agonie et Corruption réparties entre les ennemis en combat (`next-target`, 3 au plus) ; sans aggro, cible hors combat quittée aussitôt ; pas de DoT sous 20 % de vie. |
+| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. En multi-cibles, Agonie et Corruption réparties entre les ennemis en combat (`next-target`, 3 au plus) ; pas de DoT sous 20 % de vie. |
 | `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
 | `rotations/peche.yaml` | Pêche (`activity: fishing`) : leurre à reposer sur la canne. Les noms des objets sont à adapter. |
@@ -602,7 +599,7 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
 - `DotSpreadingTest` : répartition d'Agonie et Corruption entre deux ennemis, retour sur le premier à l'expiration,
-  délai entre deux `Tab`, cible hors combat quittée sans aggro et attaquée avec, 3 ennemis affligés au plus, aucune
+  délai entre deux `Tab`, monstre non engagé laissé au ciblage auto sans aggro et attaqué avec, 3 ennemis affligés au plus, aucune
   répartition hors mode multi-cibles, pas de DoT sur un ennemi mourant.
 - Pêche : lecture du résultat du dernier lancer (`QrCodeV2ReaderTest`), fichier des résultats (`FishingResultsTest`).
 - Objets : lecture d'un objet sur une touche et de l'enchantement de l'arme (`QrCodeV2ReaderTest`), règles `use` et

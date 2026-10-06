@@ -10,8 +10,8 @@
 # Plusieurs ennemis, en mode multi-cibles (menu de l'addon) : une fois Agonie et Corruption posées sur la cible, s'il
 # reste des ennemis en combat sans Agonie, passer au suivant (Tab), jusqu'à 3 ennemis affligés. ClockWork reconnaît
 # chaque ennemi : revenu sur une cible déjà affligée, il ne relance rien. Hors mode multi-cibles, on reste sur sa cible.
-# Sans mode aggro, en combat, une cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte) est quittée
-# aussitôt, pour ne combattre que ce qui attaque. Pas de DoT sur un ennemi sous 20 % : il mourra avant.
+# Sans mode aggro, en combat, une cible qui n'y est pas (Tab tombé sur un monstre non engagé) n'est pas attaquée : rien
+# à faire, le ciblage auto (tne) passe à la suivante. Pas de DoT sur un ennemi sous 20 % : il mourra avant.
 
 name: Démoniste Affliction
 class: WARLOCK
@@ -22,12 +22,6 @@ assisted:
   follow: false
 
 rules:
-  # Sans aggro, en combat, cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte) : la quitter avant
-  # tout, pour ne combattre que ce qui attaque. Avec aggro, elle est attaquée : c'est le but du mode
-  - action: next-target
-    when: "player.combat && !player.aggro && !target.combat"
-    priority: 150
-
   # Lua : absente de la cible
   - cast: Affliction instable
     when: "target.hostile && spell.sinceCastOnTarget('Affliction instable') > 8"
