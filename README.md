@@ -411,7 +411,10 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     à la touche, 2 à 7 px au repos), ou si le centre s'écarte de plus que la hauteur des plumes, sur deux images
     consécutives : clic immédiat. Règles vérifiées en rejouant les traces de 19 lancers réels.
   - **Trace** : chaque lancer écrit `traces-peche/<horodatage>.csv` (centre, surface, hauteur et verdict à chaque
-    image), pour régler les seuils sur des données réelles.
+    image), pour régler les seuils sur des données réelles ; les 300 plus récentes sont conservées.
+  - **Rejeu** : `TraceReplayTest` rejoue 27 lancers réels (`src/test/resources/fishing/traces`, avec le moment de la
+    vraie touche observée en jeu dans `attendu.csv`) et vérifie que la détection actuelle clique au bon moment. Un
+    lancer mal détecté en jeu y est ajouté avec la bonne réponse.
   - **Lancée depuis WoW** (bouton « Pêche » du menu de l'addon, ou `/clk fish`) : l'addon allume la case (12,4), le
     Java pêche tant qu'elle reste allumée. Bouger la souris l'arrête aussi ; il faut alors rallumer la pêche en jeu.
   - **Raccourci du sort Pêche détecté** : le Java cherche le sort sur les touches décrites par la grille (avec son
@@ -474,6 +477,7 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 - `BobberDetectorTest` : signature du bouchon sur des captures en jeu (eau boueuse, eau verte lumineuse en première
   personne) et sur des images synthétiques bruitées, décor écarté, plume bleue décalée, suivi, touche (écart,
   disparition, tangage ignoré).
+- `TraceReplayTest` : 27 lancers réels rejoués, clic au moment de la vraie touche (dont 3 touches d'abord manquées).
 - `HitDetectorTest` : perte de vie sans action, seuil, régénération, fenêtre glissante.
 - `SpellDatabaseLoaderTest` : replis (version proche, cache), nettoyage du cache par produit, comparaison de versions.
 

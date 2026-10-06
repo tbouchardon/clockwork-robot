@@ -20,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -162,7 +164,7 @@ public class Fisherman {
                 BobberDetector.BiteWatcher.Verdict verdict  = watcher.feed(measured);
                 frames++;
                 trace.append(System.currentTimeMillis() - start).append(';')
-                     .append(measured.map(blob -> "%.1f;%.1f;%d;%d".formatted(blob.x(), blob.y(), blob.count(), blob.height())).orElse(";;0;0"))
+                     .append(measured.map(blob -> String.format(Locale.ROOT, "%.1f;%.1f;%d;%d", blob.x(), blob.y(), blob.count(), blob.height())).orElse(";;0;0"))
                      .append(';').append(verdict).append('\n');
 
                 if (verdict != BobberDetector.BiteWatcher.Verdict.WAITING) {
@@ -182,14 +184,25 @@ public class Fisherman {
     }
 
     /**
-     * Trace du suivi de chaque lancer (centre, surface et hauteur de la plume à chaque image), pour régler les seuils :
-     * dossier traces-peche du dossier de lancement.
+     * Traces conservées : les plus récentes (quelques Mo au plus).
+     */
+    static final int KEPT_TRACES = 300;
+
+    /**
+     * Trace du suivi de chaque lancer (centre, surface et hauteur des plumes à chaque image), pour régler les seuils et
+     * enrichir les tests de rejeu (TraceReplayTest) : dossier traces-peche du dossier de lancement, limité aux
+     * {@value #KEPT_TRACES} plus récentes.
      */
     private static void writeTrace(StringBuilder trace) {
 
         try {
             Path folder = Files.createDirectories(Path.of("traces-peche"));
             Files.writeString(folder.resolve(System.currentTimeMillis() + ".csv"), trace, StandardCharsets.UTF_8);
+            try (var files = Files.list(folder)) {
+                // Noms horodatés : l'ordre alphabétique est l'ordre chronologique
+                List<Path> traces = files.filter(file -> file.toString().endsWith(".csv")).sorted().toList();
+                for (Path old : traces.subList(0, Math.max(0, traces.size() - KEPT_TRACES))) {Files.deleteIfExists(old);}
+            }
         }
         catch (IOException e) {
             logger.debug("Trace de pêche non écrite : {}", e.getMessage());
