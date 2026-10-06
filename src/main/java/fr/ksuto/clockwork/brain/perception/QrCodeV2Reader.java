@@ -124,7 +124,24 @@ public final class QrCodeV2Reader {
      */
     public static boolean targetLootable(Frame qr) {
 
-        return qr.red(8, 13) >= 4 && qr.red(8, 1) > 127 && qr.green(8, 1) > 127;
+        return lootMode(qr) && qr.green(8, 1) > 127;
+    }
+
+    /**
+     * Mode ramassage du menu de l'addon (v4, case (8, 1)).
+     */
+    public static boolean lootMode(Frame qr) {
+
+        return qr.red(8, 13) >= 4 && qr.red(8, 1) > 127;
+    }
+
+    /**
+     * La cible est morte : réaction grise en (11, 3).
+     */
+    public static boolean targetDead(Frame qr) {
+
+        int r = qr.red(11, 3), g = qr.green(11, 3), b = qr.blue(11, 3);
+        return r > 100 && r < 160 && Math.abs(r - g) < 10 && Math.abs(r - b) < 10;
     }
 
     /**

@@ -30,6 +30,7 @@ public class Automaton {
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
     private static final long                  LOOT_WALK             = 6000;
+    private static final long                  LOOT_APPEARS          = 1500;
 
     private static final int MODIFIER_CTRL = 1;
     private static final int MODIFIER_ALT = 2;
@@ -49,6 +50,7 @@ public class Automaton {
     private              int                   lastGridFrame         = -1;
     private              boolean               fishRequested         = false;
     private              boolean               lootTried             = false;
+    private              long                  targetDeadSince       = 0;
     private              long                  invisibleSince        = 0;
     private              long                  lastGridFrameChange   = 0;
     private              long                  lastTab               = 0;
@@ -294,9 +296,10 @@ public class Automaton {
         
         long now = System.currentTimeMillis();
 
-        // Sort refusé, cible pas devant le personnage (signalé par l'addon) : elle est dans le dos, demi-tour. Sans ce
-        // signal, le cerveau continuerait d'appuyer sur ses sorts, refusés un à un
-        if (QrCodeV2Reader.notFacingTarget(qrCode.getCapturedQrCode()) && now > lockTurnAroundUntil) {
+        // Pilote automatique : sort refusé, cible pas devant le personnage (signalé par l'addon) : elle est dans le dos,
+        // demi-tour. Sans ce signal, le cerveau continuerait d'appuyer sur ses sorts, refusés un à un. Hors pilote, le
+        // joueur garde la main sur la caméra
+        if (qrCode.DRIVE_MOD.active && QrCodeV2Reader.notFacingTarget(qrCode.getCapturedQrCode()) && now > lockTurnAroundUntil) {
             logger.info("Cible pas devant le personnage : demi-tour");
             ui.appendMessage("demi-tour");
             lockTurnAroundUntil = now + TURN_AROUND_COOL_DOWN;
@@ -386,14 +389,31 @@ public class Automaton {
      * la tuer, il est donc devant : avancer (flèche haut) en appuyant sur Alt+Maj+L, posé par l'addon sur « Interagir
      * avec la cible », jusqu'à ouvrir le butin (la cible n'a plus de butin), au plus {@value #LOOT_WALK} ms. Aucun
      * réglage du joueur n'est modifié. Une seule tentative par cadavre.
+     * <p>
+     * Seulement s'il ne reste aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort
+     * du dernier). Le butin n'apparaît pas tout de suite : la cible morte est gardée jusqu'à {@value #LOOT_APPEARS} ms,
+     * sans quoi le ciblage auto passerait aussitôt à l'ennemi suivant.
      *
-     * @return un ramassage a eu lieu à ce tour
+     * @return ramassage en cours ou attendu : pas de ciblage auto ni de pilote automatique à ce tour
      */
     private boolean loot(QrCode qrCode) {
 
-        if (!QrCodeV2Reader.targetLootable(qrCode.getCapturedQrCode())) {
+        Frame grid = qrCode.getCapturedQrCode();
+        if (!QrCodeV2Reader.lootMode(grid) || !QrCodeV2Reader.targetDead(grid)) {
+            targetDeadSince = 0;
             lootTried = false;
             return false;
+        }
+        if (QrCodeV2Reader.read(grid).map(GameState::enemies).orElse(0) > 0) {return false;} // d'autres ennemis : combattre
+        long now = System.currentTimeMillis();
+        if (targetDeadSince == 0) {targetDeadSince = now;}
+        if (!QrCodeV2Reader.targetLootable(grid)) {
+            boolean waiting = !lootTried && now - targetDeadSince < LOOT_APPEARS;
+            if (!waiting && !lootTried) {
+                logger.info("Cible morte sans butin pour le personnage (déjà ramassé, ou rien à prendre)");
+                lootTried = true;
+            }
+            return waiting;
         }
         if (lootTried) {return false;}
         lootTried = true;
@@ -406,8 +426,9 @@ public class Automaton {
         try {
             while (System.currentTimeMillis() < end) {
                 peripherals.robot.delay(300);
-                Frame grid = qrCode.captureQrCode(peripherals);
-                if (!QrCodeV2Reader.targetLootable(grid)) {return true;} // butin ouvert, ou combat repris
+                Frame current = qrCode.captureQrCode(peripherals);
+                // Butin ouvert (la cible n'en a plus), ou un ennemi arrive en combat : on s'arrête
+                if (!QrCodeV2Reader.targetLootable(current) || QrCodeV2Reader.read(current).map(GameState::enemies).orElse(0) > 0) {return true;}
                 peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
             }
             logger.info("Ramassage abandonné : cadavre non atteint");

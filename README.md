@@ -567,7 +567,8 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   et pendant un repas. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
   flèches gauche et droite ; la flèche bas l'arrête. Ces flèches sont les raccourcis par défaut de WoW.
 - **Cible dans le dos** : quand WoW refuse un sort parce que la cible n'est pas devant le personnage, l'addon le signale
-  (case (7,1)) et le Java fait demi-tour, au plus une fois toutes les 4 s, pilote automatique ou non. Le journal de la
+  (case (7,1)) et le Java fait demi-tour, au plus une fois toutes les 4 s, en pilote automatique seulement (sinon le
+  joueur garde la main sur la caméra). Le journal de la
   fenêtre affiche `. demi-tour .`.
 - **Frappé sans riposter** (`HitDetector`) : en pilote automatique, si la vie du joueur a baissé d'au moins 2 points ces
   6 dernières secondes alors que le bot n'a appuyé sur aucune touche, c'est qu'un monstre non ciblé le frappe (souvent
@@ -577,7 +578,9 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   avec du butin pour le joueur (`CanLootUnit`, case (8,1)), le personnage lui faisait face pour la tuer : il est
   devant. Le Java avance (flèche haut) en appuyant toutes les 0,3 s sur `Alt+Maj+L`, posé par l'addon sur « Interagir
   avec la cible », jusqu'à ouvrir le butin, au plus 6 s (une quarantaine de mètres). Aucun réglage du joueur n'est
-  modifié. Une tentative par cadavre ; ni ciblage auto ni pilote automatique pendant ce temps. Le ramassage de zone de
+  modifié. Une tentative par cadavre ; ni ciblage auto ni pilote automatique pendant ce temps. Seulement s'il ne reste
+  aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort du dernier) ; la cible
+  morte est gardée jusqu'à 1,5 s, le temps que son butin apparaisse, sans quoi le ciblage auto la quitterait aussitôt. Le ramassage de zone de
   WoW pille les cadavres voisins en même temps. Les soins de groupe ont leur propre section (règles
   `on`).
 
