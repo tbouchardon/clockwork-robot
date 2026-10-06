@@ -36,11 +36,25 @@ import java.util.Optional;
  *                         pêche...), 0 si aucun (v4)
  * @param targetId         identifiant de la cible sur 24 bits, tiré de son GUID (v4, 0 si aucune ou illisible) : reconnaître
  *                         une cible déjà vue
+ * @param multiTarget      mode multi-cibles de l'addon : répartir ses DoT, utiliser ses sorts de zone
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
                         boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group,
-                        double weaponEnchant, int targetId) {
+                        double weaponEnchant, int targetId, boolean multiTarget) {
+
+    /**
+     * État sans mode multi-cibles.
+     */
+    public GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
+                     boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
+                     boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId,
+                     int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group, double weaponEnchant, int targetId) {
+
+        this(playerHealth, playerPower, hasTarget, targetHostile, targetHealth, targetPower, targetInCombat, inCombat, casting, enemies, facing,
+             recommendedSpell, aggro, playerDead, mounted, targetTapDenied, moving, form, comboPoints, classId, specId, frame, cast, targetCast, keys,
+             group, weaponEnchant, targetId, false);
+    }
 
     /**
      * État sans identifiant de cible.

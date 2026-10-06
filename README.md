@@ -360,6 +360,7 @@ Variables disponibles dans `when` :
 | `item.ready('Nom')`, `item.usable('Nom')`, `item.onBar('Nom')`, `item.cooldown('Nom')` | Comme `spell.*`, pour un objet. |
 | `item.count('Nom')`, `item.sinceUse('Nom')`, `item.buffActive('Nom')` | Nombre possédé (charges comprises), secondes depuis la dernière utilisation, aura de l'objet active sur le joueur (lue hors combat). |
 | `healer` | Mode soigneur de l'addon. |
+| `multi` | Mode multi-cibles de l'addon : répartir ses DoT, utiliser ses sorts de zone. |
 | `group.size`, `group.below(%)`, `group.avgHealth` | Membres vivants et connectés, nombre d'entre eux sous ce pourcentage de vie, vie moyenne. |
 | `member.health`, `member.role`, `member.tank`, `member.healer`, `member.self` | Règles `on` seulement : le membre candidat. `role` vaut `'tank'`, `'healer'`, `'damager'` ou `''`. |
 | `member.sinceCast('Nom')` | Règles `on` seulement : secondes depuis le dernier lancement **par le cerveau** de ce sort sur ce membre, infini au-delà de 60 s. Remplace les auras, illisibles en combat (Récupération, Bouclier…). |
@@ -370,15 +371,16 @@ Pour répartir ses DoT, une règle `action: next-target` passe à l'ennemi suiva
 actuelle et qu'il reste des ennemis sans eux :
 
 ```yaml
-  # En combat, quitter aussitôt une cible qui n'y est pas (monstre non engagé choisi par Tab, cible morte)
+  # Sans aggro, en combat : quitter aussitôt une cible qui n'y est pas (monstre non engagé choisi par Tab, cible morte)
   - action: next-target
-    when: "player.combat && !target.combat"
-    priority: 150          # avant les DoT : sinon, en mode aggro, le monstre serait engagé
+    when: "player.combat && !player.aggro && !target.combat"
+    priority: 150          # avant les DoT, qui sinon l'engageraient
 
-  # DoT posés ici, d'autres ennemis sans Agonie : suivant, 3 ennemis affligés au plus
+  # Multi-cibles : DoT posés ici, d'autres ennemis sans Agonie : suivant, 3 ennemis affligés au plus
   - action: next-target
     when: >-
-      player.combat
+      multi
+      && player.combat
       && spell.sinceCastOnTarget('Agonie') < 14
       && spell.dotted('Agonie', 14) < enemies
       && spell.dotted('Agonie', 14) < 3
@@ -389,7 +391,15 @@ Chaque ennemi est reconnu par son identifiant (grille v4). Le cerveau retient se
 (`spell.dotted`), et l'addon les lancements sur la cible actuelle, même faits à la main ou avant d'être passé sur
 d'autres (`spell.sinceCastOnTarget`). `enemies` compte les ennemis en combat dont la barre de vie est affichée : `Tab`
 choisit le plus proche devant le personnage, **en combat ou non** : d'où la première règle, qui quitte un monstre non
-engagé. Le plafond évite de passer son temps à tourner entre dix ennemis. Les ennemis contrôlés (mouton, peur) ne sont
+engagé quand on ne veut combattre que ce qui attaque (sans aggro). Les modes du menu de l'addon se combinent ainsi :
+
+| Pour… | Aggro | Ciblage auto | Multi-cibles |
+|---|---|---|---|
+| tuer une cible à la fois, puis la suivante | oui | oui | non |
+| tuer tout ce qui est à portée | oui | oui | oui |
+| ne combattre que ce qui m'attaque | non | oui | au choix |
+
+ Le plafond évite de passer son temps à tourner entre dix ennemis. Les ennemis contrôlés (mouton, peur) ne sont
 pas détectables : les auras sont illisibles en combat. Un DoT casserait leur contrôle.
 
 ### Soigner le groupe
@@ -473,7 +483,7 @@ Limites actuelles :
 |---|---|
 | `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
 | `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. Soins : Rétablissement d'urgence sous 25 % même hors mode soigneur, puis retour en forme de félin ; en mode soigneur, Récupération et Rétablissement avant les dégâts. |
-| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. Agonie et Corruption réparties entre les ennemis en combat (`next-target`, 3 au plus), cible hors combat quittée aussitôt, pas de DoT sous 20 % de vie. |
+| `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. En multi-cibles, Agonie et Corruption réparties entre les ennemis en combat (`next-target`, 3 au plus) ; sans aggro, cible hors combat quittée aussitôt ; pas de DoT sous 20 % de vie. |
 | `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
 | `rotations/peche.yaml` | Pêche (`activity: fishing`) : leurre à reposer sur la canne. Les noms des objets sont à adapter. |
@@ -592,7 +602,8 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
 - `DotSpreadingTest` : répartition d'Agonie et Corruption entre deux ennemis, retour sur le premier à l'expiration,
-  délai entre deux `Tab`, cible hors combat quittée, 3 ennemis affligés au plus, pas de DoT sur un ennemi mourant.
+  délai entre deux `Tab`, cible hors combat quittée sans aggro et attaquée avec, 3 ennemis affligés au plus, aucune
+  répartition hors mode multi-cibles, pas de DoT sur un ennemi mourant.
 - Pêche : lecture du résultat du dernier lancer (`QrCodeV2ReaderTest`), fichier des résultats (`FishingResultsTest`).
 - Objets : lecture d'un objet sur une touche et de l'enchantement de l'arme (`QrCodeV2ReaderTest`), règles `use` et
   `item.*` (`BrainTest`), fichier de pêche (`BrainServiceTest`).

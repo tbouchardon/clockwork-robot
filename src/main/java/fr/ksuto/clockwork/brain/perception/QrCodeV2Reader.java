@@ -115,7 +115,8 @@ public final class QrCodeV2Reader {
                 keys,
                 version >= 4 && full ? readGroup(qr) : Group.NONE,
                 version >= 4 && qr.red(4, 1) > 127 ? qr.green(4, 1) * WEAPON_ENCHANT_HORIZON / 255 : 0,
-                version >= 4 ? read24(qr, 6, 1) : 0));
+                version >= 4 ? read24(qr, 6, 1) : 0,
+                qr.blue(10, 2) > 127));
     }
 
     /**

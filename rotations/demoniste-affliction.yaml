@@ -7,10 +7,11 @@
 # a plus de X s », d'après les durées des tables du jeu (12.1, SpellMisc) : Affliction instable 8 s, Agonie 18 s,
 # Corruption 14 s. À ajuster si un talent les allonge.
 #
-# Plusieurs ennemis : une fois Agonie et Corruption posées sur la cible, s'il reste des ennemis en combat sans Agonie,
-# passer au suivant (Tab), jusqu'à 3 ennemis affligés. ClockWork reconnaît chaque ennemi : revenu sur une cible déjà
-# affligée, il ne relance rien. En combat, une cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte)
-# est quittée aussitôt, pour ne pas l'engager par erreur. Pas de DoT sur un ennemi sous 20 % : il mourra avant.
+# Plusieurs ennemis, en mode multi-cibles (menu de l'addon) : une fois Agonie et Corruption posées sur la cible, s'il
+# reste des ennemis en combat sans Agonie, passer au suivant (Tab), jusqu'à 3 ennemis affligés. ClockWork reconnaît
+# chaque ennemi : revenu sur une cible déjà affligée, il ne relance rien. Hors mode multi-cibles, on reste sur sa cible.
+# Sans mode aggro, en combat, une cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte) est quittée
+# aussitôt, pour ne combattre que ce qui attaque. Pas de DoT sur un ennemi sous 20 % : il mourra avant.
 
 name: Démoniste Affliction
 class: WARLOCK
@@ -21,10 +22,10 @@ assisted:
   follow: false
 
 rules:
-  # En combat, cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte) : la quitter avant tout, pour ne
-  # pas l'engager par erreur, même en mode aggro
+  # Sans aggro, en combat, cible qui n'y est pas (Tab tombé sur un monstre non engagé, cible morte) : la quitter avant
+  # tout, pour ne combattre que ce qui attaque. Avec aggro, elle est attaquée : c'est le but du mode
   - action: next-target
-    when: "player.combat && !target.combat"
+    when: "player.combat && !player.aggro && !target.combat"
     priority: 150
 
   # Lua : absente de la cible
@@ -42,10 +43,11 @@ rules:
     when: "target.hostile && target.health > 20 && spell.sinceCastOnTarget('Corruption') > 12"
     priority: 85
 
-  # DoT posés ici, d'autres ennemis en combat sans Agonie (3 affligés au plus) : cible suivante
+  # Multi-cibles : DoT posés ici, d'autres ennemis en combat sans Agonie (3 affligés au plus) : cible suivante
   - action: next-target
     when: >-
-      player.combat
+      multi
+      && player.combat
       && spell.sinceCastOnTarget('Agonie') < 14
       && spell.sinceCastOnTarget('Corruption') < 12
       && spell.dotted('Agonie', 14) < enemies

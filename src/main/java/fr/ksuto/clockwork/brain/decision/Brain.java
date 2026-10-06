@@ -291,6 +291,7 @@ public final class Brain {
         context.set("spell", spells);
         context.set("item", new ItemView(state, database));
         context.set("healer", state.group().healerMode());
+        context.set("multi", state.multiTarget());
         context.set("group", new GroupView(state.group()));
         return variables;
     }
