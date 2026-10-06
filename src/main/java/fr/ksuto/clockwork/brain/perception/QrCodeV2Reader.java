@@ -120,6 +120,14 @@ public final class QrCodeV2Reader {
     }
 
     /**
+     * Ramassage (v4, case (8, 1)) : mode ramassage actif et cible morte avec du butin pour le joueur.
+     */
+    public static boolean targetLootable(Frame qr) {
+
+        return qr.red(8, 13) >= 4 && qr.red(8, 1) > 127 && qr.green(8, 1) > 127;
+    }
+
+    /**
      * Un sort vient d'être refusé parce que la cible n'est pas devant le personnage (v4, case (7, 1)) : elle est dans
      * son dos.
      */

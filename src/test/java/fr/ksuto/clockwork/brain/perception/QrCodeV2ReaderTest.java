@@ -279,6 +279,15 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsTheLootSignal() {
+
+        Grid grid = new Grid(32).set(8, 13, 4 / 255.0, 0, 0);
+        assertFalse(QrCodeV2Reader.targetLootable(grid.frame()));
+        assertFalse(QrCodeV2Reader.targetLootable(grid.set(8, 1, 0, 1, 0).frame()), "butin, mais mode ramassage éteint");
+        assertTrue(QrCodeV2Reader.targetLootable(grid.set(8, 1, 1, 1, 0).frame()));
+    }
+
+    @Test
     void readsTheNotFacingSignal() {
 
         assertFalse(QrCodeV2Reader.notFacingTarget(new Grid(32).set(8, 13, 4 / 255.0, 0, 0).frame()));

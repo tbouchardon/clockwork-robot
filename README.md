@@ -130,8 +130,9 @@ Le cerveau se pilote depuis les fichiers, à chaud :
    - pixel (0,0) non vert → *« QR code invisible »* (WoW masqué, interface cachée, addon non chargé) : on attend ;
    - case `toggle` éteinte → *« addon désactivé »* : on attend ;
    - le changement d'état est journalisé une seule fois, pour savoir **pourquoi** le bot ne fait rien.
-3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon ; ramassage du butin à la fin
-   d'un combat en mode `drive`.
+3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon. **Ramassage** (mode du
+   menu) : si la cible est un cadavre avec du butin, `Alt+Maj+L`, trois essais au plus ; ni ciblage auto ni pilote
+   pendant ce temps.
 4. **Choix de la touche** :
    - mode historique : la touche allumée de plus haute priorité, avec son modificateur et sa durée d'appui ;
    - **si le cerveau est actif**, sa décision **remplace** celle de l'addon (voir plus bas). Une grille figée (compteur
@@ -572,9 +573,12 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   6 dernières secondes alors que le bot n'a appuyé sur aucune touche, c'est qu'un monstre non ciblé le frappe (souvent
   dans le dos) : demi-tour, puis `Tab` le cible. La vie est secrète pour l'addon mais lue en clair par le Java ; le
   journal de combat, qui servait autrefois, est interdit en 12.x.
-- **Soins de groupe** : quand l'addon signale un membre blessé, ciblage par `Maj+F2…F5` (groupe) ou `Alt+Maj+lettre`
-  (raid), puis la rotation soigne.
-- **Ramassage du butin** après chaque combat en mode `drive`.
+- **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : quand la cible est un cadavre
+  avec du butin pour le joueur (`CanLootUnit`, case (8,1)), le Java appuie sur `Alt+Maj+L`, posé par l'addon sur
+  « Interagir avec la cible ». Le personnage y marche et ouvre le butin : l'addon active le déplacement par clic
+  (`autointeract`) le temps du ramassage, puis rétablit le réglage du joueur. Trois essais espacés de 3 s au plus par
+  cadavre ; ni ciblage auto ni pilote automatique pendant ce temps. Les soins de groupe ont leur propre section (règles
+  `on`).
 
 ---
 

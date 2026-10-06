@@ -29,6 +29,8 @@ public class Automaton {
     
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
+    private static final int                   LOOT_ATTEMPTS         = 3;
+    private static final long                  LOOT_DELAY            = 3000;
 
     private static final int MODIFIER_CTRL = 1;
     private static final int MODIFIER_ALT = 2;
@@ -41,13 +43,14 @@ public class Automaton {
     private              Robot                 robot;
     private              TomTom                tomtom;
     private final        BrainService          brain                 = new BrainService();
-    private              boolean               wasInCombat           = false;
     private              long                  lastActionTime        = 0;
     private              long                  lockTurnAroundUntil   = System.currentTimeMillis();
     private              String                state                 = "";
     private final        HitDetector           hitDetector           = new HitDetector();
     private              int                   lastGridFrame         = -1;
     private              boolean               fishRequested         = false;
+    private              long                  nextLootAttempt       = 0;
+    private              int                   lootAttempts          = 0;
     private              long                  invisibleSince        = 0;
     private              long                  lastGridFrameChange   = 0;
     private              long                  lastTab               = 0;
@@ -201,9 +204,7 @@ public class Automaton {
             tomtom.clearWayPoints();
         }
         
-        if (wasInCombat && !qrCode.inCombat.active && qrCode.DRIVE_MOD.active) {
-            tryToLoot();
-        }
+        boolean looting = loot(qrCode.getCapturedQrCode());
         
         Key     key2hit              = null;
         int     bestPriority         = -1;
@@ -284,13 +285,14 @@ public class Automaton {
         
         // Ciblage auto : pas plus d'un Tab par délai de lecture de la grille, sinon une cible valable serait sautée avant
         // d'avoir été vue
-        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !tabbed && !qrCode.casting.active
+        if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !tabbed && !looting && !qrCode.casting.active
             && System.currentTimeMillis() - lastTab >= Brain.NEXT_TARGET_DELAY) {
             peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
             lastTab = System.currentTimeMillis();
         }
         
-        tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, qrCode.getPlayerHealth());
+        tomtom.drive(qrCode, peripherals, key2hit != null || looting, qrCode.casting.active, qrCode.inCombat.active, lastActionTime,
+                     qrCode.getPlayerHealth());
         
         long now = System.currentTimeMillis();
 
@@ -312,7 +314,6 @@ public class Automaton {
             turnAround();
         }
         
-        wasInCombat = qrCode.inCombat.active;
         
         if (key2hit == null) {peripherals.robot.delay(200);}
         else {peripherals.robot.delay(750);}
@@ -382,22 +383,31 @@ public class Automaton {
         return qrCode.getKeys().stream().filter(key -> key.key.equals(name)).findFirst();
     }
     
-    private void tryToLoot() {
-        
-        peripherals.robot.delay(500);
-        
-        int hitZoneX = Screen.SCREEN_WIDTH / 2 + (int) (Screen.SCREEN_WIDTH / 100d * 4.6875);
-        int hitZoneY = Screen.SCREEN_HEIGHT / 2 + (int) (Screen.SCREEN_HEIGHT / 100d * 14.8148);
-        
-        peripherals.robot.keyPress(KeyEvent.VK_SHIFT);
-        peripherals.getMouse().clickRight(hitZoneX, hitZoneY);
-        peripherals.getMouse().clickRight(hitZoneX, hitZoneY - 100);
-        peripherals.getMouse().clickRight(hitZoneX, hitZoneY + 100);
-        peripherals.getMouse().clickRight(hitZoneX - 100, hitZoneY);
-        peripherals.getMouse().clickRight(hitZoneX + 100, hitZoneY);
-        peripherals.robot.keyRelease(KeyEvent.VK_SHIFT);
+    /**
+     * Ramassage (mode du menu de l'addon) : la cible est un cadavre avec du butin. Alt+Maj+L, posé par l'addon sur
+     * « Interagir avec la cible », y fait marcher le personnage (déplacement par clic activé le temps du ramassage) et
+     * ouvre le butin. Trois essais espacés de 3 s au plus par cadavre, puis on le laisse.
+     *
+     * @return un ramassage est en cours : ni ciblage auto, ni pilote automatique pendant ce temps
+     */
+    private boolean loot(Frame grid) {
+
+        if (!QrCodeV2Reader.targetLootable(grid)) {
+            lootAttempts = 0;
+            return false;
+        }
+        if (lootAttempts >= LOOT_ATTEMPTS) {return false;}
+        long now = System.currentTimeMillis();
+        if (now >= nextLootAttempt) {
+            lootAttempts++;
+            nextLootAttempt = now + LOOT_DELAY;
+            logger.info("Ramassage du butin (essai {})", lootAttempts);
+            ui.appendMessage("butin");
+            peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
+        }
+        return true;
     }
-    
+
     private void turnAround() {
         
         robot.mouseMove(Screen.X_START, Screen.Y_START);
