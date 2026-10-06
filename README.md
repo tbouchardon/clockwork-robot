@@ -565,6 +565,9 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
   et pendant un repas. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
   flèches gauche et droite ; la flèche bas l'arrête. Ces flèches sont les raccourcis par défaut de WoW.
+- **Cible dans le dos** : quand WoW refuse un sort parce que la cible n'est pas devant le personnage, l'addon le signale
+  (case (7,1)) et le Java fait demi-tour, au plus une fois toutes les 4 s, pilote automatique ou non. Le journal de la
+  fenêtre affiche `. demi-tour .`.
 - **Frappé sans riposter** (`HitDetector`) : en pilote automatique, si la vie du joueur a baissé d'au moins 2 points ces
   6 dernières secondes alors que le bot n'a appuyé sur aucune touche, c'est qu'un monstre non ciblé le frappe (souvent
   dans le dos) : demi-tour, puis `Tab` le cible. La vie est secrète pour l'addon mais lue en clair par le Java ; le

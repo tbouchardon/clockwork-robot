@@ -292,8 +292,19 @@ public class Automaton {
         
         tomtom.drive(qrCode, peripherals, key2hit != null, qrCode.casting.active, qrCode.inCombat.active, lastActionTime, qrCode.getPlayerHealth());
         
-        // Frappé sans riposter (vie en baisse, aucune touche depuis 6 s) : un monstre non ciblé, souvent dans le dos
         long now = System.currentTimeMillis();
+
+        // Sort refusé, cible pas devant le personnage (signalé par l'addon) : elle est dans le dos, demi-tour. Sans ce
+        // signal, le cerveau continuerait d'appuyer sur ses sorts, refusés un à un
+        if (QrCodeV2Reader.notFacingTarget(qrCode.getCapturedQrCode()) && now > lockTurnAroundUntil) {
+            logger.info("Cible pas devant le personnage : demi-tour");
+            ui.appendMessage("demi-tour");
+            lockTurnAroundUntil = now + TURN_AROUND_COOL_DOWN;
+            hitDetector.reset();
+            turnAround();
+        }
+
+        // Frappé sans riposter (vie en baisse, aucune touche depuis 6 s) : un monstre non ciblé, souvent dans le dos
         if (hitDetector.hitWithoutRetaliating(now, qrCode.getPlayerHealth(), lastActionTime) && now > lockTurnAroundUntil && qrCode.DRIVE_MOD.active) {
             logger.info("Frappé sans riposter : demi-tour");
             lockTurnAroundUntil = now + TURN_AROUND_COOL_DOWN;

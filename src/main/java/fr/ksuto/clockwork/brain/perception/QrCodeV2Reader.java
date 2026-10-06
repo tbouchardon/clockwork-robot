@@ -120,6 +120,15 @@ public final class QrCodeV2Reader {
     }
 
     /**
+     * Un sort vient d'être refusé parce que la cible n'est pas devant le personnage (v4, case (7, 1)) : elle est dans
+     * son dos.
+     */
+    public static boolean notFacingTarget(Frame qr) {
+
+        return qr.red(8, 13) >= 4 && qr.red(7, 1) > 127;
+    }
+
+    /**
      * Résultat du dernier lancer de pêche (v4) : case (5, 1), R = compteur, G = résultat.
      *
      * @return vide si la grille n'est pas en v4

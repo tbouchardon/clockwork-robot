@@ -279,6 +279,14 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsTheNotFacingSignal() {
+
+        assertFalse(QrCodeV2Reader.notFacingTarget(new Grid(32).set(8, 13, 4 / 255.0, 0, 0).frame()));
+        assertTrue(QrCodeV2Reader.notFacingTarget(new Grid(32).set(8, 13, 4 / 255.0, 0, 0).set(7, 1, 1, 0, 0).frame()));
+        assertFalse(QrCodeV2Reader.notFacingTarget(new Grid(32).set(8, 13, 3 / 255.0, 0, 0).set(7, 1, 1, 0, 0).frame()), "v3 : case non définie");
+    }
+
+    @Test
     void readsTheLastFishingResult() {
 
         Grid grid = new Grid(32).set(8, 13, 4 / 255.0, 0, 0);
