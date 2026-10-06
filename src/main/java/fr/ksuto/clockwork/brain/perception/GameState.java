@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * État du jeu lu dans le QR code v2 : ce que le cerveau connaît pour décider.
+ * État du jeu lu dans le QR code (v2 à v4) : ce que le cerveau connaît pour décider.
  *
  * @param playerHealth     vie du joueur, en %
  * @param playerPower      ressource principale du joueur, en %
@@ -31,10 +31,24 @@ import java.util.Optional;
  * @param cast             sort en cours d'incantation ou de canalisation ({@link Cast#NONE} si aucun)
  * @param targetCast       sort incanté par la cible ({@link TargetCast#NONE} si aucun)
  * @param keys             état de chaque touche, par nom de touche
+ * @param group            groupe ou raid, et mode soigneur (v4 ; {@link Group#NONE} avant)
  */
 public record GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
                         boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
-                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys) {
+                        boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId, int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys, Group group) {
+
+    /**
+     * État sans groupe (grilles v2 et v3).
+     */
+    public GameState(double playerHealth, double playerPower, boolean hasTarget, boolean targetHostile, double targetHealth, double targetPower,
+                     boolean targetInCombat, boolean inCombat, boolean casting, int enemies, double facing, int recommendedSpell, boolean aggro,
+                     boolean playerDead, boolean mounted, boolean targetTapDenied, boolean moving, int form, int comboPoints, int classId, int specId,
+                     int frame, Cast cast, TargetCast targetCast, Map<String, KeyState> keys) {
+
+        this(playerHealth, playerPower, hasTarget, targetHostile, targetHealth, targetPower, targetInCombat, inCombat, casting, enemies, facing,
+             recommendedSpell, aggro, playerDead, mounted, targetTapDenied, moving, form, comboPoints, classId, specId, frame, cast, targetCast, keys,
+             Group.NONE);
+    }
 
     /**
      * Même règle que l'addon (Clockwork:rotation) : hors mode aggro, on n'attaque pas une cible hors combat

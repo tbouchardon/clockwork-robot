@@ -24,6 +24,10 @@ import java.util.Map;
  *   - cast: Horion de flammes
  *     when: "target.hostile &amp;&amp; spell.sinceCastOnTarget('Horion de flammes') &gt; 15"
  *     priority: 120
+ *   - cast: Afflux de soins
+ *     on: lowest            # le membre le plus blessé pour qui la condition est vraie
+ *     when: "member.health &lt; 50"
+ *     priority: 150
  * </pre>
  *
  * @param name             nom libre, affiché dans le journal
@@ -33,9 +37,10 @@ import java.util.Map;
  * @param assistedPriority priorité de la recommandation de Blizzard
  * @param rules            règles, de la plus prioritaire à la moins prioritaire
  * @param stopCasting      façon d'interrompre sa propre incantation quand une règle plus prioritaire s'applique
+ * @param returnToTarget   après un sort lancé sur un membre du groupe, revenir à la cible précédente
  */
 public record Rotation(String name, String playerClass, String spec, boolean followAssisted, int assistedPriority, List<Rule> rules,
-                       StopCasting stopCasting) {
+                       StopCasting stopCasting, boolean returnToTarget) {
 
     /**
      * Interrompre sa propre incantation : WoW refuse un autre sort pendant une incantation (pas pendant une
@@ -57,12 +62,48 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
     }
 
     /**
+     * Sur qui lancer le sort.
+     */
+    public enum On {
+        /**
+         * La cible actuelle (par défaut).
+         */
+        TARGET,
+        /**
+         * Le joueur lui-même.
+         */
+        SELF,
+        /**
+         * Le membre le plus blessé pour qui la condition est vraie.
+         */
+        LOWEST,
+        /**
+         * Le tank le plus blessé pour qui la condition est vraie.
+         */
+        TANK,
+        /**
+         * Le soigneur le plus blessé pour qui la condition est vraie.
+         */
+        HEALER;
+
+        /**
+         * Le sort vise un autre membre : seulement en mode soigneur, sauf règle {@code always}.
+         */
+        public boolean others() {
+
+            return this == LOWEST || this == TANK || this == HEALER;
+        }
+    }
+
+    /**
      * @param cast     nom du sort (ou identifiant numérique)
      * @param when     condition JEXL, nulle si toujours vraie
      * @param priority priorité (la plus haute l'emporte)
      * @param script   condition compilée, nulle si toujours vraie
+     * @param on       sur qui lancer le sort
+     * @param always   un soin sur les autres qui s'applique même hors mode soigneur (urgence)
      */
-    public record Rule(String cast, String when, int priority, JexlScript script) {}
+    public record Rule(String cast, String when, int priority, JexlScript script, On on, boolean always) {}
 
     @SuppressWarnings("unchecked")
     static Rotation parse(String yaml, JexlEngine jexl) {
@@ -91,7 +132,18 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
                 String     when   = rule.get("when") == null ? null : String.valueOf(rule.get("when"));
                 int        ruleP  = rule.get("priority") instanceof Number number ? number.intValue() : 1;
                 JexlScript script = when == null ? null : jexl.createScript(when);
-                rules.add(new Rule(cast, when, ruleP, script));
+                // YAML 1.1 (SnakeYAML) lit la clé « on » comme le booléen true, comme le fait GitHub Actions
+                Object     onKey  = rule.containsKey("on") ? rule.get("on") : rule.get(Boolean.TRUE);
+                On         on     = onKey == null ? On.TARGET : switch (String.valueOf(onKey).toLowerCase()) {
+                    case "target" -> On.TARGET;
+                    case "self" -> On.SELF;
+                    case "lowest" -> On.LOWEST;
+                    case "tank" -> On.TANK;
+                    case "healer" -> On.HEALER;
+                    default -> throw new IllegalArgumentException("on inconnu pour « " + cast + " » : " + onKey
+                                                                  + " (target, self, lowest, tank ou healer)");
+                };
+                rules.add(new Rule(cast, when, ruleP, script, on, Boolean.TRUE.equals(rule.get("always"))));
             }
         }
         // Tri stable : à priorité égale, l'ordre du fichier est conservé
@@ -104,7 +156,9 @@ public record Rotation(String name, String playerClass, String spec, boolean fol
             default -> throw new IllegalArgumentException("stopCasting inconnu : " + map.get("stopCasting") + " (jump, back ou none)");
         };
 
-        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting);
+        boolean returnToTarget = !Boolean.FALSE.equals(map.get("returnToTarget"));
+
+        return new Rotation(name, playerClass, spec, follow, priority, List.copyOf(rules), stopCasting, returnToTarget);
     }
 
     /**

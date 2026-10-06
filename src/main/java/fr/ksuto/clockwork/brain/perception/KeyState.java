@@ -28,7 +28,16 @@ public record KeyState(String key, int spellId, double cooldown, boolean usable,
      */
     public boolean ready() {
 
-        return spellId != 0 && usable && cooldown <= 0.05 && range != Range.OUT;
+        return castable() && range != Range.OUT;
+    }
+
+    /**
+     * Le sort peut être lancé, portée mise à part : pour un sort lancé sur un membre du groupe, la portée de la touche
+     * concerne la cible actuelle, pas lui.
+     */
+    public boolean castable() {
+
+        return spellId != 0 && usable && cooldown <= 0.05;
     }
 
     public enum Range {

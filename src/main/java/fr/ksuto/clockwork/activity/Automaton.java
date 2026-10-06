@@ -10,7 +10,6 @@ import fr.ksuto.clockwork.brain.decision.Rotation;
 import fr.ksuto.clockwork.brain.perception.GameState;
 import fr.ksuto.clockwork.brain.perception.KeyCombo;
 import fr.ksuto.clockwork.brain.perception.QrCodeV2Reader;
-import fr.ksuto.clockwork.entities.qrcode.ComplexKey;
 import fr.ksuto.clockwork.entities.qrcode.Key;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
@@ -84,19 +83,6 @@ public class Automaton {
             }
             
             searchForSomethingToDo(qrCode);
-        }
-    }
-    
-    private void checkParty(Frame capturedQrCode, QrCode qrCode) {
-        
-        for (ComplexKey raidMember : qrCode.raid) {
-            
-            raidMember.updateActive(capturedQrCode);
-            if (raidMember.getBlue(capturedQrCode) != 0) {
-                if (raidMember.index < 5) {targetPartyMember(raidMember);}
-                else {targetRaidMember(raidMember);}
-                break;
-            }
         }
     }
     
@@ -204,8 +190,8 @@ public class Automaton {
         boolean ctrlModifier         = false;
         boolean altModifier          = false;
         Rotation.StopCasting stopFirst = Rotation.StopCasting.NONE;
-        
-        checkParty(qrCode.getCapturedQrCode(), qrCode);
+        int     member               = 0;
+        boolean returnToTarget       = false;
         
         Frame capturedQrCode = qrCode.getCapturedQrCode();
         
@@ -246,6 +232,8 @@ public class Automaton {
                 shiftModifier = combo != null && combo.shift();
                 bestPriorityDuration = 0;
                 stopFirst = decision.map(Brain.Decision::stopFirst).orElse(Rotation.StopCasting.NONE);
+                member = decision.map(Brain.Decision::member).orElse(0);
+                returnToTarget = decision.map(Brain.Decision::returnToTarget).orElse(false);
                 decision.ifPresent(d -> logger.debug("Cerveau : touche {} ({}, priorité {})", d.key(), d.reason(), d.priority()));
             }
             else if (state.isEmpty()) {
@@ -258,7 +246,9 @@ public class Automaton {
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
             stopCasting(stopFirst);
+            if (member > 0) {press(GroupTargeting.member(member));}
             hitKey(key2hit, altModifier, ctrlModifier, shiftModifier, bestPriorityDuration);
+            if (member > 0 && returnToTarget) {press(GroupTargeting.LAST_TARGET);}
         }
         
         if (qrCode.TARGET_NEAREST_ENEMY.active && key2hit == null && !qrCode.casting.active) {
@@ -303,6 +293,15 @@ public class Automaton {
     }
 
     /**
+     * Raccourci de ciblage d'un membre du groupe (boutons sécurisés de l'addon).
+     */
+    private void press(GroupTargeting.Shortcut shortcut) {
+
+        peripherals.getKeyboard().pressKey(shortcut.key(), shortcut.alt(), shortcut.ctrl(), shortcut.shift());
+        peripherals.robot.delay(30);
+    }
+
+    /**
      * Journalise l'état de l'automate quand il change, pour savoir pourquoi il ne fait rien.
      */
     private void reportState(String newState) {
@@ -335,36 +334,6 @@ public class Automaton {
     private static Optional<Key> keyNamed(QrCode qrCode, String name) {
         
         return qrCode.getKeys().stream().filter(key -> key.key.equals(name)).findFirst();
-    }
-    
-    private void targetPartyMember(ComplexKey raidMember) {
-        
-        logger.debug("Target party member " + raidMember.index);
-        
-        switch (raidMember.index) {
-            
-            case 1:
-                peripherals.getKeyboard().pressKey(KeyEvent.VK_F2, false, false, true);
-                break;
-            case 2:
-                peripherals.getKeyboard().pressKey(KeyEvent.VK_F3, false, false, true);
-                break;
-            case 3:
-                peripherals.getKeyboard().pressKey(KeyEvent.VK_F4, false, false, true);
-                break;
-            case 4:
-                peripherals.getKeyboard().pressKey(KeyEvent.VK_F5, false, false, true);
-                break;
-            default:
-                logger.debug("ERROR : Unexpected raidMember.index value: " + raidMember.index);
-        }
-    }
-    
-    private void targetRaidMember(ComplexKey raidMember) {
-        
-        logger.debug("Target raid member " + raidMember.index);
-        
-        peripherals.getKeyboard().pressKey(raidMember.hitKey, raidMember.alt, raidMember.ctrl, raidMember.shift);
     }
     
     private void tryToLoot() {

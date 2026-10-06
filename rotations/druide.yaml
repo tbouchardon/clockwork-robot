@@ -12,6 +12,12 @@
 # moins de 2 s de la fin » devient « lancé sur cette cible il y a plus de 16 s » (le debuff dure 18 s d'après les tables
 # du jeu, 12.1 ; à ajuster si un talent l'allonge).
 #
+# Soins (grille v4 de l'addon) :
+#   - urgence, même hors mode soigneur : Rétablissement sur un membre sous 25 % (il fait quitter la forme) ;
+#   - en mode soigneur : Récupération entretenue et Rétablissement sur les membres blessés, avant les dégâts ;
+#   - après un Rétablissement d'urgence en combat, retour en forme de félin (farouche : retirer cette règle en
+#     équilibre). Forme de félin doit alors être sur une touche.
+#
 # Comme pour toutes les rotations, rien n'est lancé pendant une incantation, sur une monture, mort, ni contre une cible
 # marquée par un autre joueur : inutile de le répéter dans les conditions.
 #
@@ -27,6 +33,27 @@ assisted:
   follow: false
 
 rules:
+  # --- Soins ---
+  - cast: Rétablissement
+    on: lowest
+    always: true
+    when: "member.health < 25"
+    priority: 250
+
+  - cast: Rétablissement
+    on: lowest
+    when: "member.health < 60"
+    priority: 140
+
+  - cast: Récupération
+    on: lowest
+    when: "member.health < 90 && member.sinceCast('Récupération') > 12"
+    priority: 130
+
+  - cast: Forme de félin
+    when: "!healer && player.combat && player.form == '' && spell.sinceCast('Rétablissement') < 15"
+    priority: 110
+
   # --- Forme humaine ou de sélénien ---
   - cast: Éclat lunaire
     when: >-

@@ -3,6 +3,8 @@ package fr.ksuto.clockwork.brain.perception;
 import fr.ksuto.prh.capture.Frame;
 
 import java.awt.image.BufferedImage;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -212,6 +214,52 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
+    void readsTheGroupOfVersion4() {
+
+        // v4 : mode soigneur en (3, 1) ; membre 1 en (17, 1), 15 en (17, 4), 40 en (28, 5)
+        GameState state = QrCodeV2Reader.read(new Grid(32)
+                .set(8, 13, 4 / 255.0, 0, 0)
+                .set(3, 1, 1, 1, 0)                                    // mode soigneur, en raid
+                .set(17, 1, 0.8, 1, (1 + 8 + 16 * 2) / 255.0)          // le joueur, soigneur, 80 %
+                .set(17, 4, 0.3, 0, (1 + 16) / 255.0)                  // tank à 30 %, hors de portée
+                .set(28, 5, 0, 0.5, (1 + 2 + 4 + 16 * 3) / 255.0)      // mort, déconnecté, portée inconnue
+                .frame()).orElseThrow();
+
+        Group group = state.group();
+        assertTrue(group.healerMode());
+        assertTrue(group.raid());
+        assertEquals(3, group.members().size(), "les cases vides (sans le drapeau « existe ») sont ignorées");
+
+        Group.Member self = group.members().get(0);
+        assertEquals(1, self.slot());
+        assertEquals(80, self.health(), 0.3);
+        assertTrue(self.self());
+        assertEquals(Group.Role.HEALER, self.role());
+        assertTrue(self.healable());
+
+        Group.Member tank = group.members().get(1);
+        assertEquals(15, tank.slot());
+        assertEquals(Group.Role.TANK, tank.role());
+        assertFalse(tank.inRange());
+        assertFalse(tank.healable());
+
+        Group.Member gone = group.members().get(2);
+        assertEquals(40, gone.slot());
+        assertTrue(gone.dead());
+        assertTrue(gone.offline());
+        assertTrue(gone.inRange(), "portée inconnue : le jeu tranchera");
+        assertEquals(Group.Role.DAMAGER, gone.role());
+    }
+
+    @Test
+    void version3GridHasNoGroup() {
+
+        GameState state = QrCodeV2Reader.read(new Grid(32).set(8, 13, 3 / 255.0, 0, 0).set(17, 1, 1, 1, 1).frame()).orElseThrow();
+
+        assertEquals(Group.NONE, state.group());
+    }
+
+    @Test
     void readsTheSpellInProgress() {
 
         GameState idle = QrCodeV2Reader.read(v2().set24(9, 13, 234153).frame()).orElseThrow();
@@ -257,5 +305,26 @@ class QrCodeV2ReaderTest {
         assertArrayEquals(new int[]{2, 7}, QrCodeV2Reader.spellCell(9));
         assertArrayEquals(new int[]{2, 10}, QrCodeV2Reader.spellCell(13));
         assertArrayEquals(new int[]{9, 2}, QrCodeV2Reader.spellCell(18));
+        assertArrayEquals(new int[]{30, 1}, QrCodeV2Reader.memberCell(14));
+        assertArrayEquals(new int[]{30, 4}, QrCodeV2Reader.memberCell(28));
+        assertArrayEquals(new int[]{17, 5}, QrCodeV2Reader.memberCell(29));
+    }
+
+    @Test
+    void memberCellsAreFreeCellsOfBlock2() {
+
+        Set<String> keyCells = new HashSet<>();
+        for (int position = 1; position <= 18; position++) {
+            for (int[] cell : new int[][]{QrCodeV2Reader.stateCell(position), QrCodeV2Reader.historyCell(position), QrCodeV2Reader.spellCell(position)}) {
+                keyCells.add((cell[0] + 16) + "," + cell[1]);
+            }
+        }
+        Set<String> memberCells = new HashSet<>();
+        for (int slot = 1; slot <= QrCodeV2Reader.MEMBERS; slot++) {
+            int[] cell = QrCodeV2Reader.memberCell(slot);
+            assertTrue(cell[0] >= 17 && cell[0] <= 30 && cell[1] >= 1 && cell[1] <= 14, "intérieur du bloc 2 : membre " + slot);
+            assertFalse(keyCells.contains(cell[0] + "," + cell[1]), "case de touche : membre " + slot);
+            assertTrue(memberCells.add(cell[0] + "," + cell[1]), "case en double : membre " + slot);
+        }
     }
 }

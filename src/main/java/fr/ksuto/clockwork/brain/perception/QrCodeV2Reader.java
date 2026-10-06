@@ -3,6 +3,7 @@ package fr.ksuto.clockwork.brain.perception;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,12 +14,18 @@ import java.util.Optional;
  * <ul>
  *   <li>v2 : un bloc de 16x16, touches sans modificateur ;</li>
  *   <li>v3 : carré de 32x32, quatre blocs reprenant les mêmes cases de touches : sans modificateur (0, 0),
- *   Maj (16, 0), Ctrl (0, 16), Alt (16, 16), plus un compteur de mises à jour.</li>
+ *   Maj (16, 0), Ctrl (0, 16), Alt (16, 16), plus un compteur de mises à jour ;</li>
+ *   <li>v4 : v3 + groupe ou raid dans les cases libres du bloc 2, et mode soigneur (group.lua).</li>
  * </ul>
  */
 public final class QrCodeV2Reader {
 
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
+
+    /**
+     * Membres du groupe ou du raid décrits par la grille v4.
+     */
+    public static final int MEMBERS = 40;
 
     /**
      * Blocs de touches : préfixe de la combinaison et décalage du bloc, identiques à Clockwork.QR_BLOCKS côté addon.
@@ -50,13 +57,14 @@ public final class QrCodeV2Reader {
 
     /**
      * @param qr capture de 32x32 (v3) ou au moins 16x16 (v2) dont le coin haut gauche est celui du QR code
-     * @return l'état du jeu, ou vide si la grille n'est ni en v2 ni en v3 (addon plus ancien)
+     * @return l'état du jeu, ou vide si la grille n'est pas en v2, v3 ou v4 (addon plus ancien)
      */
     public static Optional<GameState> read(Frame qr) {
 
         int version = qr.red(8, 13);
-        if (version != 2 && version != VERSION) {return Optional.empty();}
-        List<Block> blocks = version == 2 || qr.width() < 32 || qr.height() < 32 ? BLOCKS.subList(0, 1) : BLOCKS;
+        if (version < 2 || version > VERSION) {return Optional.empty();}
+        boolean     full   = qr.width() >= 32 && qr.height() >= 32;
+        List<Block> blocks = version == 2 || !full ? BLOCKS.subList(0, 1) : BLOCKS;
 
         Map<String, KeyState> keys = new LinkedHashMap<>();
         for (Block block : blocks) {
@@ -90,11 +98,39 @@ public final class QrCodeV2Reader {
                 qr.red(9, 4),
                 qr.red(10, 4),
                 qr.red(11, 4) << 8 | qr.green(11, 4),
-                version == VERSION ? read24(qr, 11, 2) : 0,
+                version >= 3 ? read24(qr, 11, 2) : 0,
                 qr.rgb(3, 2) == Rgb.ARGB_WHITE ? new GameState.Cast(read24(qr, 9, 13), qr.green(10, 13) > 127, qr.red(10, 13) * CAST_HORIZON / 255)
                                                : GameState.Cast.NONE,
                 qr.green(11, 13) > 127 ? new GameState.TargetCast(true, read24(qr, 12, 13), qr.blue(11, 13) > 127) : GameState.TargetCast.NONE,
-                keys));
+                keys,
+                version >= 4 && full ? readGroup(qr) : Group.NONE));
+    }
+
+    /**
+     * Groupe (v4) : mode soigneur en (3, 1), un membre par case du bloc 2, identique à group.lua.
+     */
+    private static Group readGroup(Frame qr) {
+
+        List<Group.Member> members = new ArrayList<>();
+        for (int slot = 1; slot <= MEMBERS; slot++) {
+            int[] cell  = memberCell(slot);
+            int   flags = qr.blue(cell[0], cell[1]);
+            if ((flags & 1) == 0) {continue;}
+            int range = qr.green(cell[0], cell[1]);
+            members.add(new Group.Member(slot, percent(qr.red(cell[0], cell[1])), range > 63, (flags & 2) != 0, (flags & 4) != 0,
+                                         (flags & 8) != 0, Group.Role.values()[flags >> 4 & 3]));
+        }
+        return new Group(qr.red(3, 1) > 127, qr.green(3, 1) > 127, List.copyOf(members));
+    }
+
+    /**
+     * Case d'un membre (bloc 2) : 1..14 en ligne 1, 15..28 en ligne 4, 29..40 en ligne 5.
+     */
+    static int[] memberCell(int slot) {
+
+        if (slot <= 14) {return new int[]{16 + slot, 1};}
+        if (slot <= 28) {return new int[]{16 + slot - 14, 4};}
+        return new int[]{16 + slot - 28, 5};
     }
 
     private static KeyState readKey(Frame qr, Block block, String key, int position) {

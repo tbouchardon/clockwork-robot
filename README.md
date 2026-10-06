@@ -49,7 +49,7 @@ Deux modes de décision coexistent :
 | Mode | Activé quand | Qui décide |
 |---|---|---|
 | **Historique (v1)** | pas de rotation pour la classe et la spécialisation du personnage, ou grille v1 | L'addon allume la touche à appuyer avec une priorité ; Java appuie sur la plus prioritaire. |
-| **Cerveau** | une rotation de `rotations/` correspond au personnage, et grille v2/v3 | Java : l'addon décrit l'état de chaque touche, Java applique les règles YAML. |
+| **Cerveau** | une rotation de `rotations/` correspond au personnage, et grille v2 à v4 | Java : l'addon décrit l'état de chaque touche (et du groupe en v4), Java applique les règles YAML. |
 
 ---
 
@@ -129,12 +129,13 @@ Le cerveau se pilote depuis les fichiers, à chaud :
 3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon ; ramassage du butin à la fin
    d'un combat en mode `drive`.
 4. **Choix de la touche** :
-   - mode historique : posture à prendre (F1-F5), soins de groupe (ciblage du membre blessé), puis la touche allumée de
-     plus haute priorité, avec son modificateur et sa durée d'appui ;
+   - mode historique : la touche allumée de plus haute priorité, avec son modificateur et sa durée d'appui ;
    - **si le cerveau est actif**, sa décision **remplace** celle de l'addon (voir plus bas). Une grille figée (compteur
      de mises à jour immobile depuis plus de 1,5 s : écran de chargement, WoW en arrière-plan) ne produit aucune action.
-5. **Action** : appui sur la touche, avec Maj, Ctrl ou Alt si besoin. Sans action et en mode `tne`, appui sur `Tab`
-   (cible suivante).
+5. **Action** : appui sur la touche, avec Maj, Ctrl ou Alt si besoin. Pour un sort lancé sur un membre du groupe (règle
+   `on`), le Java cible d'abord le membre (`Alt+Maj+A`…, boutons sécurisés de l'addon, voir `GroupTargeting`), appuie
+   sur la touche du sort, puis revient à la cible précédente (`Alt+Maj+U`) si la rotation le demande et qu'il y en
+   avait une. Sans action et en mode `tne`, appui sur `Tab` (cible suivante).
 6. **Pause** : 750 ms après une action (temps global de recharge), 200 ms sinon.
 
 ---
@@ -146,8 +147,8 @@ que l'on fait.
 
 ### Perception : `QrCodeV2Reader` → `GameState`
 
-`QrCodeV2Reader.read(Frame)` lit la version (case (8,13)) et refuse tout ce qui n'est pas v2 ou v3 (retour vide : mode
-historique). Il produit un `GameState` immuable :
+`QrCodeV2Reader.read(Frame)` lit la version (case (8,13)) et refuse tout ce qui n'est pas v2, v3 ou v4 (retour vide :
+mode historique). Il produit un `GameState` immuable :
 
 | Champ | Source |
 |---|---|
@@ -162,7 +163,8 @@ historique). Il produit un `GameState` immuable :
 | `cast` | Sort en cours : identifiant, canalisation, secondes restantes (`Cast.NONE` si aucun). |
 | `playerDead`, `mounted`, `targetTapDenied` | Garde-fous : joueur mort, sur une monture, cible marquée par un autre joueur. |
 | `classId`, `specId` | Classe et spécialisation du personnage (identifiants du jeu : 7 = chaman, 262 = Élémentaire). |
-| `frame` | Compteur de mises à jour (v3). |
+| `frame` | Compteur de mises à jour (v3 et plus). |
+| `group` | Groupe ou raid (v4, `Group.NONE` avant) : mode soigneur, en raid, membres présents. Chaque `Group.Member` a son emplacement (1 à 40, celui du raccourci qui le cible), sa vie en %, sa portée de soin, mort, déconnecté, c'est le joueur, son rôle (tank, soigneur, dégâts). |
 | `keys` | 18 touches en v2, **72** en v3 (`1`, `SHIFT-1`, `CTRL-Q`, `ALT-=`…). |
 
 Chaque touche est un `KeyState` :
@@ -179,6 +181,7 @@ Chaque touche est un `KeyState` :
 | `buffActive` | L'aura du sort est active sur le joueur (lue hors combat, dernier état connu en combat). |
 
 `KeyState.ready()` = un sort, utilisable, sans temps de recharge (moins de 0,05 s), pas hors de portée.
+`KeyState.castable()` = la même chose sans la portée, qui concerne la cible actuelle : c'est le test des règles `on`.
 
 Méthodes utiles de `GameState` : `mayAct()` (mode aggro, ou hors combat, ou cible en combat), `keysReady()` (la
 grille contient au moins un sort ; elle est vide juste après l'activation), `keyForSpell(id)`.
@@ -314,6 +317,10 @@ rules:
 - `when` : condition JEXL (`&&`, `||`, `!`, `<`, `>`, `==`, arithmétique). Si elle est absente, la règle est toujours
   vraie.
 - `priority` : la plus haute l'emporte.
+- `on` : sur qui lancer le sort (grille v4 de l'addon), voir *Soigner le groupe* ci-dessous. Absent : la cible actuelle.
+- `always` : une règle `on` sur les autres qui s'applique même hors mode soigneur (urgence).
+- `returnToTarget` (au niveau de la rotation, vrai par défaut) : après un sort sur un membre, revenir à la cible
+  précédente. Utile à un hybride qui soigne puis reprend son ennemi ; `false` pour un soigneur qui reste sur ses alliés.
 
 Variables disponibles dans `when` :
 
@@ -334,6 +341,52 @@ Variables disponibles dans `when` :
 | `spell.buffActive('Nom')` | L'aura du sort est active sur le joueur (Cri de guerre, Bouclier de foudre…). Lue **hors combat** seulement, les auras étant inaccessibles en combat en 12.x : en combat, c'est l'état lu juste avant d'y entrer. |
 | `spell.form('Nom')` | Le personnage est sous cette forme (accents, casse et apostrophe indifférents). |
 | `spell.sinceCast('Nom')`, `spell.sinceCastOnTarget('Nom')` | Secondes depuis le dernier lancement (toutes cibles / cible actuelle), infini au-delà de 60 s. |
+| `healer` | Mode soigneur de l'addon. |
+| `group.size`, `group.below(%)`, `group.avgHealth` | Membres vivants et connectés, nombre d'entre eux sous ce pourcentage de vie, vie moyenne. |
+| `member.health`, `member.role`, `member.tank`, `member.healer`, `member.self` | Règles `on` seulement : le membre candidat. `role` vaut `'tank'`, `'healer'`, `'damager'` ou `''`. |
+| `member.sinceCast('Nom')` | Règles `on` seulement : secondes depuis le dernier lancement **par le cerveau** de ce sort sur ce membre, infini au-delà de 60 s. Remplace les auras, illisibles en combat (Récupération, Bouclier…). |
+
+### Soigner le groupe
+
+Une règle `on` vise un membre du groupe plutôt que la cible actuelle :
+
+```yaml
+rules:
+  # Urgence, même hors mode soigneur : le membre le plus blessé sous 25 %
+  - cast: Rétablissement
+    on: lowest
+    always: true
+    when: "member.health < 25"
+    priority: 250
+
+  # Mode soigneur : soin sur la durée, pas deux fois sur le même membre en 12 s
+  - cast: Récupération
+    on: lowest
+    when: "member.health < 90 && member.sinceCast('Récupération') > 12"
+    priority: 130
+
+  # Soin de zone si 3 membres sont sous 80 %
+  - cast: Prière de soins
+    on: lowest
+    when: "group.below(80) >= 3"
+    priority: 120
+```
+
+| `on` | Candidats |
+|---|---|
+| `target` | La cible actuelle (par défaut, comportement habituel). |
+| `self` | Le joueur. Toujours permis. |
+| `lowest` | Tous les membres. |
+| `tank`, `healer` | Les membres de ce rôle. |
+
+- Seuls les membres **vivants, connectés et à portée** sont candidats. Ils sont essayés du plus blessé au moins blessé,
+  et le premier pour qui `when` est vraie est soigné.
+- `lowest`, `tank` et `healer` n'agissent qu'en **mode soigneur** (`/clk healer` ou le menu de l'addon, allumé d'office
+  pour une spécialisation de soin), sauf `always: true`. Un DPS hybride garde ainsi ses soins d'urgence sans soigner
+  tout le monde.
+- La portée affichée sur la touche concerne la cible actuelle : elle est ignorée, c'est la portée du membre qui compte.
+- Les soins ne dépendent pas du mode aggro : sans aggro, une cible hors combat empêche d'attaquer, pas de soigner.
+- La règle est ignorée (signalée une fois) si la grille ne décrit pas le groupe (addon antérieur à la v4).
 
 ### Autocomplétion dans l'éditeur
 
@@ -373,7 +426,7 @@ Limites actuelles :
 | Fichier | Contenu |
 |---|---|
 | `rotations/chaman-elementaire.yaml` | Chaman Élémentaire (exemple de départ). |
-| `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. |
+| `rotations/druide.yaml` | Druide, portage de la rotation Lua historique : règles par forme (lanceur/sélénien, ours, félin), Éclat lunaire entretenu, Morsure féroce selon les points de combo. Soins : Rétablissement d'urgence sous 25 % même hors mode soigneur, puis retour en forme de félin ; en mode soigneur, Récupération et Rétablissement avant les dégâts. |
 | `rotations/demoniste-affliction.yaml` | Démoniste Affliction, portage : Affliction instable, Agonie et Corruption entretenues, Trait de l'ombre en remplissage. |
 | `rotations/guerrier.yaml` | Guerrier, portage : Cri de guerre s'il manque (lu hors combat), Lancer héroïque hors de portée de mêlée, Exécution, Sanguinaire (Fureur), Volée de coups sur une cible qui incante. |
 | `rotations/demoniste-destruction.yaml` | Démoniste Destruction, portage : Immolation entretenue, Conflagration, Trait du chaos, Incinérer en remplissage. |
@@ -443,21 +496,23 @@ src/main/java/fr/ksuto/clockwork/
 │   ├── Automaton.java          boucle principale : capture → décision → touche
 │   ├── Fisherman.java          pêche
 │   ├── TomTom.java             pilote automatique
+│   ├── GroupTargeting.java     raccourcis de ciblage des membres (boutons sécurisés de l'addon)
 │   └── Healer.java             (historique)
 ├── brain/
 │   ├── BrainService.java       rechargement à chaud de la rotation, chargement de la table des sorts
 │   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
-│   ├── perception/             QrCodeV2Reader, GameState, KeyState, KeyCombo
-│   └── decision/               Brain, Rotation, SpellView
+│   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo
+│   └── decision/               Brain, Rotation, SpellView, MemberView, GroupView
 ├── entities/
-│   ├── qrcode/                 QrCode (recherche à l'écran, cases v1), Dot, Key, ComplexKey
+│   ├── qrcode/                 QrCode (recherche à l'écran, cases v1), Dot, Key
 │   ├── Player.java, ClkPosition.java
 └── tools/ShowZone.java         affichage d'une zone de l'écran (pêche)
 ```
 
 La disposition des cases doit rester **identique** des deux côtés : `QrCodeV2Reader` (Java) et `qrcode_v2.lua` (addon)
 partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) et les fonctions de position
-(`stateCell`, `historyCell`, `spellCell` / `spellIdCell`).
+(`stateCell`, `historyCell`, `spellCell` / `spellIdCell`). Pour le groupe, `memberCell` et `GroupTargeting`
+correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 
 ---
 
@@ -467,11 +522,16 @@ partagent l'ordre des touches (`KEY_ORDER`), les blocs (`BLOCKS` / `QR_BLOCKS`) 
 ./gradlew test
 ```
 
-- `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 et v3 (blocs à modificateurs, compteur, cible morte).
+- `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 à v4 (blocs à modificateurs, compteur, cible morte,
+  membres du groupe dans des cases libres du bloc 2).
+- `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
+  hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
+- `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.
 - `BrainTest` : priorités, conditions, recommandation de Blizzard (formes liées, cible requise), garde-fous.
 - `SpellDatabaseTest` : CSV de wago.tools, noms sans accents, variantes, sorts par classe (talents compris), produit,
   version et langue du jeu, liste pour l'éditeur.
-- `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme.
+- `DruidRotationTest` : `rotations/druide.yaml`, une décision par forme ; soin d'urgence et retour en félin, mode
+  soigneur.
 - `ProvidedRotationsTest` : toutes les rotations de `rotations/` valides ; le démoniste Affliction entretient ses debuffs.
 - `BrainServiceTest` : choix de la rotation selon la classe et la spécialisation, rotation imposée.
 - `BobberDetectorTest` : signature du bouchon sur des captures en jeu (eau boueuse, eau verte lumineuse en première

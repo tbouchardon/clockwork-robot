@@ -33,6 +33,8 @@ public final class SpellDatabaseFixture {
                     5221,"Lambeau"
                     22568,"Morsure féroce"
                     768,"Forme de félin"
+                    774,"Récupération"
+                    8936,"Rétablissement"
                     5487,"Forme d’ours"
                     24858,"Forme de sélénien"
                     783,"Forme de voyage"
