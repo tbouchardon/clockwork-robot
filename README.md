@@ -131,8 +131,8 @@ Le cerveau se pilote depuis les fichiers, à chaud :
    - case `toggle` éteinte → *« addon désactivé »* : on attend ;
    - le changement d'état est journalisé une seule fois, pour savoir **pourquoi** le bot ne fait rien.
 3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon. **Ramassage** (mode du
-   menu) : si la cible est un cadavre avec du butin, `Alt+Maj+L`, trois essais au plus ; ni ciblage auto ni pilote
-   pendant ce temps.
+   menu) : si la cible est un cadavre avec du butin, avancer vers lui en appuyant sur `Alt+Maj+L` jusqu'à ouvrir le
+   butin, 6 s au plus ; ni ciblage auto ni pilote pendant ce temps.
 4. **Choix de la touche** :
    - mode historique : la touche allumée de plus haute priorité, avec son modificateur et sa durée d'appui ;
    - **si le cerveau est actif**, sa décision **remplace** celle de l'addon (voir plus bas). Une grille figée (compteur
@@ -574,10 +574,11 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   dans le dos) : demi-tour, puis `Tab` le cible. La vie est secrète pour l'addon mais lue en clair par le Java ; le
   journal de combat, qui servait autrefois, est interdit en 12.x.
 - **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : quand la cible est un cadavre
-  avec du butin pour le joueur (`CanLootUnit`, case (8,1)), le Java appuie sur `Alt+Maj+L`, posé par l'addon sur
-  « Interagir avec la cible ». Le personnage y marche et ouvre le butin : l'addon active le déplacement par clic
-  (`autointeract`) le temps du ramassage, puis rétablit le réglage du joueur. Trois essais espacés de 3 s au plus par
-  cadavre ; ni ciblage auto ni pilote automatique pendant ce temps. Les soins de groupe ont leur propre section (règles
+  avec du butin pour le joueur (`CanLootUnit`, case (8,1)), le personnage lui faisait face pour la tuer : il est
+  devant. Le Java avance (flèche haut) en appuyant toutes les 0,3 s sur `Alt+Maj+L`, posé par l'addon sur « Interagir
+  avec la cible », jusqu'à ouvrir le butin, au plus 6 s (une quarantaine de mètres). Aucun réglage du joueur n'est
+  modifié. Une tentative par cadavre ; ni ciblage auto ni pilote automatique pendant ce temps. Le ramassage de zone de
+  WoW pille les cadavres voisins en même temps. Les soins de groupe ont leur propre section (règles
   `on`).
 
 ---

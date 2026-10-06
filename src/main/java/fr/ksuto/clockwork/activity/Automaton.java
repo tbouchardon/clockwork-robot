@@ -29,8 +29,7 @@ public class Automaton {
     
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
-    private static final int                   LOOT_ATTEMPTS         = 3;
-    private static final long                  LOOT_DELAY            = 3000;
+    private static final long                  LOOT_WALK             = 6000;
 
     private static final int MODIFIER_CTRL = 1;
     private static final int MODIFIER_ALT = 2;
@@ -49,8 +48,7 @@ public class Automaton {
     private final        HitDetector           hitDetector           = new HitDetector();
     private              int                   lastGridFrame         = -1;
     private              boolean               fishRequested         = false;
-    private              long                  nextLootAttempt       = 0;
-    private              int                   lootAttempts          = 0;
+    private              boolean               lootTried             = false;
     private              long                  invisibleSince        = 0;
     private              long                  lastGridFrameChange   = 0;
     private              long                  lastTab               = 0;
@@ -204,7 +202,7 @@ public class Automaton {
             tomtom.clearWayPoints();
         }
         
-        boolean looting = loot(qrCode.getCapturedQrCode());
+        boolean looting = loot(qrCode);
         
         Key     key2hit              = null;
         int     bestPriority         = -1;
@@ -384,28 +382,40 @@ public class Automaton {
     }
     
     /**
-     * Ramassage (mode du menu de l'addon) : la cible est un cadavre avec du butin. Alt+Maj+L, posé par l'addon sur
-     * « Interagir avec la cible », y fait marcher le personnage (déplacement par clic activé le temps du ramassage) et
-     * ouvre le butin. Trois essais espacés de 3 s au plus par cadavre, puis on le laisse.
+     * Ramassage (mode du menu de l'addon) : la cible est un cadavre avec du butin. Le personnage lui faisait face pour
+     * la tuer, il est donc devant : avancer (flèche haut) en appuyant sur Alt+Maj+L, posé par l'addon sur « Interagir
+     * avec la cible », jusqu'à ouvrir le butin (la cible n'a plus de butin), au plus {@value #LOOT_WALK} ms. Aucun
+     * réglage du joueur n'est modifié. Une seule tentative par cadavre.
      *
-     * @return un ramassage est en cours : ni ciblage auto, ni pilote automatique pendant ce temps
+     * @return un ramassage a eu lieu à ce tour
      */
-    private boolean loot(Frame grid) {
+    private boolean loot(QrCode qrCode) {
 
-        if (!QrCodeV2Reader.targetLootable(grid)) {
-            lootAttempts = 0;
+        if (!QrCodeV2Reader.targetLootable(qrCode.getCapturedQrCode())) {
+            lootTried = false;
             return false;
         }
-        if (lootAttempts >= LOOT_ATTEMPTS) {return false;}
-        long now = System.currentTimeMillis();
-        if (now >= nextLootAttempt) {
-            lootAttempts++;
-            nextLootAttempt = now + LOOT_DELAY;
-            logger.info("Ramassage du butin (essai {})", lootAttempts);
-            ui.appendMessage("butin");
-            peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
+        if (lootTried) {return false;}
+        lootTried = true;
+        logger.info("Ramassage du butin");
+        ui.appendMessage("butin");
+
+        long end = System.currentTimeMillis() + LOOT_WALK;
+        peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true); // cadavre peut-être déjà à portée
+        peripherals.robot.keyPress(KeyEvent.VK_UP);
+        try {
+            while (System.currentTimeMillis() < end) {
+                peripherals.robot.delay(300);
+                Frame grid = qrCode.captureQrCode(peripherals);
+                if (!QrCodeV2Reader.targetLootable(grid)) {return true;} // butin ouvert, ou combat repris
+                peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
+            }
+            logger.info("Ramassage abandonné : cadavre non atteint");
+            return true;
         }
-        return true;
+        finally {
+            peripherals.robot.keyRelease(KeyEvent.VK_UP);
+        }
     }
 
     private void turnAround() {
