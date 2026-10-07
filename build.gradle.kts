@@ -1,6 +1,5 @@
 plugins {
     id("ksuto.java-application")
-    id("ksuto.picture-enums")
 }
 
 group = "fr.ksuto"

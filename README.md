@@ -61,10 +61,9 @@ recommandation de Blizzard. Les anciennes rotations Lua de l'addon, et le mode o
 | Dossier | Rôle |
 |---|---|
 | `../Bot Parent` | Plugins de convention Gradle (`ksuto.*`) et catalogue de versions `libs.versions.toml`. |
-| `../Commons` | Utilitaires communs, dont la **capture d'écran** (`fr.ksuto.prh.capture` : `Capture`, `Frame`, `Rgb`). |
+| `../Commons` | Utilitaires communs (propriétés, fichiers, thème Swing). |
 | `../Logger` | Journal (SLF4J + Logback). |
-| `../Bot Peripherals` | Clavier, souris, écran (`PeripheralRobotHelper`, à base de `java.awt.Robot`). |
-| `../Bot Generator` | Plugin `ksuto.picture-enums` : génère des énumérations à partir des images de `src/main/resources`. |
+| `../Bot Peripherals` | **Capture d'écran** (`fr.ksuto.prh.capture` : `Capture`, `Frame`, `Rgb` ; DXGI sous Windows, repli sur `java.awt.Robot`), clavier, souris (`PeripheralRobotHelper`). |
 
 Bibliothèques principales : SnakeYAML (rotation), Apache Commons JEXL (conditions des règles), FlatLaf (thème Swing),
 Logback, JUnit.
