@@ -345,7 +345,7 @@ public class Automaton {
     /**
      * Ramassage (mode du menu de l'addon) : un ennemi ciblé récemment est un cadavre avec du butin (l'addon le sait même
      * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Après 0,5 s, {@value #LOOT_PRESSES} appuis espacés
-     * de 0,3 s sur Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est la touche d'interaction
+     * de 0,3 s sur Alt+Maj+X, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est la touche d'interaction
      * de WoW, qui agit sur le cadavre à portée devant le personnage. Puis un seul pas de {@value #LOOT_STEP} ms en avant
      * et autant d'appuis. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une tentative tant que du butin reste
      * signalé. Aucun réglage du joueur n'est modifié.
@@ -363,7 +363,7 @@ public class Automaton {
         long  now  = System.currentTimeMillis();
         Optional<GameState> state = QrCodeV2Reader.read(grid);
         boolean attackable = state.map(GameState::attackableTarget).orElse(false);
-        if (attackable && state.get().targetInCombat()) {lastEnemyTargeted = now;}
+        if (attackable && (state.get().targetInCombat() || state.get().inCombat())) {lastEnemyTargeted = now;}
         if (!QrCodeV2Reader.lootMode(grid)) {return false;}
 
         int enemies = state.map(GameState::enemies).orElse(0);
@@ -404,13 +404,13 @@ public class Automaton {
     }
 
     /**
-     * Appuie sur la touche d'interaction (Alt+Maj+L) et regarde le résultat.
+     * Appuie sur la touche d'interaction (Alt+Maj+X) et regarde le résultat.
      *
      * @return fini : butin ouvert (plus rien à ramasser), ou un ennemi arrive en combat
      */
     private boolean interact(QrCode qrCode) {
 
-        peripherals.getKeyboard().pressKey(KeyEvent.VK_L, true, false, true);
+        peripherals.getKeyboard().pressKey(KeyEvent.VK_X, true, false, true);
         peripherals.robot.delay(300);
         Frame current = qrCode.captureQrCode(peripherals);
         return !QrCodeV2Reader.targetLootable(current) || QrCodeV2Reader.read(current).map(GameState::enemies).orElse(0) > 0;

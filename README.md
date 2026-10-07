@@ -578,7 +578,7 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
 - **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : la cible morte disparaît
   souvent à sa mort, avant que son butin soit prêt. L'addon retient donc l'identifiant des ennemis ciblés dans la
   dernière minute et signale (case (8,1)) qu'un de leurs cadavres a du butin pour le joueur (`CanLootUnit`). Quand il ne
-  reste aucun ennemi en combat, le Java appuie sur `Alt+Maj+L`, posé par l'addon sur « Interagir avec la cible » : sans
+  reste aucun ennemi en combat, le Java appuie sur `Alt+Maj+X`, posé par l'addon sur « Interagir avec la cible » : sans
   cible, c'est la **touche d'interaction** de WoW, qui agit sur le cadavre à portée devant le personnage. Une
   demi-seconde d'attente puis trois appuis espacés de 0,3 s sur place ; sinon **un seul petit pas** en avant (0,4 s) et
   trois appuis de nouveau. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une seule tentative par butin signalé. Après la perte d'une cible ennemie en combat, le ciblage auto attend
