@@ -278,6 +278,63 @@ class QrCodeV2ReaderTest {
         assertTrue(state.keysReady());
     }
 
+    private static void set24(Grid grid, int[] cell, int value) {
+
+        grid.set24(cell[0], cell[1], value);
+    }
+
+    private static int fraction(double value) {
+
+        return (int) Math.round(value * 16777215);
+    }
+
+    @Test
+    void readsTheActiveRoute() {
+
+        // Parcours actif dans les cases libres des blocs 3 et 4 : révision, carte, nombre/boucle/sur la carte, joueur, points
+        var  cells = QrCodeV2Reader.routeCells();
+        Grid grid  = new Grid(32).set(8, 13, 4 / 255.0, 0, 0);
+        set24(grid, cells.get(0), 42);
+        set24(grid, cells.get(1), 2023);
+        grid.set(cells.get(2)[0], cells.get(2)[1], 3 / 255.0, 1, 1);
+        set24(grid, cells.get(3), fraction(0.40));
+        set24(grid, cells.get(4), fraction(0.60));
+        double[][] points = {{0.10, 0.20}, {0.45, 0.62}, {0.80, 0.90}};
+        for (int index = 0; index < points.length; index++) {
+            set24(grid, cells.get(5 + index * 2), fraction(points[index][0]));
+            set24(grid, cells.get(6 + index * 2), fraction(points[index][1]));
+        }
+
+        Route route = QrCodeV2Reader.route(grid.frame());
+
+        assertEquals(42, route.revision());
+        assertEquals(2023, route.map());
+        assertTrue(route.loop());
+        assertEquals(0.40, route.player().x, 1e-6);
+        assertEquals(3, route.points().size());
+        assertEquals(0.45, route.points().get(1).x, 1e-6);
+        assertEquals(0.90, route.points().get(2).y, 1e-6);
+        assertEquals(1, route.nearestPoint(), "le joueur (0,40 ; 0,60) est près du 2e point");
+    }
+
+    @Test
+    void routeCellsAreTheFreeCellsOfBlocks3And4() {
+
+        var cells = QrCodeV2Reader.routeCells();
+        assertEquals(2 * (196 - 54), cells.size());
+        assertArrayEquals(new int[]{1, 17}, cells.getFirst(), "bloc 3, première case libre");
+        assertTrue(cells.stream().allMatch(cell -> cell[1] >= 17 && cell[1] <= 30 && (cell[0] <= 14 || cell[0] >= 17)));
+        assertEquals(cells.size(), cells.stream().map(cell -> cell[0] + "," + cell[1]).distinct().count());
+    }
+
+    @Test
+    void noRouteWithoutMap() {
+
+        Grid grid = new Grid(32).set(8, 13, 4 / 255.0, 0, 0);
+        assertFalse(QrCodeV2Reader.route(grid.frame()).exists());
+        assertFalse(QrCodeV2Reader.route(new Grid(32).set(8, 13, 3 / 255.0, 0, 0).frame()).exists(), "v3");
+    }
+
     @Test
     void readsTheLootSignal() {
 

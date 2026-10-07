@@ -3,11 +3,14 @@ package fr.ksuto.clockwork.brain.perception;
 import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Lit le QR code de l'addon (qrcode_v2.lua) : la disposition des cases doit rester identique des deux côtés.
@@ -161,6 +164,58 @@ public final class QrCodeV2Reader {
     public static boolean notFacingTarget(Frame qr) {
 
         return qr.red(8, 13) >= 4 && qr.red(7, 1) > 127;
+    }
+
+    /**
+     * Cases libres des blocs 3 (0, 16) et 4 (16, 16), dans l'ordre de la grille (ligne par ligne) : celles du parcours
+     * actif, identiques à routeCellPositions dans routes.lua.
+     */
+    static List<int[]> routeCells() {
+
+        Set<String> keyCells = new HashSet<>();
+        for (int position = 1; position <= KEY_ORDER.size(); position++) {
+            for (int[] cell : new int[][]{stateCell(position), historyCell(position), spellCell(position)}) {keyCells.add(cell[0] + "," + cell[1]);}
+        }
+        List<int[]> cells = new ArrayList<>();
+        for (int[] block : new int[][]{{0, 16}, {16, 16}}) {
+            for (int y = 1; y <= 14; y++) {
+                for (int x = 1; x <= 14; x++) {
+                    if (!keyCells.contains(x + "," + y)) {cells.add(new int[]{block[0] + x, block[1] + y});}
+                }
+            }
+        }
+        return List.copyOf(cells);
+    }
+
+    private static final List<int[]> ROUTE_CELLS = routeCells();
+
+    /**
+     * Parcours actif (v4) : révision, carte, nombre de points et boucle, position du joueur, puis les points.
+     *
+     * @return {@link Route#NONE} si la grille n'est pas en v4 ou s'il n'y a pas de parcours actif
+     */
+    public static Route route(Frame qr) {
+
+        if (qr.red(8, 13) < 4 || qr.width() < 32 || qr.height() < 32) {return Route.NONE;}
+        int revision = read24(qr, ROUTE_CELLS.get(0));
+        int map      = read24(qr, ROUTE_CELLS.get(1));
+        if (map == 0) {return new Route(revision, 0, false, null, List.of());}
+        int[] header = ROUTE_CELLS.get(2);
+        int   count  = Math.min(qr.red(header[0], header[1]), (ROUTE_CELLS.size() - 5) / 2);
+        Point2D.Double player = qr.blue(header[0], header[1]) > 127 ? fraction(qr, 3) : null;
+        List<Point2D.Double> points = new ArrayList<>();
+        for (int index = 0; index < count; index++) {points.add(fraction(qr, 5 + index * 2));}
+        return new Route(revision, map, qr.green(header[0], header[1]) > 127, player, List.copyOf(points));
+    }
+
+    private static Point2D.Double fraction(Frame qr, int cell) {
+
+        return new Point2D.Double(read24(qr, ROUTE_CELLS.get(cell)) / 16777215.0, read24(qr, ROUTE_CELLS.get(cell + 1)) / 16777215.0);
+    }
+
+    private static int read24(Frame qr, int[] cell) {
+
+        return read24(qr, cell[0], cell[1]);
     }
 
     /**

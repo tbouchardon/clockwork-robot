@@ -196,14 +196,6 @@ public class Automaton {
         
         reportState("Actif");
         
-        if (qrCode.ADD_WAYPOINT.active) {
-            tomtom.addWayPoint(qrCode);
-        }
-        
-        if (qrCode.CLEAR_WAYPOINTS.active) {
-            tomtom.clearWayPoints();
-        }
-        
         boolean looting = loot(qrCode);
         
         Key     key2hit        = null;

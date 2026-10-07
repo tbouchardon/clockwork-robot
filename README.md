@@ -127,7 +127,7 @@ Le cerveau se pilote depuis les fichiers, à chaud :
    - pixel (0,0) non vert → *« QR code invisible »* (WoW masqué, interface cachée, addon non chargé) : on attend ;
    - case `toggle` éteinte → *« addon désactivé »* : on attend ;
    - le changement d'état est journalisé une seule fois, pour savoir **pourquoi** le bot ne fait rien.
-3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon. **Ramassage** (mode du
+3. **Ramassage** (mode du
    menu) : si un ennemi récent a laissé du butin, la touche d'interaction sur place, puis après un seul petit pas ; ni
    ciblage auto ni pilote pendant ce temps.
 4. **Choix de la touche** par le cerveau (voir plus bas). Une grille figée (compteur de mises à jour immobile depuis
@@ -559,9 +559,11 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
         when: "player.weaponEnchant < 10"
         priority: 20
     ```
-- **Pilote automatique** (`TomTom`) : lit les coordonnées de carte codées en binaire dans la grille, suit une liste de
-  points de passage, se dégage quand il est bloqué (recul, saut, rotation). Il s'arrête pour combattre, sous 50 % de vie
-  et pendant un repas. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
+- **Pilote automatique** (`TomTom`) : suit le **parcours actif, tenu par l'addon** et relu dans la grille à chaque tour
+  (`QrCodeV2Reader.route` : révision, carte, boucle, position du joueur, points ; voir le README de l'addon). Au
+  démarrage, après une modification du parcours ou après un combat, il rejoint le point le plus proche ; en fin de
+  parcours, il boucle ou s'arrête de lui-même. Le Java ne garde aucun point et n'écrit plus rien dans le chat. Il se
+  dégage quand il est bloqué (recul, saut, rotation), et s'arrête pour combattre, sous 50 % de vie et pendant un repas. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
   flèches gauche et droite ; la flèche bas l'arrête. Ces flèches sont les raccourcis par défaut de WoW.
 - **Cible dans le dos** : quand WoW refuse un sort parce que la cible n'est pas devant le personnage, l'addon le signale
   (case (7,1)) et le Java fait demi-tour, au plus une fois toutes les 4 s, en pilote automatique seulement (sinon le
@@ -598,7 +600,7 @@ src/main/java/fr/ksuto/clockwork/
 ├── brain/
 │   ├── BrainService.java       rechargement à chaud de la rotation, chargement de la table des sorts
 │   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
-│   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo, FishingResult
+│   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo, FishingResult, Route
 │   └── decision/               Brain, Rotation, SpellView, ItemView, MemberView, GroupView
 └── entities/
     ├── qrcode/                 QrCode (recherche à l'écran, cases d'état), Dot, Key
@@ -619,7 +621,7 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 ```
 
 - `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 à v4 (blocs à modificateurs, compteur, cible morte,
-  membres du groupe dans des cases libres du bloc 2).
+  membres du groupe dans des cases libres du bloc 2, parcours actif dans celles des blocs 3 et 4, point le plus proche).
 - `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.

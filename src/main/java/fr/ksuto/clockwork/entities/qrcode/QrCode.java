@@ -33,25 +33,12 @@ public class QrCode {
     //    public Position         currenPlayerPosition = new Position();
     public  Dot              TOGGLE_ON_OFF;
     public  Dot              TARGET_NEAREST_ENEMY;
-    public  Dot              ADD_WAYPOINT;
-    public  Dot              CLEAR_WAYPOINTS;
     public  Dot              DRIVE_MOD;
-    public  Dot              DRIVE_LOOP;
     public  Dot              DEBUG_MOD;
     private Camera           cameraPosition;
     private Dot              qrCodePosition;
     private Frame            capturedQrCode;
     
-    public static void typeInChat(PeripheralRobotHelper peripherals, String s) {
-        
-        peripherals.robot.keyPress(KeyEvent.VK_ENTER);
-        peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
-        peripherals.robot.delay(100);
-        peripherals.getKeyboard().typeString(s);
-        peripherals.robot.delay(100);
-        peripherals.robot.keyPress(KeyEvent.VK_ENTER);
-        peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
-    }
     
     
     /**
@@ -180,10 +167,7 @@ public class QrCode {
     
             TOGGLE_ON_OFF = new Dot(2, 13);
             TARGET_NEAREST_ENEMY = new Dot(3, 13);
-            ADD_WAYPOINT = new Dot(4, 13);
-            CLEAR_WAYPOINTS = new Dot(5, 13);
             DRIVE_MOD = new Dot(6, 13);
-            DRIVE_LOOP = new Dot(7, 13);
             DEBUG_MOD = new Dot(13, 13);
 
             logger.debug("QR code configuré");
@@ -203,10 +187,7 @@ public class QrCode {
         casting.updateActive(capturedQrCode);
         TOGGLE_ON_OFF.updateActive(capturedQrCode);
         TARGET_NEAREST_ENEMY.updateActive(capturedQrCode);
-        ADD_WAYPOINT.updateActive(capturedQrCode);
-        CLEAR_WAYPOINTS.updateActive(capturedQrCode);
         DRIVE_MOD.updateActive(capturedQrCode);
-        DRIVE_LOOP.updateActive(capturedQrCode);
         DEBUG_MOD.updateActive(capturedQrCode);
         FISH_MOD.updateActive(capturedQrCode);
     }

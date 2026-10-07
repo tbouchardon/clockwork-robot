@@ -2,14 +2,14 @@ package fr.ksuto.clockwork.activity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import fr.ksuto.clockwork.brain.perception.QrCodeV2Reader;
+import fr.ksuto.clockwork.brain.perception.Route;
 import fr.ksuto.clockwork.entities.ClkPosition;
 import fr.ksuto.clockwork.entities.qrcode.QrCode;
 import fr.ksuto.prh.PeripheralRobotHelper;
-import fr.ksuto.prh.capture.Frame;
-import fr.ksuto.prh.capture.Rgb;
 
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
+import java.awt.geom.Point2D;
 import java.util.Random;
 
 public class TomTom {
@@ -22,7 +22,6 @@ public class TomTom {
     private static final int                         TURN_DURATION         = 100;
     private final        Random                      random                = new Random();
     public               boolean                     isRunning             = false;
-    public               java.util.List<ClkPosition> path                  = new ArrayList<>();
     private              PeripheralRobotHelper       peripherals;
     private              boolean                     isFlying              = false;
     private              ClkPosition                 playersLastPosition   = null;
@@ -30,6 +29,10 @@ public class TomTom {
     private              boolean                     turnedRight           = false;
     private              boolean                     turnedLeft            = false;
     private              int                         pathIndex             = 0;
+    private              int                         routeRevision         = -1;
+    private              boolean                     resumeFromNearest     = true;
+    private              boolean                     finished              = false;
+    private              String                      reported              = "";
     private              int                         closeStep             = 0;
     private              double                      angleB;
     
@@ -38,60 +41,6 @@ public class TomTom {
         this.peripherals = peripherals;
     }
     
-    
-    public void addWayPoint(QrCode qrCode) {
-        
-        ClkPosition currenPlayerPosition = getCoordinates(qrCode, peripherals);
-        path.add(new ClkPosition(currenPlayerPosition));
-        String output = "";
-        for (ClkPosition position : path) {
-            String formattedX = String.format("%06d", position.xPos);
-            String formattedY = String.format("%06d", position.yPos);
-            output += formattedX.substring(0, 2) + "," + formattedX.substring(2, 4) + "-" +
-                      formattedY.substring(0, 2) + "," + formattedY.substring(2, 4) + ";";
-        }
-        logger.debug(output);
-        QrCode.typeInChat(peripherals, "/clk wpadded");
-        peripherals.robot.delay(500);
-    }
-    
-    public void clearWayPoints() {
-        
-        path.clear();
-        pathIndex = 0;
-        QrCode.typeInChat(peripherals, "/clk wpcleared");
-        peripherals.robot.delay(500);
-    }
-    
-    public ClkPosition getCoordinates(QrCode qrCode, PeripheralRobotHelper peripherals) {
-        
-        logger.debug("getCoordinates");
-        
-        Frame         capturedQrCode       = qrCode.captureQrCode(peripherals);
-        ClkPosition   currenPlayerPosition = new ClkPosition();
-        
-        currenPlayerPosition.xPos = readCoordinate(capturedQrCode, 7, 8);
-        currenPlayerPosition.yPos = readCoordinate(capturedQrCode, 10, 11);
-        
-        return currenPlayerPosition;
-    }
-    
-    /**
-     * Lit une coordonnée codée sur 20 bits par l'addon (coordinates_functions.lua) :
-     * bits 19 à 12 sur la ligne haute (x = 6 à 13), bits 11 à 0 sur la ligne basse (x = 2 à 13), pixel blanc = 1.
-     */
-    private static int readCoordinate(Frame capturedQrCode, int highRow, int lowRow) {
-        
-        int value = 0;
-        for (int x = 6; x <= 13; x++) {value = value << 1 | bit(capturedQrCode, x, highRow);}
-        for (int x = 2; x <= 13; x++) {value = value << 1 | bit(capturedQrCode, x, lowRow);}
-        return value;
-    }
-    
-    private static int bit(Frame capturedQrCode, int x, int y) {
-        
-        return capturedQrCode.rgb(x, y) == Rgb.ARGB_WHITE ? 1 : 0;
-    }
     
     /**
      * Arrête la course automatique : un appui sur la flèche bas (reculer, raccourci par défaut de WoW) la coupe.
@@ -139,6 +88,8 @@ public class TomTom {
         
         if (!qrCode.DRIVE_MOD.active) {
             if (isRunning) {runStop();}
+            resumeFromNearest = true;
+            finished = false;
             return;
         }
         if (playerHealth < 50) {
@@ -153,43 +104,62 @@ public class TomTom {
             // Passage en caméra position combat (Pour pouvoir loot plus facilement)
             qrCode.cameraCombat(peripherals);
     
-            // Arréter de courrir et retour en cas de cible active
+            // Arréter de courrir et retour en cas de cible active ; on repartira du point le plus proche
+            runStop();
+            resumeFromNearest = true;
+            return;
+        }
+        
+        // Parcours actif, tenu par l'addon : relu à chaque tour
+        Route route = QrCodeV2Reader.route(qrCode.getCapturedQrCode());
+        if (!route.exists() || route.points().isEmpty()) {
+            runStop();
+            report("Pilote automatique : aucun parcours actif, ou parcours vide (menu de l'addon)");
+            return;
+        }
+        if (route.player() == null) {
+            runStop();
+            report("Pilote automatique : le personnage n'est pas sur la carte du parcours");
+            return;
+        }
+        // Nouveau parcours, parcours modifié, démarrage ou reprise après un combat : rejoindre le point le plus proche
+        if (route.revision() != routeRevision || resumeFromNearest) {
+            pathIndex = route.nearestPoint();
+            routeRevision = route.revision();
+            resumeFromNearest = false;
+            finished = false;
+            playersLastPosition = null;
+            report("Pilote automatique : vers le point " + (pathIndex + 1) + " sur " + route.points().size());
+        }
+        if (finished) {
             runStop();
             return;
+        }
+        
+        // Fin du parcours : on recommence s'il boucle, sinon on s'arrête (l'addon garde le pilote allumé)
+        if (pathIndex > route.points().size() - 1) {
+            if (route.loop()) {
+                logger.debug("loop");
+                pathIndex = 0;
+            }
+            else {
+                finished = true;
+                runStop();
+                report("Pilote automatique : parcours terminé");
+                return;
+            }
         }
         
         // Passage en camera position course
         qrCode.cameraDrive(peripherals);
-        
-        // Arrêter de courrir et retour si il n'y a plus de points de cheminement
-        if (path.isEmpty()) {
-            pathIndex = 0;
-            runStop();
-            QrCode.typeInChat(peripherals, "/clk drive");
-            return;
-        }
         
         // Courrir
         if (!isRunning) {
             runStart();
         }
         
-        // Retourner au point de départ si la fonction LOOP est activée et qu'il n'y a plus de points de cheminement
-        if (qrCode.DRIVE_LOOP.active && pathIndex > path.size() - 1) {
-            logger.debug("loop");
-            pathIndex = 0;
-        }
-    
-        // Si l’on est à court de points de cheminement, on vide la liste, on arrête de courrir et retour
-        if (pathIndex > path.size() - 1) {
-            path.clear();
-            runStop();
-            pathIndex = 0;
-            return;
-        }
-        
-        ClkPosition destination          = path.get(pathIndex); //coordonnées destination
-        ClkPosition currenPlayerPosition = getCoordinates(qrCode, peripherals); //position du personage
+        ClkPosition destination          = position(route.points().get(pathIndex)); //coordonnées destination
+        ClkPosition currenPlayerPosition = position(route.player()); //position du personage
         
         logger.debug("Position courante : currenPlayerPosition.xPos = " + currenPlayerPosition.xPos + ", currenPlayerPosition.yPos = " + currenPlayerPosition.yPos);
         if (playersLastPosition == null) {
@@ -286,6 +256,27 @@ public class TomTom {
         if (closeStep > 10) {stuckProtocol();}
     
         peripherals.robot.delay(100);
+    }
+    
+    /**
+     * Position sur la carte en millionièmes (unité des seuils de distance ci-dessus, héritée de l'ancien codage).
+     */
+    private static ClkPosition position(Point2D.Double fraction) {
+        
+        ClkPosition position = new ClkPosition();
+        position.xPos = (int) Math.round(fraction.x * 1_000_000);
+        position.yPos = (int) Math.round(fraction.y * 1_000_000);
+        return position;
+    }
+    
+    /**
+     * Journalise un état du pilote quand il change.
+     */
+    private void report(String state) {
+        
+        if (state.equals(reported)) {return;}
+        reported = state;
+        logger.info(state);
     }
     
     /**
