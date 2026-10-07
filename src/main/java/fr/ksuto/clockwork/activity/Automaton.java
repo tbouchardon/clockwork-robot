@@ -344,7 +344,8 @@ public class Automaton {
     
     /**
      * Ramassage (mode du menu de l'addon) : un ennemi ciblé récemment est un cadavre avec du butin (l'addon le sait même
-     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Après 0,5 s, {@value #LOOT_PRESSES} appuis espacés
+     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Après 0,5 s, le cadavre est reciblé (dernière cible,
+     * voir {@link #targetCorpse}), puis {@value #LOOT_PRESSES} appuis espacés
      * de 0,3 s sur Alt+Maj+X, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est la touche d'interaction
      * de WoW, qui agit sur le cadavre à portée devant le personnage. Puis un seul pas de {@value #LOOT_STEP} ms en avant
      * et autant d'appuis. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une tentative tant que du butin reste
@@ -388,6 +389,7 @@ public class Automaton {
 
         // Sur place d'abord : la touche d'interaction met un instant à prendre le cadavre, d'où l'attente et quelques appuis
         peripherals.robot.delay(500);
+        if (!targetCorpse(qrCode)) {return true;}
         for (int i = 0; i < LOOT_PRESSES; i++) {
             if (interact(qrCode)) {return true;}
         }
@@ -401,6 +403,38 @@ public class Automaton {
         }
         logger.info("Ramassage : cadavre hors de portée, laissé");
         return true;
+    }
+
+    /**
+     * Cible le cadavre : l'interaction sur une cible agit quel que soit l'angle, à portée ; sans cible, la touche
+     * d'interaction de WoW ne prend que ce qui est bien en face du personnage. Le cadavre est la dernière cible
+     * (Alt+Maj+U, /targetlasttarget, posé par l'addon) : la cible disparaît souvent à la mort, ou le ciblage auto en a
+     * pris une autre.
+     *
+     * @return faux si la dernière cible est un ennemi vivant : il est relâché (retour à la cible d'avant), pas de
+     * ramassage
+     */
+    private boolean targetCorpse(QrCode qrCode) {
+
+        if (corpseTargeted(qrCode.getCapturedQrCode())) {return true;}
+        press(GroupTargeting.LAST_TARGET);
+        peripherals.robot.delay(200);
+        Frame grid = qrCode.captureQrCode(peripherals);
+        if (corpseTargeted(grid)) {
+            logger.debug("Ramassage : cadavre reciblé");
+            return true;
+        }
+        if (QrCodeV2Reader.read(grid).map(GameState::hasTarget).orElse(false)) {
+            logger.info("Ramassage : la dernière cible n'est pas un cadavre, laissé");
+            press(GroupTargeting.LAST_TARGET);
+            return false;
+        }
+        return true; // aucune cible : la touche d'interaction de WoW, sur ce qui est en face
+    }
+
+    private static boolean corpseTargeted(Frame grid) {
+
+        return QrCodeV2Reader.read(grid).map(GameState::hasTarget).orElse(false) && QrCodeV2Reader.targetDead(grid);
     }
 
     /**

@@ -561,7 +561,10 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
     ```
 - **Pilote automatique** (`TomTom`) : suit le **parcours actif, tenu par l'addon** et relu dans la grille à chaque tour
   (`QrCodeV2Reader.route` : révision, carte, boucle, position du joueur, points ; voir le README de l'addon). Au
-  démarrage, après une modification du parcours ou après un combat, il rejoint le point le plus proche ; en fin de
+  démarrage et après une modification du parcours, il rejoint le point le plus proche, ou le suivant s'il l'a déjà
+  dépassé ; après un combat, il reprend vers le point qu'il visait (`Steering`, `Route.startPoint`). À chaque tour, il
+  mesure son cap sur ses deux dernières positions et tourne de l'écart avec la direction du point (180° par seconde,
+  rien sous 8°), puis saute une mesure. Un point est atteint quand il est tout proche, ou frôlé puis laissé derrière ; en fin de
   parcours, il boucle ou s'arrête de lui-même. Le Java ne garde aucun point et n'écrit plus rien dans le chat. Il se
   dégage quand il est bloqué (recul, saut, rotation), et s'arrête pour combattre, sous 50 % de vie et pendant un repas. Une cible vivante hors combat et hors de portée
   (trouvée par le ciblage auto) ne l'arrête pas : il continue sa route, le ciblage auto en prendra une plus proche.
@@ -578,8 +581,10 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
 - **Ramassage du butin** (mode « Ramassage » du menu de l'addon, désactivé par défaut) : la cible morte disparaît
   souvent à sa mort, avant que son butin soit prêt. L'addon retient donc l'identifiant des ennemis ciblés dans la
   dernière minute et signale (case (8,1)) qu'un de leurs cadavres a du butin pour le joueur (`CanLootUnit`). Quand il ne
-  reste aucun ennemi en combat, le Java appuie sur `Alt+Maj+X`, posé par l'addon sur « Interagir avec la cible » : sans
-  cible, c'est la **touche d'interaction** de WoW, qui agit sur le cadavre à portée devant le personnage. Une
+  reste aucun ennemi en combat, le Java recible le cadavre (`Alt+Maj+U`, dernière cible) puis appuie sur `Alt+Maj+X`,
+  posé par l'addon sur « Interagir avec la cible » : sur une cible, l'interaction agit quel que soit l'angle, à portée.
+  Si la dernière cible est un ennemi vivant, elle est relâchée et le butin laissé ; sans cible, c'est la **touche
+  d'interaction** de WoW, qui n'agit que sur ce qui est bien en face. Une
   demi-seconde d'attente puis trois appuis espacés de 0,3 s sur place ; sinon **un seul petit pas** en avant (0,4 s) et
   trois appuis de nouveau. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une seule tentative par butin signalé. Après la perte d'une cible ennemie en combat, le ciblage auto attend
   1,5 s, le temps que le butin apparaisse. Il faut cocher « Activer la touche d'interaction » (Options > Contrôles) :

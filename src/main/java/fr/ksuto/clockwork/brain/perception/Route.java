@@ -34,4 +34,20 @@ public record Route(int revision, int map, boolean loop, Point2D.Double player, 
         }
         return nearest;
     }
+
+    /**
+     * Point à rejoindre au départ : le plus proche, ou le suivant si le joueur l'a déjà dépassé (plus près du suivant
+     * que ne l'est le point lui-même), pour ne pas revenir en arrière.
+     */
+    public int startPoint() {
+
+        int nearest = nearestPoint();
+        if (player == null || points.size() < 2) {return nearest;}
+        int next = nearest + 1;
+        if (next >= points.size()) {
+            if (!loop) {return nearest;}
+            next = 0;
+        }
+        return player.distance(points.get(next)) < points.get(nearest).distance(points.get(next)) ? next : nearest;
+    }
 }

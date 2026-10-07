@@ -34,7 +34,6 @@ public class TomTom {
     private              boolean                     finished              = false;
     private              String                      reported              = "";
     private              int                         closeStep             = 0;
-    private              double                      angleB;
     
     TomTom(PeripheralRobotHelper peripherals) {
         
@@ -101,9 +100,10 @@ public class TomTom {
         // En cas de cible active (actions engagées) il y a moins de 2 secondes
         long lastActionDelay = System.currentTimeMillis() - lastActionTime;
         if (actionPossible || actionEnCours || Boolean.TRUE.equals(inCombat) || lastActionDelay < 2000) {
-            // Arréter de courrir et retour en cas de cible active ; on repartira du point le plus proche
+            // Arrêter de courir en cas de cible active ; on repartira vers le point visé avant le combat
             runStop();
-            resumeFromNearest = true;
+            playersLastPosition = null;
+            lastRemainingDistance = null;
             return;
         }
         
@@ -119,13 +119,15 @@ public class TomTom {
             report("Pilote automatique : le personnage n'est pas sur la carte du parcours");
             return;
         }
-        // Nouveau parcours, parcours modifié, démarrage ou reprise après un combat : rejoindre le point le plus proche
+        // Nouveau parcours, parcours modifié ou démarrage : rejoindre le point le plus proche, ou le suivant s'il est déjà
+        // dépassé. Après un combat, le point visé reste le même
         if (route.revision() != routeRevision || resumeFromNearest) {
-            pathIndex = route.nearestPoint();
+            pathIndex = route.startPoint();
             routeRevision = route.revision();
             resumeFromNearest = false;
             finished = false;
             playersLastPosition = null;
+            lastRemainingDistance = null;
             report("Pilote automatique : vers le point " + (pathIndex + 1) + " sur " + route.points().size());
         }
         if (finished) {
@@ -158,85 +160,40 @@ public class TomTom {
         logger.debug("Position courante : currenPlayerPosition.xPos = " + currenPlayerPosition.xPos + ", currenPlayerPosition.yPos = " + currenPlayerPosition.yPos);
         if (playersLastPosition == null) {
             playersLastPosition = new ClkPosition(currenPlayerPosition);
-            lastRemainingDistance = Math.sqrt(Math.pow((double) destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) destination.yPos - currenPlayerPosition.yPos, 2));
+            lastRemainingDistance = Math.hypot((double) destination.xPos - currenPlayerPosition.xPos, (double) destination.yPos - currenPlayerPosition.yPos);
             return;
         }
         
-        // Calcul de l'équation de la droite passant par la position précédente et le point de cheminement actuel
-        logger.debug("Destination : destination.xPos = " + destination.xPos + ", destination.yPos = " + destination.yPos);
-        logger.debug("Pos. Tour precedent : playersLastPosition.xPos = " + playersLastPosition.xPos + ", playersLastPosition.yPos = " + playersLastPosition.yPos);
-        
-        double a = ((double) destination.yPos - (double) playersLastPosition.yPos) / ((double) destination.xPos - (double) playersLastPosition.xPos); // a = (yB - yA) / (xB - xA)
-        
-        //Si les deux points sont trop proches, le déplacement parfaitement vertical, ou horizontal, "a" peut être en erreur. On attend donc la prochaine passe. Retour.
-        logger.debug("a = " + a);
-        if (Double.isNaN(a) || Double.isInfinite(a)) {
-            playersLastPosition = new ClkPosition(currenPlayerPosition);
-            return;
-        }
-        double b = destination.yPos - (a * destination.xPos); // b = y - ax
-    
-        double y = a * currenPlayerPosition.xPos + b; // y = ax + b
-    
-        // Regarder la remainingDistance restante
-        double remainingDistance = Math.sqrt(Math.pow((double) destination.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) destination.yPos - currenPlayerPosition.yPos, 2));
-        double traveledDistance  = Math.sqrt(Math.pow((double) playersLastPosition.xPos - currenPlayerPosition.xPos, 2) + Math.pow((double) playersLastPosition.yPos - currenPlayerPosition.yPos, 2));
-    
-        // puisque :
-        //        a² = b² + c² − 2bc.cos(α)
-        //        b² = a² + c² − 2ac.cos(β)
-        //        c² = a² + b² − 2ab.cos(γ)
-        // alors,
-        // γ = arccos[(a² + b² − c²) ÷ 2ab]
-        // et si c = lastRemainingDistance, b = remainingDistance et a = traveledDistance alors l'angle C, opposé à c =
-        Double angleC = Math.acos((Math.pow(traveledDistance, 2) + Math.pow(remainingDistance, 2) - Math.pow(lastRemainingDistance, 2)) / (2d * traveledDistance * remainingDistance));
-        angleB = Math.acos((Math.pow(traveledDistance, 2) + Math.pow(lastRemainingDistance, 2) - Math.pow(remainingDistance, 2)) / (2d * traveledDistance * lastRemainingDistance));
-        
-        // conversion de radians en degrés
-        angleC = Math.toDegrees(angleC);
-        angleB = Math.toDegrees(angleB);
-        
-        logger.debug(y + " = " + a + " * " + currenPlayerPosition.xPos + " + " + b + "( Actual = " + currenPlayerPosition.yPos + ")");
-        logger.debug("lastRemainingDistance = " + lastRemainingDistance);
-        logger.debug("remainingDistance = " + remainingDistance);
-        logger.debug("traveledDistance = " + traveledDistance);
-        logger.debug("angleC = " + angleC + "°");
-        
-        // Plus l'angle interne est grand, moins on doit tourner. Résultat en Milisecondes, partant du principe que 1000ms équivaut à un demi tour.
-        int turnDuration = (int) (1000d / 180d * (180d - angleC));
-        
-        // En fonction de la droite, de la position et de la remainingDistance :
-        
-        // Tourner de turnDuration (milisecondes) en fonction de la position du personnage par rapport à la droite précédement calculée
-        // Si à xA > xB, on se déplace d'est en ouest
-        if (currenPlayerPosition.xPos > destination.xPos) {
-            // Si yJoueur (là où le joueur est) > yCalculé (là où le joueur devrait être), le joueur est trop au sud par rapport à position idéale (les coordonnées en y étant inversées).
-            if (currenPlayerPosition.yPos > y) {
-                turnRight(turnDuration);
-            }
-            // sinon le joueur est trop au nord
-            else {
-                turnLeft(turnDuration);
-            }
-        }
-        // Si à xA < xB, on se déplace d'ouest en est
-        else {
-            if (currenPlayerPosition.yPos > y) {
-                turnLeft(turnDuration);
+        double remainingDistance = Math.hypot((double) destination.xPos - currenPlayerPosition.xPos, (double) destination.yPos - currenPlayerPosition.yPos);
+        double traveledDistance  = Math.hypot((double) playersLastPosition.xPos - currenPlayerPosition.xPos, (double) playersLastPosition.yPos - currenPlayerPosition.yPos);
+        // Immobile depuis le tour précédent : pas de direction mesurable, on attend le tour suivant (le blocage est
+        // compté plus bas)
+        boolean turned = false;
+        if (traveledDistance > 0) {
+            double error = Steering.headingError(new Point2D.Double(playersLastPosition.xPos, playersLastPosition.yPos),
+                                                 new Point2D.Double(currenPlayerPosition.xPos, currenPlayerPosition.yPos),
+                                                 new Point2D.Double(destination.xPos, destination.yPos));
+            logger.debug("Point {} : distance {}, parcouru {}, écart de cap {}°", pathIndex + 1, Math.round(remainingDistance),
+                         Math.round(traveledDistance), Math.round(error));
+            if (Steering.reached(remainingDistance, lastRemainingDistance, traveledDistance)) {
+                // Point suivant : son cap sera mesuré au prochain tour
+                logger.debug("Point {} atteint", pathIndex + 1);
+                pathIndex++;
+                turned = true;
             }
             else {
-                turnRight(turnDuration);
+                int turnDuration = Steering.turnDuration(error);
+                if (turnDuration > 0) {
+                    if (error > 0) {turnRight(turnDuration);}
+                    else {turnLeft(turnDuration);}
+                    turned = true;
+                }
             }
         }
-    
-        lastRemainingDistance = remainingDistance;
-    
-        playersLastPosition = new ClkPosition(currenPlayerPosition);
-    
-        // On passe au point de cheminement suivant si le point actuel est atteint
-        if (remainingDistance <= traveledDistance * 1.5) {
-            pathIndex++;
-        }
+        // Après un virage ou un changement de point, la mesure repart de zéro : la direction mesurée sur un tour qui
+        // contient un virage mélange l'ancien et le nouveau cap, et ferait trop corriger
+        lastRemainingDistance = turned ? null : remainingDistance;
+        playersLastPosition = turned ? null : new ClkPosition(currenPlayerPosition);
     
         // Poney mod! xD
         int jump = random.nextInt(25);
@@ -305,7 +262,6 @@ public class TomTom {
     
     private void turnLeft(int iTime) {
         
-        logger.debug("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "" : "-") + angleB + "°");
         
         if (isFlying && !isRunning) {runStart();}
         
@@ -321,7 +277,6 @@ public class TomTom {
     
     private void turnRight(int iTime) {
         
-        logger.debug("angleB (Erreur de rotation au tour précédent) = " + (turnedRight ? "-" : "") + angleB + "°");
         
         if (isFlying && !isRunning) {runStart();}
         
