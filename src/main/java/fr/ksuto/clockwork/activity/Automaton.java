@@ -351,8 +351,9 @@ public class Automaton {
      * signalé. Aucun réglage du joueur n'est modifié.
      * <p>
      * Seulement s'il ne reste aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort
-     * du dernier). Le butin n'apparaît pas tout de suite : après avoir perdu une cible ennemie, le ciblage auto attend
-     * {@value #LOOT_APPEARS} ms, sans quoi il engagerait aussitôt l'ennemi suivant.
+     * du dernier). Le butin n'apparaît pas tout de suite : après avoir perdu une cible ennemie en combat, le ciblage auto
+     * attend {@value #LOOT_APPEARS} ms, sans quoi il engagerait aussitôt l'ennemi suivant. Une cible vivante hors combat
+     * (trouvée par le ciblage auto, souvent hors de portée) ne compte pas : le pilote continue sa route.
      *
      * @return ramassage en cours ou attendu : pas de ciblage auto ni de pilote automatique à ce tour
      */
@@ -361,15 +362,16 @@ public class Automaton {
         Frame grid = qrCode.getCapturedQrCode();
         long  now  = System.currentTimeMillis();
         Optional<GameState> state = QrCodeV2Reader.read(grid);
-        if (state.map(GameState::attackableTarget).orElse(false)) {lastEnemyTargeted = now;}
+        boolean attackable = state.map(GameState::attackableTarget).orElse(false);
+        if (attackable && state.get().targetInCombat()) {lastEnemyTargeted = now;}
         if (!QrCodeV2Reader.lootMode(grid)) {return false;}
 
         int enemies = state.map(GameState::enemies).orElse(0);
         if (enemies > 0) {return false;} // d'autres ennemis : combattre d'abord
         if (!QrCodeV2Reader.targetLootable(grid)) {
             lootAttempts = 0;
-            // Ennemi perdu à l'instant (mort) : laisser au butin le temps d'apparaître
-            return now - lastEnemyTargeted < LOOT_APPEARS;
+            // Ennemi combattu perdu à l'instant (mort) : laisser au butin le temps d'apparaître
+            return !attackable && now - lastEnemyTargeted < LOOT_APPEARS;
         }
         if (lootAttempts >= LOOT_ATTEMPTS) {return false;}
         if (!QrCodeV2Reader.interactKeyEnabled(grid)) {

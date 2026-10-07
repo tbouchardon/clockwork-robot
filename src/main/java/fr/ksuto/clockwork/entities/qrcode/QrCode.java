@@ -35,7 +35,6 @@ public class QrCode {
     public  Dot              TARGET_NEAREST_ENEMY;
     public  Dot              DRIVE_MOD;
     public  Dot              DEBUG_MOD;
-    private Camera           cameraPosition;
     private Dot              qrCodePosition;
     private Frame            capturedQrCode;
     
@@ -65,33 +64,6 @@ public class QrCode {
         return null;
     }
     
-    public void cameraCombat(PeripheralRobotHelper peripherals) {
-        
-        if (cameraPosition == Camera.COMBAT) {return;}
-        
-        cameraDrive(peripherals);
-        
-        cameraPosition = Camera.COMBAT;
-        
-        for (int n = 1; n <= 2; n++) {
-            peripherals.robot.keyPress(KeyEvent.VK_HOME);
-            peripherals.robot.keyRelease(KeyEvent.VK_HOME);
-            peripherals.robot.delay(100);
-        }
-    }
-    
-    public void cameraDrive(PeripheralRobotHelper peripherals) {
-        
-        if (cameraPosition == Camera.DRIVE) {return;}
-        
-        cameraPosition = Camera.DRIVE;
-        
-        for (int n = 1; n <= 5; n++) {
-            peripherals.robot.keyPress(KeyEvent.VK_END);
-            peripherals.robot.keyRelease(KeyEvent.VK_END);
-            peripherals.robot.delay(100);
-        }
-    }
     
     public Frame captureQrCode(PeripheralRobotHelper peripherals) {
     
@@ -204,9 +176,5 @@ public class QrCode {
     
     public double getPlayerHealth()  {return 100D / 255D * (double) playerHealth.getRed(capturedQrCode);}
     
-    public enum Camera {
-        DRIVE,
-        COMBAT
-    }
 }
 

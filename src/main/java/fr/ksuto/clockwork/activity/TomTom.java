@@ -101,9 +101,6 @@ public class TomTom {
         // En cas de cible active (actions engagées) il y a moins de 2 secondes
         long lastActionDelay = System.currentTimeMillis() - lastActionTime;
         if (actionPossible || actionEnCours || Boolean.TRUE.equals(inCombat) || lastActionDelay < 2000) {
-            // Passage en caméra position combat (Pour pouvoir loot plus facilement)
-            qrCode.cameraCombat(peripherals);
-    
             // Arréter de courrir et retour en cas de cible active ; on repartira du point le plus proche
             runStop();
             resumeFromNearest = true;
@@ -149,9 +146,6 @@ public class TomTom {
                 return;
             }
         }
-        
-        // Passage en camera position course
-        qrCode.cameraDrive(peripherals);
         
         // Courrir
         if (!isRunning) {

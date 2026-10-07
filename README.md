@@ -563,7 +563,9 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   (`QrCodeV2Reader.route` : révision, carte, boucle, position du joueur, points ; voir le README de l'addon). Au
   démarrage, après une modification du parcours ou après un combat, il rejoint le point le plus proche ; en fin de
   parcours, il boucle ou s'arrête de lui-même. Le Java ne garde aucun point et n'écrit plus rien dans le chat. Il se
-  dégage quand il est bloqué (recul, saut, rotation), et s'arrête pour combattre, sous 50 % de vie et pendant un repas. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
+  dégage quand il est bloqué (recul, saut, rotation), et s'arrête pour combattre, sous 50 % de vie et pendant un repas. Une cible vivante hors combat et hors de portée
+  (trouvée par le ciblage auto) ne l'arrête pas : il continue sa route, le ciblage auto en prendra une plus proche.
+  Il ne touche pas à la caméra. Il avance en course automatique (`Alt+Maj+V`, posé en surcharge par l'addon) et tourne avec les
   flèches gauche et droite ; la flèche bas l'arrête. Ces flèches sont les raccourcis par défaut de WoW.
 - **Cible dans le dos** : quand WoW refuse un sort parce que la cible n'est pas devant le personnage, l'addon le signale
   (case (7,1)) et le Java fait demi-tour, au plus une fois toutes les 4 s, en pilote automatique seulement (sinon le
@@ -579,7 +581,7 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
   reste aucun ennemi en combat, le Java appuie sur `Alt+Maj+L`, posé par l'addon sur « Interagir avec la cible » : sans
   cible, c'est la **touche d'interaction** de WoW, qui agit sur le cadavre à portée devant le personnage. Une
   demi-seconde d'attente puis trois appuis espacés de 0,3 s sur place ; sinon **un seul petit pas** en avant (0,4 s) et
-  trois appuis de nouveau. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une seule tentative par butin signalé. Après la perte d'une cible ennemie, le ciblage auto attend
+  trois appuis de nouveau. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une seule tentative par butin signalé. Après la perte d'une cible ennemie en combat, le ciblage auto attend
   1,5 s, le temps que le butin apparaisse. Il faut cocher « Activer la touche d'interaction » (Options > Contrôles) :
   sinon le ramassage est signalé impossible, une fois. Aucun réglage du joueur n'est modifié. Les soins de groupe ont
   leur propre section (règles `on`).
