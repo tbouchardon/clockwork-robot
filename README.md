@@ -44,12 +44,10 @@ joueur. Et depuis la 12.x (Midnight), il ne peut même plus **décider**, car la
 sont des valeurs « secrètes » qu'il ne peut ni comparer ni calculer. Il peut seulement les afficher. L'addon affiche
 donc tout, et c'est ce programme, extérieur au jeu, qui lit les pixels et prend les décisions.
 
-Deux modes de décision coexistent :
-
-| Mode | Activé quand | Qui décide |
-|---|---|---|
-| **Historique (v1)** | pas de rotation pour la classe et la spécialisation du personnage, ou grille v1 | L'addon allume la touche à appuyer avec une priorité ; Java appuie sur la plus prioritaire. |
-| **Cerveau** | une rotation de `rotations/` correspond au personnage, et grille v2 à v4 | Java : l'addon décrit l'état de chaque touche (et du groupe en v4), Java applique les règles YAML. |
+**Le Java décide seul** : l'addon décrit l'état de chaque touche, du joueur, de la cible et du groupe ; le cerveau
+applique la rotation YAML du personnage (`rotations/`), ou, s'il n'y en a pas pour sa classe et sa spécialisation, la
+recommandation de Blizzard. Les anciennes rotations Lua de l'addon, et le mode où l'addon allumait la touche à appuyer
+(grille v1), ont été retirés : les valeurs secrètes de la 12.x les empêchent de fonctionner.
 
 ---
 
@@ -125,7 +123,7 @@ Le cerveau se pilote depuis les fichiers, à chaud :
 
 `Automaton.play()` tourne jusqu'à la fermeture de la fenêtre. À chaque tour (`searchForSomethingToDo`) :
 
-1. **Capture** de la grille (32x32 pixels à la position trouvée par Auto Config).
+1. **Capture** de la grille (32x32 pixels à la position trouvée au démarrage).
 2. **Garde-fous**, dans l'ordre :
    - pixel (0,0) non vert → *« QR code invisible »* (WoW masqué, interface cachée, addon non chargé) : on attend ;
    - case `toggle` éteinte → *« addon désactivé »* : on attend ;
@@ -133,10 +131,9 @@ Le cerveau se pilote depuis les fichiers, à chaud :
 3. **Pilote automatique** : ajout ou effacement de points de passage demandés par l'addon. **Ramassage** (mode du
    menu) : si un ennemi récent a laissé du butin, la touche d'interaction sur place, puis après un seul petit pas ; ni
    ciblage auto ni pilote pendant ce temps.
-4. **Choix de la touche** :
-   - mode historique : la touche allumée de plus haute priorité, avec son modificateur et sa durée d'appui ;
-   - **si le cerveau est actif**, sa décision **remplace** celle de l'addon (voir plus bas). Une grille figée (compteur
-     de mises à jour immobile depuis plus de 1,5 s : écran de chargement, WoW en arrière-plan) ne produit aucune action.
+4. **Choix de la touche** par le cerveau (voir plus bas). Une grille figée (compteur de mises à jour immobile depuis
+   plus de 1,5 s : écran de chargement, WoW en arrière-plan) ne produit aucune action ; une grille v1 (addon trop ancien)
+   non plus.
 5. **Action** : appui sur la touche, avec Maj, Ctrl ou Alt si besoin. Pour un sort lancé sur un membre du groupe (règle
    `on`), le Java cible d'abord le membre (`Alt+Maj+A`…, boutons sécurisés de l'addon, voir `GroupTargeting`), appuie
    sur la touche du sort, puis revient à la cible précédente (`Alt+Maj+U`) si la rotation le demande et qu'il y en
@@ -154,7 +151,7 @@ que l'on fait.
 ### Perception : `QrCodeV2Reader` → `GameState`
 
 `QrCodeV2Reader.read(Frame)` lit la version (case (8,13)) et refuse tout ce qui n'est pas v2, v3 ou v4 (retour vide :
-mode historique). Il produit un `GameState` immuable :
+addon trop ancien, le Java n'agit pas). Il produit un `GameState` immuable :
 
 | Champ | Source |
 |---|---|
@@ -246,7 +243,8 @@ Maj, Ctrl ou Alt.
 - il **choisit la rotation du personnage** d'après la classe et la spécialisation lues dans la grille : celle de sa
   spécialisation (`class` + `spec`), sinon celle de toute sa classe (`class` sans `spec`). À égalité, le premier fichier
   par ordre alphabétique. Le choix est journalisé à chaque changement (*« Rotation pour SHAMAN Élémentaire : … »*) ;
-- sans rotation pour le personnage, il laisse l'addon décider (mode historique) ;
+- sans rotation pour le personnage, il suit la **recommandation de Blizzard** (une rotation par défaut, sans règle,
+  `assisted.follow` vrai) ;
 - un `rotation.yaml` dans le dossier de lancement impose sa rotation à tout personnage.
 
 ### Tables du jeu (wago.tools)
@@ -592,22 +590,20 @@ Ces fonctions viennent des versions précédentes et sont toujours en place :
 ```
 src/main/java/fr/ksuto/clockwork/
 ├── Runner.java                 point d'entrée : thème FlatLaf, injection Guice, fenêtre
-├── ClockWorkUI.java            fenêtre (Auto Config, Pêche, journal), démarre l'automate
+├── ClockWorkUI.java            fenêtre (journal), recherche du QR code, démarre l'automate
 ├── activity/
 │   ├── Automaton.java          boucle principale : capture → décision → touche
 │   ├── Fisherman.java          pêche
 │   ├── TomTom.java             pilote automatique
-│   ├── GroupTargeting.java     raccourcis de ciblage des membres (boutons sécurisés de l'addon)
-│   └── Healer.java             (historique)
+│   └── GroupTargeting.java     raccourcis de ciblage des membres (boutons sécurisés de l'addon)
 ├── brain/
 │   ├── BrainService.java       rechargement à chaud de la rotation, chargement de la table des sorts
 │   ├── data/                   GameInstall, WagoTables, SpellDatabaseLoader, SpellDatabase, SpellSchema, Csv
 │   ├── perception/             QrCodeV2Reader, GameState, Group, KeyState, KeyCombo, FishingResult
 │   └── decision/               Brain, Rotation, SpellView, ItemView, MemberView, GroupView
-├── entities/
-│   ├── qrcode/                 QrCode (recherche à l'écran, cases v1), Dot, Key
-│   ├── Player.java, ClkPosition.java
-└── tools/ShowZone.java         affichage d'une zone de l'écran (pêche)
+└── entities/
+    ├── qrcode/                 QrCode (recherche à l'écran, cases d'état), Dot, Key
+    └── ClkPosition.java        position sur la carte (pilote automatique)
 ```
 
 La disposition des cases doit rester **identique** des deux côtés : `QrCodeV2Reader` (Java) et `qrcode_v2.lua` (addon)
@@ -660,11 +656,11 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 | Symptôme | Cause probable |
 |---|---|
 | *« QR code invisible »* | WoW minimisé ou recouvert, interface masquée (`Alt+Z`), addon non chargé. |
-| *« addon désactivé »* | `/clk toggle` en jeu (Auto Config le fait normalement). |
+| *« addon désactivé »* | `/clk toggle` en jeu, le bouton du menu, ou son raccourci clavier. |
 | *« grille figée »* | Écran de chargement, WoW en pause ou en arrière-plan. |
-| *« Cerveau inactif : grille v1 »* | Addon trop ancien : redéployer l'addon et `/reload`. |
+| *« grille d'un addon trop ancien (v1) »* | Redéployer l'addon et `/reload`. |
 | *« Règle ignorée : … n'est sur aucune touche »* | Sort absent des touches décrites, ou nom inconnu : vérifier le nom (l'éditeur le signale avec `class` et `spec`). |
-| *« Aucune rotation pour … : l'addon décide seul »* | Pas de fichier dans `rotations/` pour cette classe et cette spécialisation. |
-| Auto Config ne trouve rien | Grille déformée : WoW doit être en fenêtré maximisé ; l'addon recalcule l'échelle des pixels à chaque changement de taille. |
+| *« Aucune rotation pour … : recommandation de Blizzard »* | Pas de fichier dans `rotations/` pour cette classe et cette spécialisation : le bot suit le combat assisté de Blizzard. |
+| Le QR code n'est jamais trouvé | Grille déformée : WoW doit être en fenêtré maximisé ; l'addon recalcule l'échelle des pixels à chaque changement de taille. |
 | `installDist` échoue (fichier verrouillé) | ClockWork tourne encore et verrouille ses `.jar` : l'arrêter avant de construire. |
 | Gradle ne trouve pas Java sous WSL | `JAVA_HOME` pointe vers un JDK Windows : utiliser un JDK Linux (`export JAVA_HOME=…`). |

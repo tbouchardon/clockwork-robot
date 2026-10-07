@@ -28,7 +28,8 @@ import java.util.Optional;
  * Cerveau du bot : rotations YAML, rechargées à chaud dès que leur fichier change, et table des sorts du jeu.
  * <p>
  * La rotation suit le personnage : parmi les fichiers du dossier des rotations, celle de sa classe et de sa
- * spécialisation (lues dans la grille), sinon celle de toute sa classe. Sans rotation pour lui, l'addon décide seul.
+ * spécialisation (lues dans la grille), sinon celle de toute sa classe. Sans rotation pour lui, il suit la
+ * recommandation de Blizzard ({@link #DEFAULT_ROTATION}).
  * <p>
  * Propriétés système :
  * <ul>
@@ -54,7 +55,13 @@ public final class BrainService {
      */
     private static final long RELOAD_INTERVAL = 1000;
 
-    private final Brain brain        = new Brain();
+    /**
+     * Rotation d'un personnage sans fichier : la recommandation de Blizzard (combat assisté), seule.
+     */
+    static final String DEFAULT_ROTATION = "name: Recommandation de Blizzard\nassisted:\n  follow: true\nrules: []\n";
+
+    private final Brain    brain           = new Brain();
+    private final Rotation defaultRotation = brain.parse(DEFAULT_ROTATION);
     private final Brain fishingBrain = new Brain();
     private final Path  rotationsFolder;
     private final Path  forcedFile;
@@ -114,26 +121,6 @@ public final class BrainService {
     }
 
     /**
-     * @return au moins une rotation est disponible (le cerveau peut prendre la main sur l'addon)
-     */
-    public boolean hasRotations() {
-
-        reloadIfChanged();
-        return forced != null || !rotations.isEmpty();
-    }
-
-    /**
-     * @return le cerveau décide pour ce personnage : une rotation lui correspond (ou la table des sorts, nécessaire pour
-     * le savoir, est en cours de chargement)
-     */
-    public boolean handles(GameState state) {
-
-        if (!hasRotations()) {return false;}
-        if (forced != null || database == null) {return true;}
-        return rotationFor(state).isPresent();
-    }
-
-    /**
      * @return la touche à appuyer selon la rotation du personnage, ou vide si pas de rotation, table des sorts pas
      * encore chargée ou rien à faire
      */
@@ -146,7 +133,7 @@ public final class BrainService {
             waitingReported = true;
             return Optional.empty();
         }
-        return rotationFor(state).flatMap(rotation -> brain.decide(state, rotation, spells));
+        return brain.decide(state, rotationFor(state).orElse(defaultRotation), spells);
     }
 
     /**
@@ -197,7 +184,7 @@ public final class BrainService {
         String key    = character + " -> " + choice;
         if (!Objects.equals(key, lastChoice)) {
             lastChoice = key;
-            if (choice == null) {logger.info("Aucune rotation pour {} : l'addon décide seul", character);}
+            if (choice == null) {logger.info("Aucune rotation pour {} : recommandation de Blizzard", character);}
             else {logger.info("Rotation pour {} : {}", character, choice);}
         }
         return chosen.map(Loaded::rotation);

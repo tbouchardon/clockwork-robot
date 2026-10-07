@@ -34,9 +34,6 @@ public class Automaton {
     private static final int                   LOOT_ATTEMPTS         = 1;
     private static final long                  LOOT_APPEARS          = 1500;
 
-    private static final int MODIFIER_CTRL = 1;
-    private static final int MODIFIER_ALT = 2;
-    private static final int MODIFIER_SHIFT = 4;
 
 
     private final        PeripheralRobotHelper peripherals;
@@ -209,80 +206,46 @@ public class Automaton {
         
         boolean looting = loot(qrCode);
         
-        Key     key2hit              = null;
-        int     bestPriority         = -1;
-        int     bestPriorityDuration = 0;
-        boolean shiftModifier        = false;
-        boolean ctrlModifier         = false;
-        boolean altModifier          = false;
+        Key     key2hit        = null;
+        boolean shiftModifier  = false;
+        boolean ctrlModifier   = false;
+        boolean altModifier    = false;
         Rotation.StopCasting stopFirst = Rotation.StopCasting.NONE;
-        int     member               = 0;
-        boolean tabbed               = false;
-        boolean returnToTarget       = false;
+        int     member         = 0;
+        boolean tabbed         = false;
+        boolean returnToTarget = false;
         
-        Frame capturedQrCode = qrCode.getCapturedQrCode();
-        
-        if (key2hit != null) {logger.debug("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority);}
-        
-        String keyStatus = "";
-        for (Key key : qrCode.getKeys()) {
-            int     keyMod   = key.getRed(capturedQrCode);
-            int     priority = key.getGreen(capturedQrCode);
-            int     duration = (int) (key.getBlue(capturedQrCode) / 255.0 * 30.0 * 1000.0);
-            boolean active   = priority != 0;
-            keyStatus += key.key + " : " + active + " | ";
-            
-            if (active && priority > bestPriority) {
-                
-                key2hit = key;
-                ctrlModifier = keyMod == MODIFIER_CTRL;
-                altModifier = keyMod == MODIFIER_ALT;
-                shiftModifier = keyMod == MODIFIER_SHIFT;
-                bestPriority = priority;
-                bestPriorityDuration = duration;
-                
-                logger.debug("key2hit = " + key2hit.key + ", mod = " + keyMod + ", bestPriority = " + bestPriority);
-            }
+        // Cerveau Java : la rotation YAML du personnage, sinon la recommandation de Blizzard (l'addon ne décide plus)
+        Optional<GameState> state = QrCodeV2Reader.read(qrCode.getCapturedQrCode());
+        if (state.isEmpty()) {
+            reportState("En attente : grille d'un addon trop ancien (v1), à mettre à jour");
         }
-        logger.debug(keyStatus);
-        
-        // Cerveau Java : avec une rotation YAML pour ce personnage et une grille v2 ou v3, il choisit la touche à la place
-        // de l'addon
-        if (brain.hasRotations()) {
-            Optional<GameState> state = QrCodeV2Reader.read(qrCode.getCapturedQrCode());
-            if (state.isPresent() && brain.handles(state.get())) {
-                Optional<Brain.Decision> decision = gridFrozen(state.get()) ? Optional.empty() : brain.decide(state.get());
-                // Cible suivante (répartition des DoT) : Tab, rien d'autre à ce tour
-                if (decision.isPresent() && decision.get().key().equals(Brain.NEXT_TARGET)) {
-                    logger.debug("Cerveau : cible suivante ({}, priorité {})", decision.get().reason(), decision.get().priority());
-                    peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
-                    lastTab = System.currentTimeMillis();
-                    tabbed = true;
-                    decision = Optional.empty();
-                }
-                KeyCombo combo = decision.map(d -> KeyCombo.parse(d.key())).orElse(null);
-                key2hit = combo == null ? null : keyNamed(qrCode, combo.key()).orElse(null);
-                altModifier = combo != null && combo.alt();
-                ctrlModifier = combo != null && combo.ctrl();
-                shiftModifier = combo != null && combo.shift();
-                bestPriorityDuration = 0;
-                stopFirst = decision.map(Brain.Decision::stopFirst).orElse(Rotation.StopCasting.NONE);
-                member = decision.map(Brain.Decision::member).orElse(0);
-                returnToTarget = decision.map(Brain.Decision::returnToTarget).orElse(false);
-                decision.ifPresent(d -> logger.debug("Cerveau : touche {} ({}, priorité {})", d.key(), d.reason(), d.priority()));
+        else {
+            Optional<Brain.Decision> decision = gridFrozen(state.get()) ? Optional.empty() : brain.decide(state.get());
+            // Cible suivante (répartition des DoT) : Tab, rien d'autre à ce tour
+            if (decision.isPresent() && decision.get().key().equals(Brain.NEXT_TARGET)) {
+                logger.debug("Cerveau : cible suivante ({}, priorité {})", decision.get().reason(), decision.get().priority());
+                peripherals.getKeyboard().pressKey(KeyEvent.VK_TAB);
+                lastTab = System.currentTimeMillis();
+                tabbed = true;
+                decision = Optional.empty();
             }
-            else if (state.isEmpty()) {
-                reportState("Cerveau inactif : grille v1, l'addon décide seul (addon à mettre à jour)");
-            }
+            KeyCombo combo = decision.map(d -> KeyCombo.parse(d.key())).orElse(null);
+            key2hit = combo == null ? null : keyNamed(qrCode, combo.key()).orElse(null);
+            altModifier = combo != null && combo.alt();
+            ctrlModifier = combo != null && combo.ctrl();
+            shiftModifier = combo != null && combo.shift();
+            stopFirst = decision.map(Brain.Decision::stopFirst).orElse(Rotation.StopCasting.NONE);
+            member = decision.map(Brain.Decision::member).orElse(0);
+            returnToTarget = decision.map(Brain.Decision::returnToTarget).orElse(false);
+            decision.ifPresent(d -> logger.debug("Cerveau : touche {} ({}, priorité {})", d.key(), d.reason(), d.priority()));
         }
-        
-        if (key2hit != null) {logger.debug("key2hit = " + key2hit.key + ", bestPriority = " + bestPriority + ", bestPriorityDuration = " + bestPriorityDuration);}
         
         if (key2hit != null) {
             lastActionTime = System.currentTimeMillis();
             stopCasting(stopFirst);
             if (member > 0) {press(GroupTargeting.member(member));}
-            hitKey(key2hit, altModifier, ctrlModifier, shiftModifier, bestPriorityDuration);
+            hitKey(key2hit, altModifier, ctrlModifier, shiftModifier, 0);
             if (member > 0 && returnToTarget) {press(GroupTargeting.LAST_TARGET);}
         }
         

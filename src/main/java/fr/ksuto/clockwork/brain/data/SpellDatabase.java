@@ -266,13 +266,6 @@ public final class SpellDatabase {
         return itemIds.getOrDefault(normalize(reference), Set.of());
     }
 
-    /**
-     * @return le nom de l'objet, ou son identifiant s'il est inconnu
-     */
-    public String itemNameOf(int id) {
-
-        return itemNames.getOrDefault(id, String.valueOf(id));
-    }
 
     /**
      * Le sort, ses variantes et ses homonymes : la recommandation de Blizzard désigne la forme de base (ex. 73899) alors

@@ -38,11 +38,6 @@ public class TomTom {
         this.peripherals = peripherals;
     }
     
-    @SuppressWarnings("unused")
-    public void addCurrentPositionToPathList(QrCode qrCode, PeripheralRobotHelper peripherals) {
-        
-        getCoordinates(qrCode, peripherals);
-    }
     
     public void addWayPoint(QrCode qrCode) {
         

@@ -70,8 +70,8 @@ public class ClockWorkUI {
     }
 
     /**
-     * Cherche le QR code de l'addon toutes les 2 s jusqu'à le trouver, puis démarre l'automate. Sans clic ni frappe
-     * (contrairement à Auto Config, qui active l'addon) : rien n'est envoyé à une autre fenêtre pendant l'attente.
+     * Cherche le QR code de l'addon toutes les 2 s jusqu'à le trouver, puis démarre l'automate. Sans clic ni frappe :
+     * rien n'est envoyé à une autre fenêtre pendant l'attente.
      */
     private void startQrCodeSearch() {
 
@@ -164,7 +164,7 @@ public class ClockWorkUI {
     }
 
     /**
-     * Démarre l'automate s'il ne tourne pas déjà : une nouvelle Auto Config ne doit pas en lancer un second.
+     * Démarre l'automate s'il ne tourne pas déjà : une nouvelle recherche du QR code ne doit pas en lancer un second.
      */
     private synchronized void startAutomaton() {
         

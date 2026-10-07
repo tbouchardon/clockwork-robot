@@ -71,15 +71,26 @@ class BrainServiceTest {
         assertEquals("3", keyFor(service, character(DRUID, 102)));
     }
 
+    /**
+     * Comme {@link #character}, avec Éclair (touche 1) recommandé par Blizzard.
+     */
+    private static GameState recommending(int classId, int specId) {
+
+        GameState s = character(classId, specId);
+        return new GameState(s.playerHealth(), s.playerPower(), s.hasTarget(), s.targetHostile(), s.targetHealth(), s.targetPower(),
+                             s.targetInCombat(), s.inCombat(), s.casting(), s.enemies(), s.facing(), 188196, s.aggro(), s.playerDead(), s.mounted(),
+                             s.targetTapDenied(), s.moving(), s.form(), s.comboPoints(), s.classId(), s.specId(), s.frame(), s.cast(), s.targetCast(),
+                             s.keys());
+    }
+
     @Test
-    void addonDecidesWhenNoRotationFitsTheCharacter() throws IOException {
+    void blizzardRecommendationWhenNoRotationFitsTheCharacter() throws IOException {
 
         BrainService service = service();
 
-        assertTrue(service.hasRotations());
-        assertTrue(service.handles(character(SHAMAN, ELEMENTAL)));
-        assertFalse(service.handles(character(MAGE, 63)));
-        assertFalse(service.handles(character(0, 0)), "classe inconnue");
+        assertEquals("1", keyFor(service, recommending(MAGE, 63)), "pas de rotation mage : recommandation de Blizzard");
+        assertEquals("1", keyFor(service, recommending(0, 0)), "classe inconnue : idem");
+        assertEquals("", keyFor(service, character(MAGE, 63)), "rien de recommandé : rien");
     }
 
     @Test
@@ -89,7 +100,7 @@ class BrainServiceTest {
         Files.writeString(folder.resolve("rotation.yaml"), "rules:\n  - cast: Éclat lunaire\n", StandardCharsets.UTF_8);
         BrainService forced = new BrainService(folder.resolve("rotations"), folder.resolve("rotation.yaml"), spells);
 
-        assertTrue(forced.handles(character(MAGE, 63)));
+        assertEquals("3", keyFor(forced, character(MAGE, 63)));
         assertEquals("3", keyFor(forced, character(SHAMAN, ELEMENTAL)));
     }
 
@@ -98,8 +109,7 @@ class BrainServiceTest {
 
         BrainService empty = new BrainService(folder.resolve("absent"), folder.resolve("rotation.yaml"), spells);
 
-        assertFalse(empty.hasRotations());
-        assertFalse(empty.handles(character(SHAMAN, ELEMENTAL)));
+        assertEquals("1", keyFor(empty, recommending(SHAMAN, ELEMENTAL)), "aucun fichier : recommandation de Blizzard");
     }
 
     @Test

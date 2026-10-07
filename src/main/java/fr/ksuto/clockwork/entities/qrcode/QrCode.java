@@ -8,11 +8,8 @@ import fr.ksuto.prh.capture.Frame;
 import fr.ksuto.prh.capture.Rgb;
 
 import java.awt.*;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Administrateur on 19/05/15!
@@ -56,36 +53,6 @@ public class QrCode {
         peripherals.robot.keyRelease(KeyEvent.VK_ENTER);
     }
     
-    static void openCloseKsuto(PeripheralRobotHelper peripherals) {
-    
-        typeInChat(peripherals, "/clk toggle");
-    }
-    
-    static void startKsuto(PeripheralRobotHelper peripherals, Dot dot) {
-        
-        peripherals.robot.mouseMove(dot.xPosition, dot.yPosition);
-        peripherals.robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        peripherals.robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        peripherals.robot.delay(100);
-        
-        openCloseKsuto(peripherals);
-    }
-    
-    /**
-     * Active l'addon (/clk toggle) s'il est éteint.
-     *
-     * @return vrai si la commande a été envoyée
-     */
-    public boolean ensureAddonActive(PeripheralRobotHelper peripherals) {
-        
-        captureQrCode(peripherals);
-        update();
-        if (TOGGLE_ON_OFF.active) {return false;}
-        
-        logger.info("Addon désactivé : clic sur le QR code pour donner le focus à WoW, puis /clk toggle");
-        startKsuto(peripherals, qrCodePosition);
-        return true;
-    }
     
     /**
      * Coin haut gauche du QR code : un carré de 16×16 dont les quatre coins sont vert pur. Vrai que l'addon soit
@@ -149,31 +116,6 @@ public class QrCode {
     
     public boolean hasTarget() {return (targetReaction.getRgb(capturedQrCode) != Rgb.ARGB_BLACK);}
     
-    public boolean init(PeripheralRobotHelper peripherals) throws AWTException, IOException {
-        
-        Robot robot = peripherals.robot;
-        
-        logger.debug("Starting AutoConfig");
-        
-        Point qrCodePosition = null;
-        
-        for (int i = 7; i >= 0; i--) {
-    
-            qrCodePosition = findQrCode(Capture.screen());
-    
-            if (qrCodePosition != null) {
-                break;
-            }
-    
-            if (i == 4) {
-                QrCode.openCloseKsuto(peripherals);
-            }
-    
-            robot.delay(750);
-        }
-
-        return configure(qrCodePosition);
-    }
 
     /**
      * Cherche le QR code une seule fois, sans clic ni attente : recherche automatique au démarrage de ClockWork.
@@ -243,16 +185,13 @@ public class QrCode {
             DRIVE_MOD = new Dot(6, 13);
             DRIVE_LOOP = new Dot(7, 13);
             DEBUG_MOD = new Dot(13, 13);
-    
-    
-            //            QrCode.startKsuto(peripherals, this.qrCodePosition);
-    
-            logger.debug("AutoConfig Done");
+
+            logger.debug("QR code configuré");
     
             return true;
         }
         else {
-            logger.debug("AutoConfig Failed");
+            logger.debug("QR code introuvable");
     
             return false;
         }
@@ -282,17 +221,7 @@ public class QrCode {
         return keys;
     }
     
-    public int getNumberOfTargets()  {return (int) Math.floor(100D / 255D * (double) numberOfTargets.getRed(capturedQrCode) + 0.5);}
-    
     public double getPlayerHealth()  {return 100D / 255D * (double) playerHealth.getRed(capturedQrCode);}
-    
-    public double getPlayerMana()    {return 100D / 255D * (double) playerMana.getBlue(capturedQrCode);}
-    
-    public double getTargetHealth()  {return 100D / 255D * (double) targetHealth.getRed(capturedQrCode);}
-    
-    public double getTargetMana()    {return 100D / 255D * (double) targetMana.getBlue(capturedQrCode);}
-    
-    public boolean isTargetHostile() {return (targetReaction.getRgb(capturedQrCode) == Rgb.ARGB_RED);}
     
     public enum Camera {
         DRIVE,
