@@ -167,8 +167,8 @@ public final class QrCodeV2Reader {
     }
 
     /**
-     * Cases libres des blocs 3 (0, 16) et 4 (16, 16), dans l'ordre de la grille (ligne par ligne) : celles du parcours
-     * actif, identiques à routeCellPositions dans routes.lua.
+     * Cases libres du bloc 3 (0, 16), dans l'ordre de la grille (ligne par ligne) : celles du parcours actif, identiques à
+     * routeCellPositions dans routes.lua. Le bloc 4 reste en réserve.
      */
     static List<int[]> routeCells() {
 
@@ -177,7 +177,7 @@ public final class QrCodeV2Reader {
             for (int[] cell : new int[][]{stateCell(position), historyCell(position), spellCell(position)}) {keyCells.add(cell[0] + "," + cell[1]);}
         }
         List<int[]> cells = new ArrayList<>();
-        for (int[] block : new int[][]{{0, 16}, {16, 16}}) {
+        for (int[] block : new int[][]{{0, 16}}) {
             for (int y = 1; y <= 14; y++) {
                 for (int x = 1; x <= 14; x++) {
                     if (!keyCells.contains(x + "," + y)) {cells.add(new int[]{block[0] + x, block[1] + y});}

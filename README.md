@@ -621,7 +621,7 @@ correspondent à `memberCell` et `memberTargetKey` de `group.lua`.
 ```
 
 - `QrCodeV2ReaderTest` : décodage d'une grille synthétique, v2 à v4 (blocs à modificateurs, compteur, cible morte,
-  membres du groupe dans des cases libres du bloc 2, parcours actif dans celles des blocs 3 et 4, point le plus proche).
+  membres du groupe dans des cases libres du bloc 2, parcours actif dans celles du bloc 3, point le plus proche).
 - `GroupHealingTest` : règles `on` (membre le plus blessé, rôle, soi-même), mode soigneur et `always`, membres morts ou
   hors de portée écartés, `group.*`, `member.sinceCast`, retour à la cible.
 - `GroupTargetingTest` : raccourcis de ciblage identiques à l'addon.

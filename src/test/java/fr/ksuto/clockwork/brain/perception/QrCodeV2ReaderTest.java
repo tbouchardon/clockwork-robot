@@ -291,7 +291,7 @@ class QrCodeV2ReaderTest {
     @Test
     void readsTheActiveRoute() {
 
-        // Parcours actif dans les cases libres des blocs 3 et 4 : révision, carte, nombre/boucle/sur la carte, joueur, points
+        // Parcours actif dans les cases libres du bloc 3 : révision, carte, nombre/boucle/sur la carte, joueur, points
         var  cells = QrCodeV2Reader.routeCells();
         Grid grid  = new Grid(32).set(8, 13, 4 / 255.0, 0, 0);
         set24(grid, cells.get(0), 42);
@@ -318,12 +318,13 @@ class QrCodeV2ReaderTest {
     }
 
     @Test
-    void routeCellsAreTheFreeCellsOfBlocks3And4() {
+    void routeCellsAreTheFreeCellsOfBlock3() {
 
         var cells = QrCodeV2Reader.routeCells();
-        assertEquals(2 * (196 - 54), cells.size());
+        assertEquals(196 - 54, cells.size());
+        assertTrue(cells.size() >= 5 + 2 * 60, "en-tête et 60 points");
         assertArrayEquals(new int[]{1, 17}, cells.getFirst(), "bloc 3, première case libre");
-        assertTrue(cells.stream().allMatch(cell -> cell[1] >= 17 && cell[1] <= 30 && (cell[0] <= 14 || cell[0] >= 17)));
+        assertTrue(cells.stream().allMatch(cell -> cell[1] >= 17 && cell[1] <= 30 && cell[0] >= 1 && cell[0] <= 14), "bloc 4 libre");
         assertEquals(cells.size(), cells.stream().map(cell -> cell[0] + "," + cell[1]).distinct().count());
     }
 
