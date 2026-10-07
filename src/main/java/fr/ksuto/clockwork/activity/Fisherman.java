@@ -2,14 +2,11 @@ package fr.ksuto.clockwork.activity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import fr.ksuto.bot.generated.enums.InterfaceEnum;
 import fr.ksuto.clockwork.ClockWorkUI;
 import fr.ksuto.clockwork.brain.perception.FishingResult;
 import fr.ksuto.prh.PeripheralRobotHelper;
 import fr.ksuto.prh.capture.Capture;
 import fr.ksuto.prh.capture.Frame;
-import fr.ksuto.prh.entities.Position;
-import fr.ksuto.prh.helpers.PictureSearch;
 import fr.ksuto.prh.peripherals.Screen;
 
 import java.awt.*;
@@ -340,13 +337,6 @@ public class Fisherman {
     
     void setup() throws AWTException {
     
-        Position resultsWoW = PictureSearch.getDefault(InterfaceEnum.WOW).search().getFirstResult().getFirstPosition();
-        if (resultsWoW != null) {
-            int iWoWSize = Screen.SCREEN_WIDTH - (resultsWoW.getX() * 2);
-            logger.debug("WoW Width = " + iWoWSize);
-        }
-    
-        
         peripherals.robot.delay(100);
         peripherals.robot.mouseMove(Screen.SCREEN_WIDTH / 2, Screen.SCREEN_HEIGHT / 2 + 10);
         expected = new Point(Screen.SCREEN_WIDTH / 2, Screen.SCREEN_HEIGHT / 2 + 10);
