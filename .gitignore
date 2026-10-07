@@ -18,3 +18,4 @@ build/
 rotation.yaml
 /rotation.schema.json
 traces-peche/
+traces/
