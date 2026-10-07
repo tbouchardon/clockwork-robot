@@ -30,6 +30,7 @@ public class Automaton {
     private static final int                   GREY_COLOR            = 100;
     private static final long                  TURN_AROUND_COOL_DOWN = 4000;
     private static final int                   LOOT_PRESSES          = 3;
+    private static final int                   LOOT_STEP             = 400;
     private static final int                   LOOT_ATTEMPTS         = 1;
     private static final long                  LOOT_APPEARS          = 1500;
 
@@ -388,10 +389,10 @@ public class Automaton {
     
     /**
      * Ramassage (mode du menu de l'addon) : un ennemi ciblé récemment est un cadavre avec du butin (l'addon le sait même
-     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Sur place seulement : après 0,5 s,
-     * {@value #LOOT_PRESSES} appuis espacés de 0,3 s sur Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ;
-     * sans cible, c'est la touche d'interaction de WoW, qui agit sur le cadavre à portée devant le personnage. Un cadavre
-     * hors de portée est laissé : avancer en ligne droite le rate le plus souvent. Une tentative tant que du butin reste
+     * s'il n'est plus ciblé : la cible disparaît souvent à sa mort). Après 0,5 s, {@value #LOOT_PRESSES} appuis espacés
+     * de 0,3 s sur Alt+Maj+L, posé par l'addon sur « Interagir avec la cible » ; sans cible, c'est la touche d'interaction
+     * de WoW, qui agit sur le cadavre à portée devant le personnage. Puis un seul pas de {@value #LOOT_STEP} ms en avant
+     * et autant d'appuis. Un cadavre plus loin est laissé : avancer en ligne droite le rate le plus souvent. Une tentative tant que du butin reste
      * signalé. Aucun réglage du joueur n'est modifié.
      * <p>
      * Seulement s'il ne reste aucun ennemi en combat (le jeu garde le statut « en combat » quelques secondes après la mort
@@ -428,9 +429,16 @@ public class Automaton {
         logger.info("Ramassage du butin (essai {})", lootAttempts);
         ui.appendMessage("butin");
 
-        // Sur place seulement : avancer en ligne droite rate le plus souvent le cadavre. La touche d'interaction met un
-        // instant à le prendre, d'où l'attente et quelques appuis
+        // Sur place d'abord : la touche d'interaction met un instant à prendre le cadavre, d'où l'attente et quelques appuis
         peripherals.robot.delay(500);
+        for (int i = 0; i < LOOT_PRESSES; i++) {
+            if (interact(qrCode)) {return true;}
+        }
+        // Un seul petit pas en avant (le personnage faisait face à sa cible), puis de nouveau sur place : au-delà,
+        // avancer en ligne droite rate le plus souvent le cadavre
+        peripherals.robot.keyPress(KeyEvent.VK_UP);
+        peripherals.robot.delay(LOOT_STEP);
+        peripherals.robot.keyRelease(KeyEvent.VK_UP);
         for (int i = 0; i < LOOT_PRESSES; i++) {
             if (interact(qrCode)) {return true;}
         }
